@@ -31,7 +31,7 @@ uv sync --extra notebook                      # notebook + ipykernel are demo-on
 uv run jupyter lab examples/quickstart.ipynb  # or: uv run python examples/quickstart.py
 ```
 
-The notebook runs the full **W2V → BERT-PT → BERT-FT** chain on a synthetic dataset shipped in `examples/data/` (CPU, ~1 minute), ending with three quarterly embedding CSVs. Real production runs require CSMAR data — see [Prepare data](how-to/prepare-data.md). Full walkthrough: [Quickstart](tutorials/quickstart.md).
+The notebook runs the full **W2V-PT → W2V-FT → BERT-PT → BERT-FT** chain on a synthetic dataset shipped in `examples/data/` (CPU, ~1 minute), ending with four embedding CSVs. Real production runs require CSMAR data — see [Prepare data](how-to/prepare-data.md). Full walkthrough: [Quickstart](tutorials/quickstart.md).
 
 ## Where to go
 

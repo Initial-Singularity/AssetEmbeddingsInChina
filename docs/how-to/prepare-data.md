@@ -34,7 +34,7 @@ split by year as UTF-8 CSV. Key fields:
 
 One committed dataset — no external data needed to reproduce the demo:
 
-- `examples/data/` — synthetic portfolios for the end-to-end W2V → BERT-PT → BERT-FT walkthrough in `examples/quickstart.{ipynb,py}`. Schema and generation rationale: `examples/data/README.md`.
+- `examples/data/` — synthetic portfolios for the end-to-end W2V-PT → W2V-FT → BERT-PT → BERT-FT walkthrough in `examples/quickstart.{ipynb,py}`. Schema and generation rationale: `examples/data/README.md`.
 
 ## Processing pipeline
 

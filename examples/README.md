@@ -1,6 +1,6 @@
 # Examples
 
-End-to-end walkthrough of the project's canonical training chain — **W2V → BERT-PT → BERT-FT** — on a synthetic dataset shipped in [`data/`](data/). CPU only, ~1 minute, fully redistributable (every number is generated; see [`data/README.md`](data/README.md)).
+End-to-end walkthrough of the project's canonical training chain — **W2V-PT → W2V-FT → BERT-PT → BERT-FT** — on a synthetic dataset shipped in [`data/`](data/). CPU only, ~1 minute, fully redistributable (every number is generated; see [`data/README.md`](data/README.md)).
 
 Two equivalent entry points share the same pipeline:
 
@@ -30,12 +30,13 @@ uv run python examples/quickstart.py
 
 ## What you should see
 
-The pipeline produces three asset-embedding artifacts:
+The pipeline produces four asset-embedding artifacts:
 
 | Model | Trained on | Artifact |
 |---|---|---|
-| W2V | PT data | `_output/w2v/w2v_d16_embedding.csv` |
+| W2V-PT | PT data | `_output/w2v/w2v_d16_embedding.csv` |
+| W2V-FT | FT data | `_output/w2v_ft/w2v_ft_d16_embedding.csv` |
 | BERT-PT | PT data | `_output/bert_pt/bert_pt_d16_best_contextual_embedding.csv` |
 | BERT-FT | FT data | `_output/bert_ft/bert_ft_d16_best_contextual_embedding.csv` |
 
-Each CSV is a `(Token, Embed_1..Embed_d)` matrix. The final cell prints the three shapes plus the top-5 cosine neighbours of one stock in each space — the synthetic universe has latent cluster structure, so neighbours stay within a stock's cluster. Because W2V seeds BERT's embedding layer and BERT-FT starts from the BERT-PT encoder, the three spaces share one coordinate frame.
+Each CSV is a `(Token, Embed_1..Embed_d)` matrix. The final cell prints the four shapes plus the top-5 cosine neighbours of one stock in each space — the synthetic universe has latent cluster structure, so neighbours stay within a stock's cluster, and the two fine-tuned models pick up the FT-period drift together while staying comparable to their pretrained starting points.

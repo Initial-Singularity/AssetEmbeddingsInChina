@@ -49,7 +49,7 @@ uv sync --extra notebook                          # notebook + ipykernel are dem
 uv run jupyter lab examples/quickstart.ipynb      # or: uv run python examples/quickstart.py
 ```
 
-The notebook runs the full **W2V → BERT-PT → BERT-FT** training chain on a synthetic dataset shipped in `examples/data/` (CPU, ~1 minute) and produces three asset-embedding CSVs sharing one coordinate frame. Real production runs require CSMAR data; see [`docs/how-to/prepare-data.md`](docs/how-to/prepare-data.md).
+The notebook runs the full **W2V-PT → W2V-FT → BERT-PT → BERT-FT** training chain on a synthetic dataset shipped in `examples/data/` (CPU, ~1 minute) and produces four asset-embedding CSVs, the fine-tuned ones comparable to their pretrained starting points. Real production runs require CSMAR data; see [`docs/how-to/prepare-data.md`](docs/how-to/prepare-data.md).
 
 ## Data availability
 
@@ -84,7 +84,7 @@ These are the *learned representations*, not CSMAR source data — download them
 
 ## Documentation
 
-The full docs live in [`docs/`](docs/) and will be published at <https://initial-singularity.github.io/AssetEmbeddingsInChina/> once the repository is public.
+The full docs live in [`docs/`](docs/) and are published at <https://initial-singularity.github.io/AssetEmbeddingsInChina/>.
 
 - [Installation](docs/how-to/install.md)
 - [Prepare data](docs/how-to/prepare-data.md)

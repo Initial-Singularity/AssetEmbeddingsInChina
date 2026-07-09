@@ -28,7 +28,7 @@ uv sync --extra notebook                      # notebook 与 ipykernel 仅为演
 uv run jupyter lab examples/quickstart.ipynb  # 或：uv run python examples/quickstart.py
 ```
 
-该 notebook 在 `examples/data/` 中随附的合成数据集上跑完整的 **W2V → BERT-PT → BERT-FT** 链路（CPU，约 1 分钟），最终产出三份逐季度的 embedding CSV。真实的生产运行需要 CSMAR 数据——参见 [准备数据](how-to/prepare-data.md)。完整走查：[快速上手教程](tutorials/quickstart.md)。
+该 notebook 在 `examples/data/` 中随附的合成数据集上跑完整的 **W2V-PT → W2V-FT → BERT-PT → BERT-FT** 链路（CPU，约 1 分钟），最终产出四份 embedding CSV。真实的生产运行需要 CSMAR 数据——参见 [准备数据](how-to/prepare-data.md)。完整走查：[快速上手教程](tutorials/quickstart.md)。
 
 ## 该往哪儿看
 

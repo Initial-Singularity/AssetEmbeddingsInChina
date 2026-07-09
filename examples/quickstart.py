@@ -3,33 +3,36 @@
 Mirrors `quickstart.ipynb` cell-for-cell. Runs the project's canonical chain
 on CPU in roughly one minute:
 
-    portfolio_pretrained.csv          portfolio_finetune.csv
-              |                                |
-              v                                |
-    +-----------------+                        |
-    |  Step 1 - W2V   |                        |
-    |  10 ep, d=16    |                        |
-    +-----------------+                        |
-              | init                           |
-              v                                |
-    +-----------------+                        |
-    | Step 2 - BERT-PT|                        |
-    | 8 ep, 2 layers  |                        |
-    +-----------------+                        |
-              | init                           |
-              v                                |
-    +-----------------+                        |
-    | Step 3 - BERT-FT| <----------------------+
+    portfolio_pretrained.csv              portfolio_finetune.csv
+              |                                     |
+              v                                     v
+    +-----------------+      init       +-----------------+
+    | Step 1 - W2V-PT | --------------> | Step 2 - W2V-FT |
+    |  10 ep, d=16    |                 |  10 ep          |
+    +-----------------+                 +-----------------+
+              | init (embedding layer)            |
+              v                                   |
+    +-----------------+                           |
+    | Step 3 - BERT-PT| <-- portfolio_pretrained  |
+    | 8 ep, 2 layers  |                           |
+    +-----------------+       init (embedding layer)
+              | init (encoder)                    |
+              v                                   v
+    +-----------------+
+    | Step 4 - BERT-FT| <-- portfolio_finetune.csv
     | 5 ep            |
     +-----------------+
               |
               v
-      3 embedding CSVs (W2V, BERT-PT, BERT-FT)
+    4 embedding CSVs (W2V-PT, W2V-FT, BERT-PT, BERT-FT)
 
 Each model produces its own embedding CSV — the deliverable of the pipeline.
-BERT's embedding layer is warm-started from the trained W2V embeddings
-(W2V -> BERT), and each fine-tune is initialized from the pretrained model
-(PT -> FT), which keeps the quarterly embeddings comparable over time.
+The wiring mirrors the production pipeline: W2V is pretrained once and
+fine-tuned on the later period (PT -> FT); BERT-PT warm-starts its embedding
+layer from the pretrained W2V (W2V -> BERT); BERT-FT is initialized from the
+pretrained BERT encoder (PT -> FT) with its embedding layer warm-started from
+the fine-tuned W2V (W2V -> BERT). This keeps the quarterly embeddings
+comparable over time.
 
     uv run python examples/quickstart.py
 """
@@ -88,7 +91,7 @@ print(f"Workdir     : {WORK}")
 print(f"Seed        : {SEED}")
 
 # ----------------------------------------------------------------------------
-# Step 1 — W2V pretrain on PT data
+# Step 1 — W2V pretrain (W2V-PT) on PT data
 # ----------------------------------------------------------------------------
 section("Step 1 - W2V pretrain on PT data")
 
@@ -129,9 +132,38 @@ BERT_VOCAB = len(w2v.wv) + 3
 print(f"W2V vocab: {len(w2v.wv)}   ->   BERT vocab (incl. [MASK]/[PAD]/[UNK]): {BERT_VOCAB}")
 
 # ----------------------------------------------------------------------------
-# Step 2 — BERT pretrain on PT data, init from W2V
+# Step 2 — W2V finetune (W2V-FT) on FT data, init from W2V-PT
 # ----------------------------------------------------------------------------
-section("Step 2 - BERT pretrain on PT data (init from W2V)")
+section("Step 2 - W2V finetune on FT data (init from W2V-PT)")
+
+w2v_ft_folder = WORK / "w2v_ft"
+w2v_ft_name = "w2v_ft_d16"
+
+# Same hyperparameters as pretraining; `pretrained_model` carries the PT
+# vectors over (PT -> FT), exactly as in the production pipeline.
+w2v_ft_config = {
+    **w2v_config,
+    "pretrained_model": str(w2v_model_path),
+    "data_path": str(DATA / "portfolio_finetune.csv"),
+    "save_folder": str(w2v_ft_folder),
+    "save_name": w2v_ft_name,
+}
+w2v_ft_config_path = WORK / "w2v_ft_config.json"
+write_json(w2v_ft_config_path, w2v_ft_config)
+
+run_step(
+    [sys.executable, "-m", "asset_embeddings.scripts.train.w2v", "-c", str(w2v_ft_config_path)],
+    cwd=PROJECT_ROOT,
+    step="W2V-FT",
+)
+
+w2v_ft_model_path = w2v_ft_folder / f"{w2v_ft_name}.model"
+w2v_ft_embedding_csv = w2v_ft_folder / f"{w2v_ft_name}_embedding.csv"
+
+# ----------------------------------------------------------------------------
+# Step 3 — BERT pretrain on PT data, init from W2V-PT
+# ----------------------------------------------------------------------------
+section("Step 3 - BERT pretrain on PT data (init from W2V-PT)")
 
 bert_pt_folder = WORK / "bert_pt"
 bert_pt_name = "bert_pt_d16"
@@ -230,17 +262,24 @@ bert_pt_embedding_csv = bert_pt_folder / f"{bert_pt_name}_best_contextual_embedd
 assert bert_pt_checkpoint.exists() and bert_pt_embedding_csv.exists()
 
 # ----------------------------------------------------------------------------
-# Step 3 — BERT fine-tune on FT data, init from BERT-PT
+# Step 4 — BERT fine-tune on FT data, init from BERT-PT + W2V-FT
 # ----------------------------------------------------------------------------
-section("Step 3 - BERT fine-tune on FT data (init from BERT-PT)")
+section("Step 4 - BERT fine-tune on FT data (init from BERT-PT + W2V-FT)")
 
 bert_ft_folder = WORK / "bert_ft"
 bert_ft_name = "bert_ft_d16"
 
-# FT differs from PT in four places: checkpoint, data path, proportions on,
-# and a gentler training schedule (lower LR, smaller batch, fewer epochs).
+# FT differs from PT in five places: the encoder starts from the pretrained
+# BERT checkpoint (PT -> FT), the embedding layer and tokenizer come from the
+# fine-tuned W2V (W2V -> BERT), the data is the FT period, proportions are on,
+# and the training schedule is gentler (lower LR, smaller batch, fewer epochs).
 bert_ft_config = dict(bert_pt_config)
-bert_ft_config["model"] = {**bert_pt_config["model"], "model_checkpoint": str(bert_pt_checkpoint)}
+bert_ft_config["model"] = {
+    **bert_pt_config["model"],
+    "model_checkpoint": str(bert_pt_checkpoint),
+    "w2v_model": str(w2v_ft_model_path),
+}
+bert_ft_config["tokenizer"] = {**bert_pt_config["tokenizer"], "w2v_model": str(w2v_ft_model_path)}
 bert_ft_config["dataset"] = {
     **bert_pt_config["dataset"],
     "data_path": str(DATA / "portfolio_finetune.csv"),
@@ -273,7 +312,8 @@ assert bert_ft_embedding_csv.exists()
 section("Results - embedding artifacts")
 
 artifacts = {
-    "W2V": (w2v_embedding_csv, "PT data"),
+    "W2V-PT": (w2v_embedding_csv, "PT data"),
+    "W2V-FT": (w2v_ft_embedding_csv, "FT data"),
     "BERT-PT": (bert_pt_embedding_csv, "PT data"),
     "BERT-FT": (bert_ft_embedding_csv, "FT data"),
 }
@@ -290,7 +330,7 @@ for label, (csv_path, trained) in artifacts.items():
 # in each space. The synthetic universe has latent cluster structure, so
 # neighbours of a stock should stay within its cluster. The token column holds
 # special tokens like [CLS] alongside stock codes, so skip those when probing.
-probe = next(t for t in embeddings["W2V"].index if not t.startswith("["))
+probe = next(t for t in embeddings["W2V-PT"].index if not t.startswith("["))
 print(f"\nTop-5 cosine neighbours of stock {probe}:")
 for label, emb in embeddings.items():
     x = emb.to_numpy()
@@ -303,8 +343,9 @@ for label, emb in embeddings.items():
 print(
     "\nInterpretation:\n"
     "  Each CSV is a (Token, Embed_1..Embed_d) matrix -- the asset-embedding\n"
-    "  deliverable. BERT's embedding layer is warm-started from the trained\n"
-    "  W2V embeddings, and BERT-FT is initialized from BERT-PT, so the FT\n"
-    "  embedding moves with the fine-tune period's holdings while staying\n"
-    "  comparable to its pretrained starting point."
+    "  deliverable. W2V-FT continues from W2V-PT, BERT's embedding layer is\n"
+    "  warm-started from the corresponding W2V, and BERT-FT starts from the\n"
+    "  pretrained BERT encoder, so the FT embeddings move with the fine-tune\n"
+    "  period's holdings while staying comparable to their pretrained\n"
+    "  starting points."
 )

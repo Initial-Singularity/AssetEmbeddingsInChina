@@ -32,7 +32,7 @@
 
 一份随仓库提交的数据集——复现演示无需任何外部数据：
 
-- `examples/data/`——合成组合数据，供 `examples/quickstart.{ipynb,py}` 中端到端的 W2V → BERT-PT → BERT-FT 走查使用。schema 与生成理由：`examples/data/README.md`。
+- `examples/data/`——合成组合数据，供 `examples/quickstart.{ipynb,py}` 中端到端的 W2V-PT → W2V-FT → BERT-PT → BERT-FT 走查使用。schema 与生成理由：`examples/data/README.md`。
 
 ## 处理流水线
 
