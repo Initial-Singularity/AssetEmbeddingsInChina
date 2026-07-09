@@ -1,0 +1,122 @@
+[
+    {
+        "name": "Text Embedding - Main grid",
+        "description": "Text embedding main grid: 9 (provider, model) pairs x 2 languages = 18 configs. zh-short ablation arm is invoked manually (not in this grid). All three transforms (native, pca-universal, pca-perperiod) are produced; cohere/voyage/gemini will skip native target_dims that aren't in their supported_native_dims (warn-and-continue), so for those three only the pca-* output dirs are produced. output_folder is namespaced by {model_slug} so each model's ~42 subdirs (langs x transforms x dims) cluster under its own folder instead of all 378 flat-piled in embeddings/.",
+        "template": {
+            "mode": "full",
+            "provider": "{provider}",
+            "model": "{model}",
+            "language": "{language}",
+            "transforms": [
+                "native",
+                "pca-universal",
+                "pca-perperiod"
+            ],
+            "target_dims": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "csmar_info": "data/text_embeddings/csmar/TRD_Co.csv",
+            "valid_stocks_dir": "data/processed/ShareHoldingsIntermediate",
+            "names_output": "data/text_embeddings/names",
+            "cache_folder": "data/text_embeddings/cache",
+            "output_folder": "data/text_embeddings/embeddings/{model_slug}",
+            "batch_size": 100,
+            "max_retries": 6,
+            "missing_name_fallback": "skip",
+            "device": "cuda:0",
+            "hf_dtype": "bfloat16",
+            "seed": 42,
+            "verbose": true
+        },
+        "output_dir": "configs/text_embedding",
+        "filename": "{model_slug}_{language}.json",
+        "variable_params": {
+            "provider": [
+                "openai",
+                "cohere",
+                "voyage",
+                "gemini",
+                "local"
+            ],
+            "model": [
+                "text-embedding-3-small",
+                "text-embedding-3-large",
+                "embed-v4.0",
+                "voyage-3-large",
+                "gemini-embedding-001",
+                "Qwen/Qwen3-Embedding-0.6B",
+                "Qwen/Qwen3-Embedding-4B",
+                "Qwen/Qwen3-Embedding-8B",
+                "BAAI/bge-m3"
+            ],
+            "model_slug": [
+                "openai_text-embedding-3-small",
+                "openai_text-embedding-3-large",
+                "cohere_embed-v4.0",
+                "voyage_voyage-3-large",
+                "gemini_gemini-embedding-001",
+                "local_Qwen-Qwen3-Embedding-0.6B",
+                "local_Qwen-Qwen3-Embedding-4B",
+                "local_Qwen-Qwen3-Embedding-8B",
+                "local_BAAI-bge-m3"
+            ],
+            "language": [
+                "zh",
+                "en"
+            ]
+        },
+        "variable_bindings": [
+            {
+                "provider": "openai",
+                "model": "text-embedding-3-small",
+                "model_slug": "openai_text-embedding-3-small"
+            },
+            {
+                "provider": "openai",
+                "model": "text-embedding-3-large",
+                "model_slug": "openai_text-embedding-3-large"
+            },
+            {
+                "provider": "cohere",
+                "model": "embed-v4.0",
+                "model_slug": "cohere_embed-v4.0"
+            },
+            {
+                "provider": "voyage",
+                "model": "voyage-3-large",
+                "model_slug": "voyage_voyage-3-large"
+            },
+            {
+                "provider": "gemini",
+                "model": "gemini-embedding-001",
+                "model_slug": "gemini_gemini-embedding-001"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-0.6B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-0.6B"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-4B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-4B"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-8B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-8B"
+            },
+            {
+                "provider": "local",
+                "model": "BAAI/bge-m3",
+                "model_slug": "local_BAAI-bge-m3"
+            }
+        ]
+    }
+]

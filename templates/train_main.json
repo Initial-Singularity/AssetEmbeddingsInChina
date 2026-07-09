@@ -1,0 +1,433 @@
+[
+    {
+        "name": "Pretrain - AssetW2V",
+        "description": "W2V pretraining on full shareholding corpus. 7 dims = 7 configs.",
+        "template": {
+            "pretrained_model": null,
+            "embedding_dim": "{dim}",
+            "epochs": 10,
+            "window": 5,
+            "min_count": 1,
+            "sg": 1,
+            "sample": 0.001,
+            "negative_sample": 10,
+            "seed": 42,
+            "data_path": "data/processed/MutualFundShareHoldings/pretrained",
+            "data_format": "csv",
+            "id_key": "InvestorID",
+            "portfolio_key": "Portfolio",
+            "workers": 1,
+            "save_folder": "checkpoints/pretrained/AssetW2V/d{dim}",
+            "save_name": "AssetW2V_d{dim}_pretrained",
+            "save_format": ".model"
+        },
+        "output_dir": "configs/main/pretrained/AssetW2V",
+        "filename": "AssetW2V_d{dim}_pretrained.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ]
+        },
+        "variable_bindings": null
+    },
+    {
+        "name": "Pretrain - AssetBERT",
+        "description": "BERT pretraining with W2V-initialized embeddings. 7 dims = 7 configs.",
+        "template": {
+            "model": {
+                "model_type": "BERT",
+                "model_checkpoint": null,
+                "w2v_model": "checkpoints/pretrained/AssetW2V/d{dim}/AssetW2V_d{dim}_pretrained.model",
+                "embedding_file": null,
+                "vocab_size": 5236,
+                "hidden_size": "{dim}",
+                "num_hidden_layers": 4,
+                "num_attention_heads": 2,
+                "intermediate_size": "{intermediate_size}",
+                "max_position_embeddings": "{max_position_embeddings}",
+                "type_vocab_size": 1,
+                "freeze_embedding": false,
+                "freeze_encoder": false
+            },
+            "tokenizer": {
+                "w2v_model": "checkpoints/pretrained/AssetW2V/d{dim}/AssetW2V_d{dim}_pretrained.model",
+                "vocab_file": null,
+                "pretrained_tokenizer_file": null,
+                "alias_file": null
+            },
+            "dataset": {
+                "data_path": "data/processed/MutualFundShareHoldings/pretrained",
+                "data_format": "csv",
+                "id_key": "InvestorID",
+                "portfolio_key": "Portfolio",
+                "proportion1_key": "Proportion1",
+                "proportion2_key": "Proportion2",
+                "include_proportion": false,
+                "max_length": "{max_position_embeddings}",
+                "num_repeats": 1,
+                "mask_prob": 0.15,
+                "mask_indices": null,
+                "cache_size": 400
+            },
+            "dataloader": {
+                "batch_size": 128,
+                "shuffle": true,
+                "num_workers": 4,
+                "persistent_workers": true,
+                "pin_memory": true,
+                "drop_last": false
+            },
+            "optimizer": {
+                "optimizer_type": "PagedAdam8bit",
+                "optimizer_kwargs": null,
+                "learning_rate": 0.001,
+                "lr_scheduler_type": "cosine",
+                "lr_scheduler_warmup_steps": 0,
+                "lr_scheduler_train_steps": null,
+                "lr_scheduler_num_cycles": 0.5,
+                "lr_scheduler_power": 0
+            },
+            "accelerator": {
+                "mixed_precision": "auto",
+                "gradient_accumulation_steps": 1,
+                "accelerator_checkpoint": null,
+                "use_compile": true,
+                "compile_backend": "inductor",
+                "compile_mode": "default",
+                "compile_fullgraph": false,
+                "compile_dynamic": false,
+                "compile_cache_dir": null,
+                "allow_tf32": true
+            },
+            "train": {
+                "max_epoches": 30,
+                "validation_split": null,
+                "split_method": "random",
+                "best_metric": "train_loss",
+                "clip_grad_norm": null,
+                "clip_grad_value": null,
+                "detect_anomaly": true,
+                "check_per_step": 200,
+                "report_per_epoch": 1,
+                "calculate_contextualized_embeddings": false,
+                "save_per_epoch": 1,
+                "save_folder": "checkpoints/pretrained/AssetBERT/d{dim}",
+                "save_name": "AssetBERT_d{dim}_pretrained",
+                "save_format": ".safetensors",
+                "seed": 42,
+                "keep_best_only": true
+            }
+        },
+        "output_dir": "configs/main/pretrained/AssetBERT",
+        "filename": "AssetBERT_d{dim}_pretrained.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "intermediate_size": [
+                512,
+                1024
+            ],
+            "max_position_embeddings": [
+                64,
+                256
+            ]
+        },
+        "variable_bindings": [
+            {
+                "dim": 4,
+                "intermediate_size": 512,
+                "max_position_embeddings": 64
+            },
+            {
+                "dim": 8,
+                "intermediate_size": 512,
+                "max_position_embeddings": 64
+            },
+            {
+                "dim": 10,
+                "intermediate_size": 512,
+                "max_position_embeddings": 64
+            },
+            {
+                "dim": 16,
+                "intermediate_size": 512,
+                "max_position_embeddings": 64
+            },
+            {
+                "dim": 32,
+                "intermediate_size": 512,
+                "max_position_embeddings": 64
+            },
+            {
+                "dim": 64,
+                "intermediate_size": 1024,
+                "max_position_embeddings": 256
+            },
+            {
+                "dim": 128,
+                "intermediate_size": 1024,
+                "max_position_embeddings": 256
+            }
+        ]
+    },
+    {
+        "name": "Finetune - AssetW2V",
+        "description": "W2V fine-tuning on quarterly shareholding data. 7 dims × 6 quarters = 42 configs.",
+        "template": {
+            "pretrained_model": "checkpoints/pretrained/AssetW2V/d{dim}/AssetW2V_d{dim}_pretrained.model",
+            "embedding_dim": "{dim}",
+            "epochs": 10,
+            "window": 5,
+            "min_count": 1,
+            "sg": 1,
+            "sample": 0.001,
+            "negative_sample": 10,
+            "seed": 42,
+            "data_path": "data/processed/MutualFundShareHoldings/finetune/{quarter}.csv",
+            "data_format": "csv",
+            "id_key": "InvestorID",
+            "portfolio_key": "Portfolio",
+            "workers": 1,
+            "save_folder": "checkpoints/finetune/AssetW2V/d{dim}/{quarter}",
+            "save_name": "AssetW2V_d{dim}_{quarter}",
+            "save_format": ".model"
+        },
+        "output_dir": "configs/main/finetune/AssetW2V/d{dim}",
+        "filename": "AssetW2V_d{dim}_{quarter}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "quarter": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ]
+        },
+        "variable_bindings": null
+    },
+    {
+        "name": "Finetune - AssetRS",
+        "description": "RS (PCA/ICA) fitting on quarterly shareholding data. 4 variants × 7 dims × 6 quarters = 168 configs.",
+        "template": {
+            "model_type": "RS_{variant}",
+            "n_components": "{dim}",
+            "whiten": false,
+            "data_path": "data/processed/MutualFundShareHoldings/finetune/{quarter}.csv",
+            "data_format": "csv",
+            "id_key": "InvestorID",
+            "portfolio_key": "Portfolio",
+            "proportion1_key": "Proportion1",
+            "proportion2_key": "Proportion2",
+            "save_folder": "checkpoints/finetune/AssetRS/RS_{variant}/d{dim}/{quarter}",
+            "save_name": "AssetRS_{variant}_d{dim}_{quarter}",
+            "save_format": ".pkl",
+            "seed": 42
+        },
+        "output_dir": "configs/main/finetune/AssetRS/RS_{variant}/d{dim}",
+        "filename": "AssetRS_{variant}_d{dim}_{quarter}.json",
+        "variable_params": {
+            "variant": [
+                "Binary",
+                "Ranks",
+                "Level0",
+                "LevelMin"
+            ],
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "quarter": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ]
+        },
+        "variable_bindings": null
+    },
+    {
+        "name": "Finetune - AssetBERT",
+        "description": "BERT fine-tuning from pretrained checkpoint on quarterly data. 7 dims × 6 quarters = 42 configs.",
+        "template": {
+            "model": {
+                "model_type": "BERT",
+                "model_checkpoint": "checkpoints/pretrained/AssetBERT/d{dim}/AssetBERT_d{dim}_pretrained_best/model.safetensors",
+                "w2v_model": "checkpoints/finetune/AssetW2V/d{dim}/{quarter}/AssetW2V_d{dim}_{quarter}.model",
+                "embedding_file": null,
+                "vocab_size": 5236,
+                "hidden_size": "{dim}",
+                "num_hidden_layers": 4,
+                "num_attention_heads": 2,
+                "intermediate_size": "{intermediate_size}",
+                "max_position_embeddings": "{max_position_embeddings}",
+                "type_vocab_size": 1,
+                "freeze_embedding": false,
+                "freeze_encoder": false
+            },
+            "tokenizer": {
+                "w2v_model": "checkpoints/finetune/AssetW2V/d{dim}/{quarter}/AssetW2V_d{dim}_{quarter}.model",
+                "vocab_file": null,
+                "finetune_tokenizer_file": null,
+                "alias_file": null
+            },
+            "dataset": {
+                "data_path": "data/processed/MutualFundShareHoldings/finetune/{quarter}.csv",
+                "data_format": "csv",
+                "id_key": "InvestorID",
+                "portfolio_key": "Portfolio",
+                "proportion1_key": "Proportion1",
+                "proportion2_key": "Proportion2",
+                "include_proportion": true,
+                "max_length": "{max_position_embeddings}",
+                "num_repeats": 1,
+                "mask_prob": 0.15,
+                "mask_indices": null,
+                "cache_size": 80
+            },
+            "dataloader": {
+                "batch_size": 32,
+                "shuffle": true,
+                "num_workers": 4,
+                "persistent_workers": true,
+                "pin_memory": true,
+                "drop_last": false
+            },
+            "optimizer": {
+                "optimizer_type": "PagedAdam8bit",
+                "optimizer_kwargs": null,
+                "learning_rate": 0.001,
+                "lr_scheduler_type": "cosine",
+                "lr_scheduler_warmup_steps": 0,
+                "lr_scheduler_train_steps": null,
+                "lr_scheduler_num_cycles": 0.5,
+                "lr_scheduler_power": 0
+            },
+            "accelerator": {
+                "mixed_precision": "auto",
+                "gradient_accumulation_steps": 1,
+                "accelerator_checkpoint": null,
+                "use_compile": true,
+                "compile_backend": "inductor",
+                "compile_mode": "default",
+                "compile_fullgraph": false,
+                "compile_dynamic": false,
+                "compile_cache_dir": null,
+                "allow_tf32": true
+            },
+            "train": {
+                "max_epoches": 30,
+                "validation_split": null,
+                "split_method": "random",
+                "best_metric": "train_loss",
+                "clip_grad_norm": 1.0,
+                "clip_grad_value": null,
+                "detect_anomaly": true,
+                "check_per_step": 200,
+                "report_per_epoch": 1,
+                "calculate_contextualized_embeddings": true,
+                "save_per_epoch": 1,
+                "save_folder": "checkpoints/finetune/AssetBERT/d{dim}/{quarter}",
+                "save_name": "AssetBERT_d{dim}_{quarter}",
+                "save_format": ".safetensors",
+                "seed": 42,
+                "keep_best_only": true
+            }
+        },
+        "output_dir": "configs/main/finetune/AssetBERT/d{dim}",
+        "filename": "AssetBERT_d{dim}_{quarter}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "quarter": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "intermediate_size": [
+                512,
+                1024
+            ],
+            "max_position_embeddings": [
+                64,
+                256
+            ]
+        },
+        "variable_bindings": [
+            {
+                "dim": 4,
+                "intermediate_size": 512,
+                "max_position_embeddings": 64
+            },
+            {
+                "dim": 8,
+                "intermediate_size": 512,
+                "max_position_embeddings": 64
+            },
+            {
+                "dim": 10,
+                "intermediate_size": 512,
+                "max_position_embeddings": 64
+            },
+            {
+                "dim": 16,
+                "intermediate_size": 512,
+                "max_position_embeddings": 64
+            },
+            {
+                "dim": 32,
+                "intermediate_size": 512,
+                "max_position_embeddings": 64
+            },
+            {
+                "dim": 64,
+                "intermediate_size": 1024,
+                "max_position_embeddings": 256
+            },
+            {
+                "dim": 128,
+                "intermediate_size": 1024,
+                "max_position_embeddings": 256
+            }
+        ]
+    }
+]

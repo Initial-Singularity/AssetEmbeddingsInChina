@@ -1,0 +1,38 @@
+cff-version: 1.2.0
+title: "AssetEmbeddingsInChina: learning asset embeddings from partial institutional holdings in China's A-share market"
+message: "If you use this software, please cite the paper below."
+type: software
+authors:
+  - family-names: Cheng
+    given-names: Zitong
+    affiliation: "Lingnan College, Sun Yat-sen University"
+    email: ccarzit@gmail.com
+  - family-names: Huang
+    given-names: Dashan
+    affiliation: "Singapore Management University"
+    email: dashanhuang@smu.edu.sg
+  - family-names: Liu
+    given-names: Xiaobin
+    affiliation: "Lingnan College, Sun Yat-sen University"
+    email: liuxb53@mail.sysu.edu.cn
+  - family-names: Zeng
+    given-names: Tao
+    affiliation: "Zhejiang University"
+    email: ztzt6512@gmail.com
+license: MIT
+repository-code: "https://github.com/Initial-Singularity/AssetEmbeddingsInChina"
+version: 1.0.0
+preferred-citation:
+  type: unpublished
+  authors:
+    - family-names: Cheng
+      given-names: Zitong
+    - family-names: Huang
+      given-names: Dashan
+    - family-names: Liu
+      given-names: Xiaobin
+    - family-names: Zeng
+      given-names: Tao
+  title: "Do Asset Embeddings Need Complete Holdings? Lessons from China"
+  year: 2026
+  notes: "Working paper"
