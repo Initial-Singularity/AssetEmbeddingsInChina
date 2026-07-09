@@ -17,13 +17,15 @@ Following Gabaix et al. (2025), we extract latent asset characteristics from ins
   <img src="docs/figures/portfolio_sentence.svg" alt="Portfolio-sentence isomorphism" width="640">
 </p>
 
-## What's new methodologically
+## What the paper does differently
 
-Gabaix et al. fit a single cross-section. We need a sequence $\{x_{a,t}\}$ that moves with the data — but mere time-variation is not enough. Fitting each quarter independently (the **naive** procedure) drifts: per-quarter losses leave rotation, reflection, and permutation of the latent axes unidentified, so $x_{a,t+1} - x_{a,t}$ confounds true asset-level change with optimization-frame drift.
+The estimation departs from Gabaix et al. in two respects, and both answer one question: how can latent demand factors be estimated when holdings are only *partially observed*? China's hybrid disclosure rules act as a censoring filter on the true holdings, and the two departures are designed for exactly the places where that censoring binds.
 
-Our **coupled** procedure pretrains a base model on the first 80% of holding observations (the corpus is split chronologically by sequence count, placing the cutoff at 2023Q1: 73 quarters for pretraining, 6 for quarterly fine-tuning) and initializes every quarterly fine-tune from that shared anchor. The resulting sequence of embeddings sits in a coordinate frame that is *coherent* across $t$ — the central methodological commitment of the paper.
+**Pretrain–finetune instead of independent quarterly fits.** Embeddings fitted quarter by quarter are not directly comparable over time: the demand system identifies each quarter's solution only up to a rotation, so quarter-to-quarter differences need not represent true changes in the asset. Pretraining once on the first 80% of holding observations (chronological split, cutoff 2023Q1: 73 quarters for pretraining, 6 for quarterly fine-tuning) and initializing every quarterly fine-tune from that base makes the rotations more likely to agree across quarters. Pretraining learns the common, stable holding structure; finetuning captures the quarter-specific variations on top of it.
 
-Two initialization couplings drive the pipeline: W2V→BERT (BERT's embedding layer is initialized from the trained W2V matrix at both pretrain and fine-tune stages) and PT→FT (each quarterly fine-tune is initialized from the pretrained encoder). Both are individually necessary; ablating either collapses performance.
+**Warm-starting BERT's embedding layer from Word2Vec.** At both the pretraining and fine-tuning stages, BERT's embedding layer starts from the trained Word2Vec embeddings rather than random vectors (cold-start). Under top-ten disclosure, many assets appear in only a handful of reported portfolios in Q1/Q3 — the warm-start gives exactly these thinly observed assets a sensible prior.
+
+Without either departure, the performance of the BERT embeddings generally deteriorates; Gabaix et al. find pretraining unnecessary in the uniformly disclosed US market, and the paper shows this is not the case in China.
 
 <p align="center">
   <img src="docs/figures/pipeline.svg" alt="Pretrain-finetune pipeline" width="720">
@@ -32,7 +34,7 @@ Two initialization couplings drive the pipeline: W2V→BERT (BERT's embedding la
 ## What the repository provides
 
 - **Three model families** trained on institutional portfolios: `AssetBERT` (transformer MLM), `AssetW2V` (Skip-gram/CBOW), and `AssetRS` (PCA/ICA recommender-system baselines).
-- **The coupled pretrain–finetune pipeline** producing quarterly embedding sequences in a coherent coordinate frame.
+- **The pretrain–finetune pipeline** producing quarterly embedding sequences that are comparable over time.
 - **A text-embedding pipeline** that builds LLM-based embeddings (OpenAI / Cohere / Voyage / Gemini / local HF models) from firm names, the paper's text-based comparison point.
 - **The data pipeline** from raw CSMAR shareholding dumps to model-ready portfolio corpora, plus a config system and batch-generation tooling for reproducible experiment grids.
 

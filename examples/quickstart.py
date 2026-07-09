@@ -27,9 +27,9 @@ on CPU in roughly one minute:
       3 embedding CSVs (W2V, BERT-PT, BERT-FT)
 
 Each model produces its own embedding CSV — the deliverable of the pipeline.
-The two initialization couplings (W2V -> BERT at the embedding layer, and
-PT -> FT at the encoder) keep the quarterly embeddings in a coherent
-coordinate frame.
+BERT's embedding layer is warm-started from the trained W2V embeddings
+(W2V -> BERT), and each fine-tune is initialized from the pretrained model
+(PT -> FT), which keeps the quarterly embeddings comparable over time.
 
     uv run python examples/quickstart.py
 """
@@ -303,8 +303,8 @@ for label, emb in embeddings.items():
 print(
     "\nInterpretation:\n"
     "  Each CSV is a (Token, Embed_1..Embed_d) matrix -- the asset-embedding\n"
-    "  deliverable. W2V seeds BERT's embedding layer, and BERT-FT starts from\n"
-    "  the BERT-PT encoder, so the three spaces share one coordinate frame:\n"
-    "  the FT embedding moves with the fine-tune period's holdings while\n"
-    "  staying comparable to its pretrained anchor."
+    "  deliverable. BERT's embedding layer is warm-started from the trained\n"
+    "  W2V embeddings, and BERT-FT is initialized from BERT-PT, so the FT\n"
+    "  embedding moves with the fine-tune period's holdings while staying\n"
+    "  comparable to its pretrained starting point."
 )

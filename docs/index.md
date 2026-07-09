@@ -10,20 +10,17 @@ This lets us learn asset representations with NLP techniques for asset pricing a
 
 <p align="center"><img src="figures/portfolio_sentence.svg" alt="Portfolio-sentence isomorphism" width="640"></p>
 
-## What's new
+## What the paper does differently
 
-Gabaix et al. fit a single cross-section. We need a sequence of embeddings that moves with the data
-*in a coherent coordinate frame*. Fitting each quarter independently (the **naive** procedure) leaves
-rotation/reflection/permutation of the latent axes unidentified, so the change between quarters
-confounds true asset-level change with optimization-frame drift.
+The estimation departs from Gabaix et al. in two respects, and both answer one question: how can latent demand factors be estimated when holdings are only *partially observed*? China's hybrid disclosure rules act as a censoring filter on the true holdings.
 
-Our **coupled** procedure pretrains a base model on the first 80% of holding observations (the corpus is split chronologically by sequence count, placing the cutoff at 2023Q1: 73 quarters for pretraining, 6 for quarterly fine-tuning) and initializes every quarterly fine-tune from that shared anchor — the central methodological commitment of the paper. Two initialization couplings drive the pipeline (W2V→BERT and PT→FT). See [Method: paper ↔ code](explanation/method.md).
+First, **pretrain–finetune instead of independent quarterly fits**: embeddings fitted quarter by quarter are identified only up to a rotation and are therefore not directly comparable over time. Pretraining once on the first 80% of holding observations (chronological split, cutoff 2023Q1: 73 quarters for pretraining, 6 for quarterly fine-tuning) and initializing every quarterly fine-tune from that base makes the rotations more likely to agree — pretraining learns the common, stable holding structure, finetuning captures the quarter-specific variations. Second, **warm-starting BERT's embedding layer from the trained Word2Vec embeddings** rather than random vectors, which gives the assets that censored disclosure leaves thinly observed a sensible prior. See [Method: paper ↔ code](explanation/method.md).
 
 <p align="center"><img src="figures/pipeline.svg" alt="Pretrain-finetune pipeline" width="720"></p>
 
 ## What the repo delivers
 
-A training framework for the full embedding pipeline: three architectures (recommender-system SVD, Word2Vec, BERT), the coupled pretrain–finetune procedure, and the supporting data tooling. The output is a quarterly sequence of embedding CSVs — one vector per stock per quarter, all in one coherent coordinate frame. The companion paper studies how well these embeddings explain firm valuations and return correlations.
+A training framework for the full embedding pipeline: three models (recommender system, Word2Vec, BERT), the pretrain–finetune estimation, and the supporting data tooling. The output is a quarterly sequence of embedding CSVs — one vector per stock per quarter, comparable over time. The companion paper studies how well these embeddings explain firm valuations and return correlations.
 
 ## Quickstart
 
