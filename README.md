@@ -6,6 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](pyproject.toml)
 [![Data DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20640781.svg)](https://doi.org/10.5281/zenodo.20640781)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Initial-Singularity/AssetEmbeddingsInChina/blob/main/examples/quickstart.ipynb)
 
 ## The setting
 
@@ -51,7 +52,7 @@ uv sync --extra notebook                          # notebook + ipykernel are dem
 uv run jupyter lab examples/quickstart.ipynb      # or: uv run python examples/quickstart.py
 ```
 
-The notebook runs the full chain of Word2Vec, BERT pretraining, BERT finetuning and the RV benchmark on a synthetic dataset shipped in `examples/data/` (CPU, ~1 minute). All three embeddings are evaluated against the same benchmark — BERT-FT shows a clear +0.07 R² lift over the PT-trained baselines. Real production runs require CSMAR data; the data-preparation step is not part of this repository, and the inputs must follow the formats described in the docs (for the portfolio CSV, see [`examples/data/README.md`](examples/data/README.md)).
+The notebook runs the full chain of Word2Vec, BERT pretraining, BERT finetuning and the RV benchmark on a synthetic dataset shipped in `examples/data/` (CPU, ~1 minute). All three embeddings are evaluated against the same benchmark — BERT-FT shows a clear +0.07 R² lift over the PT-trained baselines. To run it without a local install, open it in Colab with the badge above; its first cell clones the repository and installs the package. Real production runs require CSMAR data; the data-preparation step is not part of this repository, and the inputs must follow the formats described in the docs (for the portfolio CSV, see [`examples/data/README.md`](examples/data/README.md)).
 
 ## Data availability
 
