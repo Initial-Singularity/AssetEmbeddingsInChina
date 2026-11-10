@@ -9,7 +9,7 @@
 # Default behavior is continue-on-error (all commands run even if some fail).
 # Use -x to stop on first failure instead.
 #
-# Reads NOTIFY_EMAIL from .env (default: ccarzit@gmail.com).
+# Reads the recipient from NOTIFY_EMAIL (environment, else .env); no e-mail is sent when it is unset.
 
 set -uo pipefail
 # Note: intentionally no -e; we capture the exit code ourselves.
@@ -32,6 +32,13 @@ Options:
   -e, --exclude <markers>  Exclude filter: comma-separated tags to skip (repeatable).
                              e.g., -e rs_binary,rs_ranks
                              → skip commands tagged rs_binary or rs_ranks
+                           A term containing * or ? is a glob over the tags; every job is also
+                             tagged with its config path, so -k 'configs/main/finetune/*' selects a
+                             directory of configs (quote the glob so the shell does not expand it).
+  --filter-file <file>     Include groups from a file, one comma-separated AND group per line,
+                             lines OR-ed (repeatable; blank lines and # comments ignored).
+  --exclude-file <file>    Exclude terms from a file, one per line (repeatable). Use files for long
+                             lists: one argument or environment string is limited to 128 KiB on Linux.
   -v, --verbose            Verbose: show full command lines
   -q, --quiet              Quiet: only show PASS/FAIL/SKIP one-liners
   -a, --attach <file>      Attach a file to the notification email (repeatable)
@@ -47,12 +54,14 @@ Email tags (automatic, based on exit code):
   [FAILED]    exit 2  — aborted early by -x / -M (max-errors reached)
 
 Environment:
-  NOTIFY_EMAIL        Recipient email (reads from .env, default: ccarzit@gmail.com)
+  NOTIFY_EMAIL        Recipient email (environment, else .env; required for e-mails)
   AE_ERROR_THROTTLE   Same as --throttle (CLI flag takes precedence)
   AE_MAX_ERRORS       Same as --max-errors (CLI flag takes precedence)
   AE_VERBOSE          Same as -v/-q (0=quiet, 1=normal, 2=verbose)
   AE_FILTER_INCLUDE   Same as -k (|-separated OR groups, ,-separated AND)
   AE_FILTER_EXCLUDE   Same as --exclude (,-separated)
+  AE_FILTER_INCLUDE_FILE  Path of an include file (what --filter-file exports)
+  AE_FILTER_EXCLUDE_FILE  Path of an exclude file (what --exclude-file exports)
 
 Examples:
   # Run full pipeline (continue on error → [PARTIAL] if any fail)
@@ -70,11 +79,17 @@ Examples:
   # Everything except RS variants
   bash scripts/run/run_notify.sh --exclude rs_binary,rs_ranks,rs_level0,rs_levelmin scripts/run/train_main.sh
 
+  # One directory of configs (glob over the config-path tag)
+  bash scripts/run/run_notify.sh -k 'configs/main/finetune/AssetBERT/*' scripts/run/train_main.sh
+
+  # Resume: everything without a completed run, as written by scripts.tools.runs_query
+  bash scripts/run/run_notify.sh --filter-file /tmp/todo.txt scripts/run/train_main.sh
+
   # Verbose mode with throttled errors, abort after 5
   bash scripts/run/run_notify.sh -v -T 300 -M 5 scripts/run/train_main.sh
 
   # Attach result DB to notification
-  bash scripts/run/run_notify.sh -a results/db/main.db scripts/run/train_main.sh
+  bash scripts/run/run_notify.sh -a results/db/main.db scripts/run/eval_main.sh
 EOF
 }
 
@@ -85,6 +100,8 @@ CLI_MAX_ERRORS=""
 CLI_VERBOSE=""
 INCLUDE_GROUPS=()
 EXCLUDE_TAGS=()
+INCLUDE_FILES=()
+EXCLUDE_FILES=()
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -118,6 +135,22 @@ while [[ $# -gt 0 ]]; do
                 exit 1
             fi
             EXCLUDE_TAGS+=("${2,,}")  # lowercase
+            shift 2
+            ;;
+        --filter-file)
+            if [[ $# -lt 2 ]]; then
+                echo "Error: --filter-file requires a path" >&2
+                exit 1
+            fi
+            INCLUDE_FILES+=("$2")
+            shift 2
+            ;;
+        --exclude-file)
+            if [[ $# -lt 2 ]]; then
+                echo "Error: --exclude-file requires a path" >&2
+                exit 1
+            fi
+            EXCLUDE_FILES+=("$2")
             shift 2
             ;;
         -a|--attach)
@@ -197,13 +230,35 @@ if [ ${#EXCLUDE_TAGS[@]} -gt 0 ]; then
     export AE_FILTER_EXCLUDE="$_exclude_val"
 fi
 
+# Filter files: concatenated into one temp file per kind; run_helper.sh reads them at source time
+# (one AND-group per line for include, one term per line for exclude; blank and # lines ignored).
+_FILTER_TMP=""; _EXCLUDE_TMP=""
+_rn_count_terms() { grep -cvE '^[[:space:]]*(#|$)' "$1"; }
+if [ ${#INCLUDE_FILES[@]} -gt 0 ]; then
+    for _f in "${INCLUDE_FILES[@]}"; do
+        [ -r "$_f" ] || { echo "Error: cannot read --filter-file '$_f'" >&2; exit 1; }
+    done
+    _FILTER_TMP=$(mktemp)
+    cat "${INCLUDE_FILES[@]}" > "$_FILTER_TMP"
+    export AE_FILTER_INCLUDE_FILE="$_FILTER_TMP"
+fi
+if [ ${#EXCLUDE_FILES[@]} -gt 0 ]; then
+    for _f in "${EXCLUDE_FILES[@]}"; do
+        [ -r "$_f" ] || { echo "Error: cannot read --exclude-file '$_f'" >&2; exit 1; }
+    done
+    _EXCLUDE_TMP=$(mktemp)
+    cat "${EXCLUDE_FILES[@]}" > "$_EXCLUDE_TMP"
+    export AE_FILTER_EXCLUDE_FILE="$_EXCLUDE_TMP"
+fi
+trap 'rm -f "$_FILTER_TMP" "$_EXCLUDE_TMP"' EXIT
+
 SCRIPT_NAME=$(basename "$SCRIPT" .sh)
 
-# Read NOTIFY_EMAIL from .env if available
+# Recipient: NOTIFY_EMAIL from the environment, else from .env; no default
 if [ -f .env ]; then
-    NOTIFY_EMAIL=$(grep -E '^NOTIFY_EMAIL=' .env | cut -d= -f2- | tr -d ' "'"'"'')
+    _ENV_NOTIFY_EMAIL=$(grep -E '^NOTIFY_EMAIL=' .env | cut -d= -f2- | tr -d ' "'"'"'')
 fi
-NOTIFY_EMAIL="${NOTIFY_EMAIL:-ccarzit@gmail.com}"
+NOTIFY_EMAIL="${NOTIFY_EMAIL:-${_ENV_NOTIFY_EMAIL:-}}"
 
 # Create temp files
 MARKER=$(mktemp)                    # to find error logs created during this run
@@ -216,6 +271,12 @@ if [ -n "${AE_FILTER_INCLUDE:-}" ]; then
 fi
 if [ -n "${AE_FILTER_EXCLUDE:-}" ]; then
     echo "Filter exclude: ${AE_FILTER_EXCLUDE}"
+fi
+if [ -n "$_FILTER_TMP" ]; then
+    echo "Filter include file: ${INCLUDE_FILES[*]} ($(_rn_count_terms "$_FILTER_TMP") groups)"
+fi
+if [ -n "$_EXCLUDE_TMP" ]; then
+    echo "Filter exclude file: ${EXCLUDE_FILES[*]} ($(_rn_count_terms "$_EXCLUDE_TMP") terms)"
 fi
 
 # Run the experiment
@@ -290,6 +351,14 @@ if [ -n "${AE_FILTER_EXCLUDE:-}" ]; then
     BODY="${BODY}
 Filter:     exclude=[${AE_FILTER_EXCLUDE}]"
 fi
+if [ -n "$_FILTER_TMP" ]; then
+    BODY="${BODY}
+Filter:     include file ${INCLUDE_FILES[*]} ($(_rn_count_terms "$_FILTER_TMP") groups)"
+fi
+if [ -n "$_EXCLUDE_TMP" ]; then
+    BODY="${BODY}
+Filter:     exclude file ${EXCLUDE_FILES[*]} ($(_rn_count_terms "$_EXCLUDE_TMP") terms)"
+fi
 if [ -n "${AE_MAX_ERRORS:-}" ] && [ "${AE_MAX_ERRORS}" != "0" ]; then
     BODY="${BODY}
 Max errors: ${AE_MAX_ERRORS}"
@@ -347,9 +416,13 @@ for f in "${EXTRA_ATTACHMENTS[@]+"${EXTRA_ATTACHMENTS[@]}"}"; do
 done
 
 # --- Send notification ---
-echo "--- Sending notification to ${NOTIFY_EMAIL} ---"
-uv run python -m scripts.tools.smtp -t "$NOTIFY_EMAIL" -s "$SUBJECT" -b "$BODY" "${ATTACH_ARGS[@]+"${ATTACH_ARGS[@]}"}" || \
-    echo "[Warning] Email notification failed (SMTP error)"
+if [ -z "$NOTIFY_EMAIL" ]; then
+    echo "[Warning] NOTIFY_EMAIL is not set (environment or .env); no notification sent"
+else
+    echo "--- Sending notification to ${NOTIFY_EMAIL} ---"
+    uv run python -m scripts.tools.smtp -t "$NOTIFY_EMAIL" -s "$SUBJECT" -b "$BODY" "${ATTACH_ARGS[@]+"${ATTACH_ARGS[@]}"}" || \
+        echo "[Warning] Email notification failed (SMTP error)"
+fi
 
 # Cleanup
 [ -n "$_ZIP_FILE" ] && rm -f "$_ZIP_FILE"

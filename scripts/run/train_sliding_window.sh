@@ -25,19 +25,21 @@ DB="results/db/sliding_window.db"
 
 for N in $WINDOW_SIZES; do
     METHOD="sw${N}"
+    EXP="sliding_window/N${N}"  # runs.experiment, one family per window length (matches sliding_window.db)
     CFG="configs/pt_strategy_ablation/sliding_window/N${N}"
 
     # ========== W2V Pretrain ==========
     echo "=== Sliding Window N=${N}: W2V pretrain ==="
     for dim in $DIMS; do
         for quarter in $QUARTERS; do
-            try_run -m w2v -m pretrain -m sliding_window -m pt_strategy_ablation -m "${METHOD}" -m "d${dim}" -m "${quarter,,}" \
+            cfg="${CFG}/pretrained/AssetW2V/d${dim}/AssetW2V_${METHOD}_d${dim}_${quarter}.json"
+            job -m w2v -m pretrain -m sliding_window -m pt_strategy_ablation -m "${METHOD}" -m "d${dim}" -m "${quarter,,}" -m "$cfg" \
                 "W2V ${METHOD} pretrain d${dim} ${quarter}" \
                 uv run python -m asset_embeddings.scripts.train.w2v \
-                    --config "${CFG}/pretrained/AssetW2V/d${dim}/AssetW2V_${METHOD}_d${dim}_${quarter}.json" \
+                    --config "$cfg" \
                     --log "checkpoints/pt_strategy_ablation/sliding_window/N${N}/pretrained/AssetW2V/d${dim}/${quarter}/train.log" \
                           "logs/pt_strategy_ablation/sliding_window/N${N}/pretrain/AssetW2V/d${dim}/${quarter}.log" \
-                    -r "$DB"
+                    -r "$DB" -e "$EXP"
         done
     done
 
@@ -45,13 +47,14 @@ for N in $WINDOW_SIZES; do
     echo "=== Sliding Window N=${N}: BERT pretrain ==="
     for dim in $DIMS; do
         for quarter in $QUARTERS; do
-            try_run -m bert -m pretrain -m sliding_window -m pt_strategy_ablation -m "${METHOD}" -m "d${dim}" -m "${quarter,,}" \
+            cfg="${CFG}/pretrained/AssetBERT/d${dim}/AssetBERT_${METHOD}_d${dim}_${quarter}_pretrained.json"
+            job -m bert -m pretrain -m sliding_window -m pt_strategy_ablation -m "${METHOD}" -m "d${dim}" -m "${quarter,,}" -m "$cfg" \
                 "BERT ${METHOD} pretrain d${dim} ${quarter}" \
                 uv run python -m asset_embeddings.scripts.train.bert \
-                    --config "${CFG}/pretrained/AssetBERT/d${dim}/AssetBERT_${METHOD}_d${dim}_${quarter}_pretrained.json" \
+                    --config "$cfg" \
                     --log "checkpoints/pt_strategy_ablation/sliding_window/N${N}/pretrained/AssetBERT/d${dim}/${quarter}/train.log" \
                           "logs/pt_strategy_ablation/sliding_window/N${N}/pretrain/AssetBERT/d${dim}/${quarter}.log" \
-                    -r "$DB"
+                    -r "$DB" -e "$EXP"
         done
     done
 
@@ -59,13 +62,14 @@ for N in $WINDOW_SIZES; do
     echo "=== Sliding Window N=${N}: BERT finetune ==="
     for dim in $DIMS; do
         for quarter in $QUARTERS; do
-            try_run -m bert -m finetune -m sliding_window -m pt_strategy_ablation -m "${METHOD}" -m "d${dim}" -m "${quarter,,}" \
+            cfg="${CFG}/finetune/AssetBERT/d${dim}/AssetBERT_${METHOD}_d${dim}_${quarter}.json"
+            job -m bert -m finetune -m sliding_window -m pt_strategy_ablation -m "${METHOD}" -m "d${dim}" -m "${quarter,,}" -m "$cfg" \
                 "BERT ${METHOD} finetune d${dim} ${quarter}" \
                 uv run python -m asset_embeddings.scripts.train.bert \
-                    --config "${CFG}/finetune/AssetBERT/d${dim}/AssetBERT_${METHOD}_d${dim}_${quarter}.json" \
+                    --config "$cfg" \
                     --log "checkpoints/pt_strategy_ablation/sliding_window/N${N}/finetune/AssetBERT/d${dim}/${quarter}/train.log" \
                           "logs/pt_strategy_ablation/sliding_window/N${N}/finetune/AssetBERT/d${dim}/${quarter}.log" \
-                    -r "$DB"
+                    -r "$DB" -e "$EXP"
         done
     done
 done

@@ -89,11 +89,12 @@ No need to manually write out all parameter values; you can use built-in functio
 
 ```bash
 uv run python -m scripts.tools.fast_generator config \
-    -t config_template.json \
-    -v '{"quarter":"@generate_time_quarters(2020,1,2021,4)"}'
+    -t '{"quarter": "{quarter}"}' \
+    -v '{"quarter":"@generate_time_quarters(2020,1,2021,4)"}' \
+    -n 'config_{quarter}.json'
 ```
 
-This will generate 8 configuration files with `quarter` values of `2020Q1 … 2021Q4`.
+This will generate 8 configuration files, `configs/config_2020Q1.json` … `configs/config_2021Q4.json`. Without `-n`, every combination would be written to the default `configs/config.json` and overwrite the previous one.
 
 
 
@@ -129,7 +130,7 @@ python train.py --dim 256 --lr 0.001
 python train.py --dim 256 --lr 0.01
 ```
 
-This allows direct batch submission of training tasks. (Blank lines are inserted only *between* command blocks, not between the variants of one block.)
+This allows direct batch submission of training tasks. (A blank line is written after every command block, including the last; the variants of one block are not separated.)
 
 
 
@@ -155,8 +156,8 @@ A template is the "basic skeleton" of generation. It can be:
 
 In templates, parameter positions can be represented by **placeholders**:
 
-- `{var}` → Replace with parameter value
-- `{var:format}` → Replace parameter value according to format (supports Python format syntax)
+- `{var}`: Replace with parameter value
+- `{var:format}`: Replace parameter value according to format (supports Python format syntax)
 
 Example template:
 
@@ -168,13 +169,13 @@ Example template:
 }
 ```
 
-If the parameter combination is `{"dim":128, "lr":0.001}`, the generated result is:
+If the parameter combination is `{"dim":128, "lr":0.001}`, the generated result is below. A string that is exactly one placeholder keeps the value's type (`"{dim}"` becomes the integer `128`), but a format spec always produces a string, so `"{lr:.4f}"` becomes `"0.0010"`; format specs are meant for paths, file names and longer strings.
 
 ```json
 {
   "model": "resnet",
   "dim": 128,
-  "lr": 0.0010
+  "lr": "0.0010"
 }
 ```
 
@@ -211,7 +212,7 @@ Generating corresponding 4 configurations or commands.
 Some parameters are not "freely combined" but "must be bound".
 For example:
 
-- **Wrong approach**: `size ∈ {tiny, base}, dim ∈ {64,128}` → 4 combinations, but `tiny` might only correspond to `64`
+- **Wrong approach**: `size ∈ {tiny, base}, dim ∈ {64,128}` gives 4 combinations, but `tiny` might only correspond to `64`
 - **Solution**: Use **variable bindings** to explicitly constrain relationships:
 
 ```json
@@ -295,7 +296,7 @@ Example:
 {"quarter": "@generate_time_quarters(2020,1,2021,4)"}
 ```
 
-→ Generates `["2020Q1","2020Q2","2020Q3","2020Q4","2021Q1","2021Q2","2021Q3","2021Q4"]`
+Generates `["2020Q1","2020Q2","2020Q3","2020Q4","2021Q1","2021Q2","2021Q3","2021Q4"]`
 
 When combined with bindings or other parameters, it will automatically expand combinations.
 
@@ -356,11 +357,11 @@ Result:
 
 Generate date range with different frequencies:
 
-- `D` → Day
-- `W` → Week
-- `M` → Month
-- `Q` → Quarter
-- `Y` → Year
+- `D`: Day
+- `W`: Week
+- `M`: Month
+- `Q`: Quarter
+- `Y`: Year
 
 Example:
 
@@ -494,24 +495,25 @@ Result:
 
 ### 4.4 Custom Function Extension
 
-Developers can register new functions via `FunctionRegistry.register(name, func)`.
+Developers can register new functions on a generator's registry, `gen.function_registry.register(name, func)`.
 
 Example:
 
 ```python
-from scripts.tools.fast_generator import FunctionRegistry
+from scripts.tools.fast_generator import ConfigGenerator
 
 def square_numbers(n):
     return [i*i for i in range(1,n+1)]
 
-registry = FunctionRegistry()
-registry.register("squares", square_numbers)
-
-print(registry.call("squares", 5))
-# Output: [1,4,9,16,25]
+gen = ConfigGenerator()
+gen.function_registry.register("squares", square_numbers)
+gen.set_template({"value": "{value}"})
+gen.set_variable_params(value="@squares(5)")   # resolved here: [1, 4, 9, 16, 25]
+gen.set_filename("value_{value}.json")
+gen.generate()
 ```
 
-Then you can use it in template parameters:
+Each generator owns its registry (`gen.function_registry`), and `set_variable_params` resolves `@` strings as soon as it is called, so register the function on that generator first. A `FunctionRegistry()` created on its own is not seen by any generator, and the command line has no way to register functions: custom functions are available through the Python API only. Once registered, the function is used in variable parameters like a built-in one:
 
 ```json
 {"value": "@squares(5)"}
@@ -547,48 +549,54 @@ Command example:
 uv run python -m scripts.tools.fast_generator config -f configs_preset.json
 ```
 
+`--set-variable NAME=VALUE` (`-V`, repeatable) overrides one entry of `variable_params` in every preset of the file; the value is read as a Python literal, e.g. `-f templates/train_disclosure_regime.json -V dim=128`.
+
 The `configs_preset.json` here is a task list that can contain one or more generation tasks. For example:
 
 
 
 #### Example 1: AssetW2V Finetune Task
 
+This is the `Finetune - AssetW2V` entry of `templates/train_main.json`, as a one-element task list:
+
 ```json
-{
-  "name": "AssetW2V Finetune Config Generator",
-  "description": "This config generator is used to generate the configs for the AssetW2V finetune model, ranged by embedding dimensions and quarterly data.",
-  "template": {
-    "pretrained_model": "model/pretrained/AssetW2V/d{dim}/AssetW2V_d{dim}_pretrained.model",
-    "embedding_dim": "{dim}",
-    "epochs": 10,
-    "window": 5,
-    "min_count": 1,
-    "sg": 1,
-    "sample": 1e-3,
-    "negative_sample": 10,
-    "seed": 42,
-    "data_path": "data/processed/MutualFundShareHoldings/finetune/{quarter}.csv",
-    "data_format": "csv",
-    "id_key": "InvestorID",
-    "portfolio_key": "Portfolio",
-    "workers": 1,
-    "save_folder": "model/finetune/AssetW2V/d{dim}",
-    "save_name": "AssetW2V_d{dim}_{quarter}",
-    "save_format": ".model"
-  },
-  "output_dir": "configs/finetune/AssetW2V/d{dim}",
-  "filename": "AssetW2V_d{dim}_{quarter}.json",
-  "variable_params": {
-    "dim": [4, 8, 10, 16, 32, 64, 128],
-    "quarter": ["2023Q2","2023Q3","2023Q4","2024Q1","2024Q2","2024Q3"]
+[
+  {
+    "name": "Finetune - AssetW2V",
+    "description": "W2V fine-tuning on quarterly shareholding data. 7 dims × 6 quarters = 42 configs.",
+    "template": {
+      "pretrained_model": "checkpoints/pretrained/AssetW2V/d{dim}/AssetW2V_d{dim}_pretrained.model",
+      "embedding_dim": "{dim}",
+      "epochs": 10,
+      "window": 5,
+      "min_count": 1,
+      "sg": 1,
+      "sample": 0.001,
+      "negative_sample": 10,
+      "seed": 42,
+      "data_path": "data/processed/MutualFundShareHoldings/finetune/{quarter}.csv",
+      "data_format": "csv",
+      "id_key": "InvestorID",
+      "portfolio_key": "Portfolio",
+      "workers": 1,
+      "save_folder": "checkpoints/finetune/AssetW2V/d{dim}/{quarter}",
+      "save_name": "AssetW2V_d{dim}_{quarter}"
+    },
+    "output_dir": "configs/main/finetune/AssetW2V/d{dim}",
+    "filename": "AssetW2V_d{dim}_{quarter}.json",
+    "variable_params": {
+      "dim": [4, 8, 10, 16, 32, 64, 128],
+      "quarter": ["2023Q2","2023Q3","2023Q4","2024Q1","2024Q2","2024Q3"]
+    },
+    "variable_bindings": null
   }
-}
+]
 ```
 
 After running, configuration files will be generated:
 
 ```
-configs/finetune/AssetW2V/
+configs/main/finetune/AssetW2V/
  ├─ d4/AssetW2V_d4_2023Q2.json
  ├─ d4/AssetW2V_d4_2023Q3.json
  ...
@@ -599,7 +607,7 @@ Where `AssetW2V_d4_2023Q2.json` content is similar to:
 
 ```json
 {
-  "pretrained_model": "model/pretrained/AssetW2V/d4/AssetW2V_d4_pretrained.model",
+  "pretrained_model": "checkpoints/pretrained/AssetW2V/d4/AssetW2V_d4_pretrained.model",
   "embedding_dim": 4,
   "epochs": 10,
   "window": 5,
@@ -613,61 +621,52 @@ Where `AssetW2V_d4_2023Q2.json` content is similar to:
   "id_key": "InvestorID",
   "portfolio_key": "Portfolio",
   "workers": 1,
-  "save_folder": "model/finetune/AssetW2V/d4",
-  "save_name": "AssetW2V_d4_2023Q2",
-  "save_format": ".model"
+  "save_folder": "checkpoints/finetune/AssetW2V/d4/2023Q2",
+  "save_name": "AssetW2V_d4_2023Q2"
 }
 ```
 
 
 
-#### Example 2: AssetBERT Finetune Task (with Variable Bindings)
+#### Example 2: Toy Model Sizes (with Variable Bindings)
 
-In the `AssetBERT` configuration, the three parameters `dim`, `intermediate_size`, and `max_position_embeddings` must correspond.
-This requires using **variable bindings (variable_bindings)**.
+Each named size fixes its width and depth, so `size`, `hidden` and `layers` must move together, while the learning rate combines freely with every size. This requires **variable bindings (variable_bindings)**:
 
 ```json
-{
-  "name": "AssetBERT finetune Config Generator",
-  "description": "This config generator is used to generate the configs for the AssetBERT finetune model, ranged by embedding dimensions and quarterly data.",
-  "template": {
-    "model": {
-      "model_type": "BERT",
-      "hidden_size": "{dim}",
-      "intermediate_size": "{intermediate_size}",
-      "max_position_embeddings": "{max_position_embeddings}"
+[
+  {
+    "name": "Toy model sizes",
+    "description": "Three named sizes, each at two learning rates.",
+    "template": {
+      "size": "{size}",
+      "hidden_size": "{hidden}",
+      "num_layers": "{layers}",
+      "lr": "{lr}"
     },
-    "train": {
-      "save_folder": "model/finetune/AssetBERT/d{dim}/{quarter}",
-      "save_name": "AssetBERT_d{dim}_{quarter}",
-      "save_format": ".safetensors"
-    }
-  },
-  "output_dir": "configs/finetune/AssetBERT/d{dim}",
-  "filename": "AssetBERT_d{dim}_{quarter}.json",
-  "variable_params": {
-    "dim": [4, 8, 10, 16, 32, 64, 128],
-    "quarter": ["2023Q2","2023Q3","2023Q4","2024Q1","2024Q2","2024Q3"],
-    "intermediate_size": [512,512,512,512,512,1024,1024],
-    "max_position_embeddings": [64,64,64,64,64,256,256]
-  },
-  "variable_bindings": [
-    {"dim": 4, "intermediate_size": 512, "max_position_embeddings": 64},
-    {"dim": 8, "intermediate_size": 512, "max_position_embeddings": 64},
-    {"dim": 10, "intermediate_size": 512, "max_position_embeddings": 64},
-    {"dim": 16, "intermediate_size": 512, "max_position_embeddings": 64},
-    {"dim": 32, "intermediate_size": 512, "max_position_embeddings": 64},
-    {"dim": 64, "intermediate_size": 1024, "max_position_embeddings": 256},
-    {"dim": 128, "intermediate_size": 1024, "max_position_embeddings": 256}
-  ]
-}
+    "output_dir": "configs/toy/{size}",
+    "filename": "toy_{size}_lr{lr}.json",
+    "variable_params": {
+      "size": ["small", "base", "large"],
+      "hidden": [64, 128, 256],
+      "layers": [2, 4, 8],
+      "lr": [0.001, 0.01]
+    },
+    "variable_bindings": [
+      {"size": "small", "hidden": 64, "layers": 2},
+      {"size": "base", "hidden": 128, "layers": 4},
+      {"size": "large", "hidden": 256, "layers": 8}
+    ]
+  }
+]
 ```
 
-This ensures that different `dim` values only match with correct `intermediate_size` and `max_position_embeddings`, avoiding invalid combinations.
+This yields 3 × 2 = 6 files (`configs/toy/small/toy_small_lr0.001.json`, …): each size appears only with its own width and depth, and each at both learning rates.
 
 
 
 ## 6. Script Generator (ScriptGenerator)
+
+The runners under `scripts/run/` are not generated: each `{data,train,eval}_<exp>.sh` is hand-written around `run_helper.sh`, with one `job` call per config and the marker filters described on [Run experiments](run-experiments.md). `fast_generator script` is the generic facility for turning a command template into a flat batch script; it is not used for the repository's own runners, and the rest of this section describes the facility as such.
 
 `ScriptGenerator` is used to generate batch processing scripts (such as Shell scripts), supporting:
 
@@ -707,15 +706,20 @@ Where `script_preset.json` defines multiple command blocks:
     {
       "template": "#!/bin/bash",
       "variable_params": {},
-      "variable_bindings": {}
+      "variable_bindings": []
     },
     {
-      "template": "uv run python -m asset_embeddings.scripts.train.w2v --config configs/pretrained/AssetW2V/AssetW2V_d{dim}_pretrained.json --log model/pretrained/AssetW2V/d{dim}/train.log logs/train/pretrained/AssetW2V/d{dim}.log",
+      "template": "DB=results/db/main.db; EXP=main",
+      "variable_params": {},
+      "variable_bindings": []
+    },
+    {
+      "template": "uv run python -m asset_embeddings.scripts.train.w2v --config configs/main/pretrained/AssetW2V/AssetW2V_d{dim}_pretrained.json --log checkpoints/pretrained/AssetW2V/d{dim}/train.log logs/main/train/pretrained/AssetW2V/d{dim}.log -r \"$DB\" -e \"$EXP\"",
       "variable_params": { "dim": [4,8,10,16,32,64,128] },
       "variable_bindings": []
     },
     {
-      "template": "uv run python -m asset_embeddings.scripts.train.rs --config configs/finetune/AssetRS/RS_{variant}/d{dim}/AssetRS_{variant}_d{dim}_{quarter}.json --log model/finetune/AssetRS/RS_{variant}/d{dim}/{quarter}/train.log logs/train/finetune/AssetRS/RS_{variant}/d{dim}/{quarter}.log",
+      "template": "uv run python -m asset_embeddings.scripts.train.rs --config configs/main/finetune/AssetRS/RS_{variant}/d{dim}/AssetRS_{variant}_d{dim}_{quarter}.json --log checkpoints/finetune/AssetRS/RS_{variant}/d{dim}/{quarter}/train.log logs/main/train/finetune/AssetRS/RS_{variant}/d{dim}/{quarter}.log -r \"$DB\" -e \"$EXP\"",
       "variable_params": {
         "variant":["Binary","Ranks","Level0","LevelMin"],
         "dim":[4,8,10,16,32,64,128],
@@ -724,13 +728,13 @@ Where `script_preset.json` defines multiple command blocks:
       "variable_bindings": []
     },
     {
-      "template": "uv run python -m scripts.tools.smtp -t ccarzit@gmail.com -s 'Training Finished' -b 'All pretraining and finetuning model training has been completed.'",
+      "template": "uv run python -m scripts.tools.smtp -t you@example.com -s 'Training Finished' -b 'All pretraining and finetuning model training has been completed.'",
       "variable_params": {},
       "variable_bindings": []
     }
   ],
-  "output_dir": "scripts/run",
-  "filename": "train.sh"
+  "output_dir": "scripts/generated",
+  "filename": "train_batch.sh"
 }
 ```
 
@@ -738,20 +742,24 @@ Where `script_preset.json` defines multiple command blocks:
 
 ### 6.3 Generation Result
 
-The program will generate a complete script at `scripts/run/train.sh` (the preset's `output_dir` + `filename`).
+The program will generate a complete script at `scripts/generated/train_batch.sh` (the preset's `output_dir` + `filename`).
 
 Partially expanded commands (example):
 
 ```bash
 #!/bin/bash
-uv run python -m asset_embeddings.scripts.train.w2v --config configs/pretrained/AssetW2V/AssetW2V_d4_pretrained.json --log model/pretrained/AssetW2V/d4/train.log logs/train/pretrained/AssetW2V/d4.log
-uv run python -m asset_embeddings.scripts.train.w2v --config configs/pretrained/AssetW2V/AssetW2V_d8_pretrained.json --log model/pretrained/AssetW2V/d8/train.log logs/train/pretrained/AssetW2V/d8.log
+
+DB=results/db/main.db; EXP=main
+
+uv run python -m asset_embeddings.scripts.train.w2v --config configs/main/pretrained/AssetW2V/AssetW2V_d4_pretrained.json --log checkpoints/pretrained/AssetW2V/d4/train.log logs/main/train/pretrained/AssetW2V/d4.log -r "$DB" -e "$EXP"
+uv run python -m asset_embeddings.scripts.train.w2v --config configs/main/pretrained/AssetW2V/AssetW2V_d8_pretrained.json --log checkpoints/pretrained/AssetW2V/d8/train.log logs/main/train/pretrained/AssetW2V/d8.log -r "$DB" -e "$EXP"
 ...
 
-uv run python -m asset_embeddings.scripts.train.rs --config configs/finetune/AssetRS/RS_Binary/d4/AssetRS_Binary_d4_2023Q2.json --log model/finetune/AssetRS/RS_Binary/d4/2023Q2/train.log logs/train/finetune/AssetRS/RS_Binary/d4/2023Q2.log
-uv run python -m asset_embeddings.scripts.train.rs --config configs/finetune/AssetRS/RS_Binary/d4/AssetRS_Binary_d4_2023Q3.json --log model/finetune/AssetRS/RS_Binary/d4/2023Q3/train.log logs/train/finetune/AssetRS/RS_Binary/d4/2023Q3.log
+uv run python -m asset_embeddings.scripts.train.rs --config configs/main/finetune/AssetRS/RS_Binary/d4/AssetRS_Binary_d4_2023Q2.json --log checkpoints/finetune/AssetRS/RS_Binary/d4/2023Q2/train.log logs/main/train/finetune/AssetRS/RS_Binary/d4/2023Q2.log -r "$DB" -e "$EXP"
+uv run python -m asset_embeddings.scripts.train.rs --config configs/main/finetune/AssetRS/RS_Binary/d4/AssetRS_Binary_d4_2023Q3.json --log checkpoints/finetune/AssetRS/RS_Binary/d4/2023Q3/train.log logs/main/train/finetune/AssetRS/RS_Binary/d4/2023Q3.log -r "$DB" -e "$EXP"
 ...
-uv run python -m scripts.tools.smtp -t ccarzit@gmail.com -s 'Training Finished' -b 'All pretraining and finetuning model training has been completed.'
+
+uv run python -m scripts.tools.smtp -t you@example.com -s 'Training Finished' -b 'All pretraining and finetuning model training has been completed.'
 ```
 
 
@@ -782,12 +790,9 @@ The program will automatically identify **independent binding groups** and gener
 }
 ```
 
-There are two binding groups here:
+All three bindings have the same key set, `{optimizer, lr}`, so they form one binding group with three alternatives. Bindings over a different key set would form a second group, and the groups multiply with each other.
 
-- Group 1: `{"optimizer": "adam", "lr": ...}`
-- Group 2: `{"optimizer": "sgd", "lr": 0.1}`
-
-When generating combinations, each binding group will also do Cartesian product with **free parameter `batch_size`**.
+When generating combinations, the binding group also does a Cartesian product with the **free parameter `batch_size`**, giving 3 × 3 = 9 combinations.
 
 Result:
 
@@ -846,29 +851,20 @@ Users can register their own convenience functions to make the generator more fl
 #### Example: Generate Exponentially Decaying Learning Rate
 
 ```python
-from scripts.tools.fast_generator import FunctionRegistry
+from scripts.tools.fast_generator import ConfigGenerator
 
 def exp_decay_lr(start, decay, steps):
     return [start * (decay ** i) for i in range(steps)]
 
-registry = FunctionRegistry()
-registry.register("exp_decay_lr", exp_decay_lr)
-
-print(registry.call("exp_decay_lr", 0.1, 0.9, 5))
-# Output: [0.1, 0.09000000000000001, 0.08100000000000002, 0.07290000000000002, 0.06561000000000002]
+gen = ConfigGenerator()
+gen.function_registry.register("exp_decay_lr", exp_decay_lr)
+gen.set_template({"lr": "{lr}"})
+gen.set_variable_params(lr="@exp_decay_lr(0.1,0.9,5)")
+print(gen.variable_params["lr"])
+# Output: [0.1, 0.09000000000000001, 0.08100000000000002, 0.0729, 0.06561]
 ```
 
-Then you can use it in JSON template:
-
-```json
-{"lr": "@exp_decay_lr(0.1,0.9,5)"}
-```
-
-Generates:
-
-```
-[0.1, 0.09, 0.081, 0.0729, 0.06561]
-```
+The generated `lr` values are these five numbers (0.1, 0.09, 0.081, 0.0729 and 0.06561, up to floating-point rounding); each becomes one config. As in §4.4, the function must be registered on the generator's own registry; the command line cannot load it.
 
 
 
@@ -876,9 +872,9 @@ Generates:
 
 Placeholders support formatting syntax, such as:
 
-- `{epoch:03d}` → Pad to three digits
-- `{lr:.4f}` → Format to four decimal places
-- `{size:>5s}` → Right align, width 5
+- `{epoch:03d}`: Pad to three digits
+- `{lr:.4f}`: Format to four decimal places
+- `{size:>5s}`: Right align, width 5
 
 Example:
 
@@ -1096,7 +1092,7 @@ print(registry.call("generate_quarters", 2023, 2024))
 # ['2023Q1', '2023Q2', '2023Q3', '2023Q4', '2024Q1', '2024Q2', '2024Q3', '2024Q4']
 ```
 
-Use in template:
+To use it in a template, register it on the generator's own registry (`gen.function_registry.register(...)`), as in §4.4; a standalone `FunctionRegistry` is not seen by any generator:
 
 ```json
 {"quarter": "@generate_quarters(2023,2024)"}

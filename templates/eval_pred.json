@@ -1,0 +1,766 @@
+[
+    {
+        "name": "Pred-RV - Embedding models",
+        "description": "Predictive RV: t-period embedding explains t+1 B/M residuals (reuses eval_RV.py). char_benchmark_path pins chars at t. 6 models x 7 dims x 2 variants = 84 configs.",
+        "template": {
+            "model_type": "{model_type}",
+            "embedding_path": [
+                "checkpoints/finetune/{model_path}/d{dim}/2023Q2/{model_type}_d{dim}_2023Q2{_add_best}_embedding.csv",
+                "checkpoints/finetune/{model_path}/d{dim}/2023Q3/{model_type}_d{dim}_2023Q3{_add_best}_embedding.csv",
+                "checkpoints/finetune/{model_path}/d{dim}/2023Q4/{model_type}_d{dim}_2023Q4{_add_best}_embedding.csv",
+                "checkpoints/finetune/{model_path}/d{dim}/2024Q1/{model_type}_d{dim}_2024Q1{_add_best}_embedding.csv",
+                "checkpoints/finetune/{model_path}/d{dim}/2024Q2/{model_type}_d{dim}_2024Q2{_add_best}_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "char_benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv"
+            ],
+            "periods": [
+                "2023Q2->2023Q3",
+                "2023Q3->2023Q4",
+                "2023Q4->2024Q1",
+                "2024Q1->2024Q2",
+                "2024Q2->2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": "{features}",
+            "align_chars": true,
+            "ridge_alpha": 0.5,
+            "seed": 42
+        },
+        "output_dir": "configs/main/eval/Pred-RV/d{dim}",
+        "filename": "{model_type}_d{dim}{_addChars}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "model_type": [
+                "AssetRS_Binary",
+                "AssetRS_Ranks",
+                "AssetRS_Level0",
+                "AssetRS_LevelMin",
+                "AssetW2V",
+                "AssetBERT"
+            ],
+            "model_path": [
+                "AssetRS/RS_Binary",
+                "AssetRS/RS_Ranks",
+                "AssetRS/RS_Level0",
+                "AssetRS/RS_LevelMin",
+                "AssetW2V",
+                "AssetBERT"
+            ],
+            "_addChars": [
+                "",
+                "_addChars"
+            ],
+            "_add_best": [
+                "",
+                "_best"
+            ],
+            "features": [
+                [
+                    "embedding"
+                ],
+                [
+                    "embedding",
+                    "chars"
+                ]
+            ]
+        },
+        "variable_bindings": [
+            {
+                "model_type": "AssetRS_Binary",
+                "model_path": "AssetRS/RS_Binary",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetRS_Ranks",
+                "model_path": "AssetRS/RS_Ranks",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetRS_Level0",
+                "model_path": "AssetRS/RS_Level0",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetRS_LevelMin",
+                "model_path": "AssetRS/RS_LevelMin",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetW2V",
+                "model_path": "AssetW2V",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetBERT",
+                "model_path": "AssetBERT",
+                "_add_best": "_best"
+            },
+            {
+                "_addChars": "",
+                "features": [
+                    "embedding"
+                ]
+            },
+            {
+                "_addChars": "_addChars",
+                "features": [
+                    "embedding",
+                    "chars"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Pred-RV - Baselines (Placebo/Chars)",
+        "description": "Predictive RV baselines. char_benchmark_path pins chars at t for Chars baseline. 2 configs.",
+        "template": {
+            "model_type": "{model_type}",
+            "embedding_path": null,
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "char_benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv"
+            ],
+            "periods": [
+                "2023Q2->2023Q3",
+                "2023Q3->2023Q4",
+                "2023Q4->2024Q1",
+                "2024Q1->2024Q2",
+                "2024Q2->2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": "{features}",
+            "align_chars": true,
+            "ridge_alpha": 0.5,
+            "seed": 42
+        },
+        "output_dir": "configs/main/eval/Pred-RV",
+        "filename": "{model_type}.json",
+        "variable_params": {
+            "model_type": [
+                "Placebo",
+                "Chars"
+            ],
+            "features": [
+                [
+                    "placebo"
+                ],
+                [
+                    "chars"
+                ]
+            ]
+        },
+        "variable_bindings": [
+            {
+                "features": [
+                    "placebo"
+                ],
+                "model_type": "Placebo"
+            },
+            {
+                "features": [
+                    "chars"
+                ],
+                "model_type": "Chars"
+            }
+        ]
+    },
+    {
+        "name": "Pred-MP - AssetBERT via BERT head",
+        "description": "Pred-MP: t-period model on t+1 portfolio data (eval_MP_BERT.py). 1 model x 7 dims x 5 pairs = 35 configs.",
+        "template": {
+            "run": {
+                "period": "{quarter_label}"
+            },
+            "model": {
+                "model_type": "BERT",
+                "model_checkpoint": "checkpoints/finetune/{model}/d{dim}/{quarter_t}/{model}_d{dim}_{quarter_t}_best/model.safetensors",
+                "embedding_file": "checkpoints/finetune/{model}/d{dim}/{quarter_t}/{model}_d{dim}_{quarter_t}_best_embedding.csv",
+                "vocab_size": 5093,
+                "hidden_size": "{dim}",
+                "num_hidden_layers": 4,
+                "num_attention_heads": 2,
+                "intermediate_size": 512,
+                "max_position_embeddings": 256,
+                "type_vocab_size": 1,
+                "freeze_embedding": true,
+                "freeze_encoder": false,
+                "embedding_model": "{model}"
+            },
+            "tokenizer": {
+                "w2v_model": null,
+                "embedding_file": "checkpoints/finetune/{model}/d{dim}/{quarter_t}/{model}_d{dim}_{quarter_t}_best_embedding.csv",
+                "vocab_file": null,
+                "pretrained_tokenizer_file": null,
+                "alias_file": null
+            },
+            "dataset": {
+                "data_path": "data/processed/MutualFundShareHoldings/finetune/{quarter_next}.csv",
+                "data_format": "csv",
+                "id_key": "InvestorID",
+                "portfolio_key": "Portfolio",
+                "proportion1_key": "Proportion1",
+                "proportion2_key": "Proportion2",
+                "include_proportion": true,
+                "max_length": 256,
+                "mask_prob": null,
+                "mask_indices": [
+                    2
+                ]
+            },
+            "dataloader": {
+                "batch_size": 32,
+                "shuffle": true,
+                "num_workers": 4,
+                "persistent_workers": true,
+                "pin_memory": false,
+                "drop_last": false
+            },
+            "optimizer": {
+                "optimizer_type": "PagedAdam8bit",
+                "optimizer_kwargs": null,
+                "learning_rate": 0.001,
+                "lr_scheduler_type": "cosine",
+                "lr_scheduler_warmup_steps": 0,
+                "lr_scheduler_train_steps": null,
+                "lr_scheduler_num_cycles": 0.5,
+                "lr_scheduler_power": 0
+            },
+            "accelerator": {
+                "mixed_precision": "auto",
+                "gradient_accumulation_steps": 1,
+                "accelerator_checkpoint": null,
+                "use_compile": false,
+                "compile_backend": "inductor",
+                "compile_mode": "reduce-overhead",
+                "compile_fullgraph": false,
+                "compile_dynamic": false,
+                "compile_cache_dir": null,
+                "allow_tf32": false
+            },
+            "train": {
+                "max_epochs": 30,
+                "validation_split": 0,
+                "test_split": 0.2,
+                "split_method": "random",
+                "best_metric": "test_loss",
+                "clip_grad_norm": 1.0,
+                "clip_grad_value": null,
+                "detect_anomaly": false,
+                "log_every_steps": 200,
+                "report_every_epochs": 1,
+                "save_every_epochs": 1,
+                "save_folder": "checkpoints/pred_refine/BERT/{model}/d{dim}/{quarter_t}_to_{quarter_next}",
+                "save_name": "{model}_d{dim}_{quarter_filename}",
+                "save_format": ".safetensors",
+                "seed": 42
+            }
+        },
+        "output_dir": "configs/main/eval/Pred-MP/BERT/{model}/d{dim}",
+        "filename": "{model}_d{dim}_{quarter_filename}.json",
+        "variable_params": {
+            "model": [
+                "AssetBERT"
+            ],
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "quarter_t": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2"
+            ],
+            "quarter_next": [
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "quarter_label": [
+                "2023Q2->2023Q3",
+                "2023Q3->2023Q4",
+                "2023Q4->2024Q1",
+                "2024Q1->2024Q2",
+                "2024Q2->2024Q3"
+            ],
+            "quarter_filename": [
+                "2023Q2_to_2023Q3",
+                "2023Q3_to_2023Q4",
+                "2023Q4_to_2024Q1",
+                "2024Q1_to_2024Q2",
+                "2024Q2_to_2024Q3"
+            ]
+        },
+        "variable_bindings": [
+            {
+                "quarter_t": "2023Q2",
+                "quarter_next": "2023Q3",
+                "quarter_label": "2023Q2->2023Q3",
+                "quarter_filename": "2023Q2_to_2023Q3"
+            },
+            {
+                "quarter_t": "2023Q3",
+                "quarter_next": "2023Q4",
+                "quarter_label": "2023Q3->2023Q4",
+                "quarter_filename": "2023Q3_to_2023Q4"
+            },
+            {
+                "quarter_t": "2023Q4",
+                "quarter_next": "2024Q1",
+                "quarter_label": "2023Q4->2024Q1",
+                "quarter_filename": "2023Q4_to_2024Q1"
+            },
+            {
+                "quarter_t": "2024Q1",
+                "quarter_next": "2024Q2",
+                "quarter_label": "2024Q1->2024Q2",
+                "quarter_filename": "2024Q1_to_2024Q2"
+            },
+            {
+                "quarter_t": "2024Q2",
+                "quarter_next": "2024Q3",
+                "quarter_label": "2024Q2->2024Q3",
+                "quarter_filename": "2024Q2_to_2024Q3"
+            }
+        ]
+    },
+    {
+        "name": "Pred-MP - RS/W2V via SMLM head",
+        "description": "Pred-MP for RS/W2V with SimplifiedMLM head (eval_MP_SMLM.py). 5 models x 7 dims x 5 pairs = 175 configs.",
+        "template": {
+            "run": {
+                "period": "{quarter_label}"
+            },
+            "model": {
+                "model_type": "SimplifiedMLM",
+                "model_checkpoint": null,
+                "embedding_file": "checkpoints/finetune/{model_path}/d{dim}/{quarter_t}/{model_type}_d{dim}_{quarter_t}_embedding.csv",
+                "vocab_size": 4940,
+                "hidden_size": "{dim}",
+                "max_position_embeddings": 256,
+                "type_vocab_size": 1,
+                "freeze_embedding": true,
+                "freeze_head": false,
+                "embedding_model": "{model_type}"
+            },
+            "tokenizer": {
+                "w2v_model": null,
+                "embedding_file": "checkpoints/finetune/{model_path}/d{dim}/{quarter_t}/{model_type}_d{dim}_{quarter_t}_embedding.csv",
+                "vocab_file": null,
+                "pretrained_tokenizer_file": null,
+                "alias_file": null
+            },
+            "dataset": {
+                "data_path": "data/processed/MutualFundShareHoldings/finetune/{quarter_next}.csv",
+                "data_format": "csv",
+                "id_key": "InvestorID",
+                "portfolio_key": "Portfolio",
+                "proportion1_key": "Proportion1",
+                "proportion2_key": "Proportion2",
+                "include_proportion": true,
+                "max_length": 256,
+                "mask_prob": null,
+                "mask_indices": [
+                    2
+                ]
+            },
+            "dataloader": {
+                "batch_size": 32,
+                "shuffle": true,
+                "num_workers": 4,
+                "persistent_workers": true,
+                "pin_memory": false,
+                "drop_last": false
+            },
+            "optimizer": {
+                "optimizer_type": "PagedAdam8bit",
+                "optimizer_kwargs": null,
+                "learning_rate": 0.001,
+                "lr_scheduler_type": "cosine",
+                "lr_scheduler_warmup_steps": 0,
+                "lr_scheduler_train_steps": null,
+                "lr_scheduler_num_cycles": 0.5,
+                "lr_scheduler_power": 0
+            },
+            "accelerator": {
+                "mixed_precision": "auto",
+                "gradient_accumulation_steps": 1,
+                "accelerator_checkpoint": null,
+                "use_compile": false,
+                "compile_backend": "inductor",
+                "compile_mode": "reduce-overhead",
+                "compile_fullgraph": false,
+                "compile_dynamic": false,
+                "compile_cache_dir": null,
+                "allow_tf32": false
+            },
+            "train": {
+                "max_epochs": 30,
+                "validation_split": 0,
+                "test_split": 0.2,
+                "split_method": "random",
+                "best_metric": "test_loss",
+                "clip_grad_norm": 1.0,
+                "clip_grad_value": null,
+                "detect_anomaly": false,
+                "log_every_steps": 200,
+                "report_every_epochs": 1,
+                "save_every_epochs": 1,
+                "save_folder": "checkpoints/pred_refine/SMLM/{model_path}/d{dim}/{quarter_t}_to_{quarter_next}",
+                "save_name": "SMLM_{model_type}_d{dim}_{quarter_filename}",
+                "save_format": ".safetensors",
+                "seed": 42
+            }
+        },
+        "output_dir": "configs/main/eval/Pred-MP/SMLM/{model_path}/d{dim}",
+        "filename": "SMLM_{model_type}_d{dim}_{quarter_filename}.json",
+        "variable_params": {
+            "model_type": [
+                "AssetRS_Binary",
+                "AssetRS_Ranks",
+                "AssetRS_Level0",
+                "AssetRS_LevelMin",
+                "AssetW2V"
+            ],
+            "model_path": [
+                "AssetRS/RS_Binary",
+                "AssetRS/RS_Ranks",
+                "AssetRS/RS_Level0",
+                "AssetRS/RS_LevelMin",
+                "AssetW2V"
+            ],
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "quarter_t": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2"
+            ],
+            "quarter_next": [
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "quarter_label": [
+                "2023Q2->2023Q3",
+                "2023Q3->2023Q4",
+                "2023Q4->2024Q1",
+                "2024Q1->2024Q2",
+                "2024Q2->2024Q3"
+            ],
+            "quarter_filename": [
+                "2023Q2_to_2023Q3",
+                "2023Q3_to_2023Q4",
+                "2023Q4_to_2024Q1",
+                "2024Q1_to_2024Q2",
+                "2024Q2_to_2024Q3"
+            ]
+        },
+        "variable_bindings": [
+            {
+                "model_type": "AssetRS_Binary",
+                "model_path": "AssetRS/RS_Binary"
+            },
+            {
+                "model_type": "AssetRS_Ranks",
+                "model_path": "AssetRS/RS_Ranks"
+            },
+            {
+                "model_type": "AssetRS_Level0",
+                "model_path": "AssetRS/RS_Level0"
+            },
+            {
+                "model_type": "AssetRS_LevelMin",
+                "model_path": "AssetRS/RS_LevelMin"
+            },
+            {
+                "model_type": "AssetW2V",
+                "model_path": "AssetW2V"
+            },
+            {
+                "quarter_t": "2023Q2",
+                "quarter_next": "2023Q3",
+                "quarter_label": "2023Q2->2023Q3",
+                "quarter_filename": "2023Q2_to_2023Q3"
+            },
+            {
+                "quarter_t": "2023Q3",
+                "quarter_next": "2023Q4",
+                "quarter_label": "2023Q3->2023Q4",
+                "quarter_filename": "2023Q3_to_2023Q4"
+            },
+            {
+                "quarter_t": "2023Q4",
+                "quarter_next": "2024Q1",
+                "quarter_label": "2023Q4->2024Q1",
+                "quarter_filename": "2023Q4_to_2024Q1"
+            },
+            {
+                "quarter_t": "2024Q1",
+                "quarter_next": "2024Q2",
+                "quarter_label": "2024Q1->2024Q2",
+                "quarter_filename": "2024Q1_to_2024Q2"
+            },
+            {
+                "quarter_t": "2024Q2",
+                "quarter_next": "2024Q3",
+                "quarter_label": "2024Q2->2024Q3",
+                "quarter_filename": "2024Q2_to_2024Q3"
+            }
+        ]
+    },
+    {
+        "name": "Pred-MP - RS/W2V via BERT head",
+        "description": "Pred-MP for RS/W2V with full BERT architecture (no pretrained checkpoint, encoder trained from scratch, frozen embeddings). t-period embedding on t+1 portfolio data (eval_MP_BERT.py). 5 models x 7 dims x 5 pairs = 175 configs.",
+        "template": {
+            "run": {
+                "period": "{quarter_label}"
+            },
+            "model": {
+                "model_type": "BERT",
+                "model_checkpoint": null,
+                "embedding_file": "checkpoints/finetune/{model_path}/d{dim}/{quarter_t}/{model_type}_d{dim}_{quarter_t}_embedding.csv",
+                "vocab_size": 5093,
+                "hidden_size": "{dim}",
+                "num_hidden_layers": 4,
+                "num_attention_heads": 2,
+                "intermediate_size": 512,
+                "max_position_embeddings": 256,
+                "type_vocab_size": 1,
+                "freeze_embedding": true,
+                "freeze_encoder": false,
+                "embedding_model": "{model_type}"
+            },
+            "tokenizer": {
+                "w2v_model": null,
+                "embedding_file": "checkpoints/finetune/{model_path}/d{dim}/{quarter_t}/{model_type}_d{dim}_{quarter_t}_embedding.csv",
+                "vocab_file": null,
+                "pretrained_tokenizer_file": null,
+                "alias_file": null
+            },
+            "dataset": {
+                "data_path": "data/processed/MutualFundShareHoldings/finetune/{quarter_next}.csv",
+                "data_format": "csv",
+                "id_key": "InvestorID",
+                "portfolio_key": "Portfolio",
+                "proportion1_key": "Proportion1",
+                "proportion2_key": "Proportion2",
+                "include_proportion": true,
+                "max_length": 256,
+                "mask_prob": null,
+                "mask_indices": [
+                    2
+                ]
+            },
+            "dataloader": {
+                "batch_size": 32,
+                "shuffle": true,
+                "num_workers": 4,
+                "persistent_workers": true,
+                "pin_memory": false,
+                "drop_last": false
+            },
+            "optimizer": {
+                "optimizer_type": "PagedAdam8bit",
+                "optimizer_kwargs": null,
+                "learning_rate": 0.001,
+                "lr_scheduler_type": "cosine",
+                "lr_scheduler_warmup_steps": 0,
+                "lr_scheduler_train_steps": null,
+                "lr_scheduler_num_cycles": 0.5,
+                "lr_scheduler_power": 0
+            },
+            "accelerator": {
+                "mixed_precision": "auto",
+                "gradient_accumulation_steps": 1,
+                "accelerator_checkpoint": null,
+                "use_compile": false,
+                "compile_backend": "inductor",
+                "compile_mode": "reduce-overhead",
+                "compile_fullgraph": false,
+                "compile_dynamic": false,
+                "compile_cache_dir": null,
+                "allow_tf32": false
+            },
+            "train": {
+                "max_epochs": 30,
+                "validation_split": 0,
+                "test_split": 0.2,
+                "split_method": "random",
+                "best_metric": "test_loss",
+                "clip_grad_norm": 1.0,
+                "clip_grad_value": null,
+                "detect_anomaly": false,
+                "log_every_steps": 200,
+                "report_every_epochs": 1,
+                "save_every_epochs": 1,
+                "save_folder": "checkpoints/pred_refine/BERT/{model_path}/d{dim}/{quarter_t}_to_{quarter_next}",
+                "save_name": "BERT_{model_type}_d{dim}_{quarter_filename}",
+                "save_format": ".safetensors",
+                "seed": 42
+            }
+        },
+        "output_dir": "configs/main/eval/Pred-MP/BERT/{model_path}/d{dim}",
+        "filename": "BERT_{model_type}_d{dim}_{quarter_filename}.json",
+        "variable_params": {
+            "model_type": [
+                "AssetRS_Binary",
+                "AssetRS_Ranks",
+                "AssetRS_Level0",
+                "AssetRS_LevelMin",
+                "AssetW2V"
+            ],
+            "model_path": [
+                "AssetRS/RS_Binary",
+                "AssetRS/RS_Ranks",
+                "AssetRS/RS_Level0",
+                "AssetRS/RS_LevelMin",
+                "AssetW2V"
+            ],
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "quarter_t": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2"
+            ],
+            "quarter_next": [
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "quarter_label": [
+                "2023Q2->2023Q3",
+                "2023Q3->2023Q4",
+                "2023Q4->2024Q1",
+                "2024Q1->2024Q2",
+                "2024Q2->2024Q3"
+            ],
+            "quarter_filename": [
+                "2023Q2_to_2023Q3",
+                "2023Q3_to_2023Q4",
+                "2023Q4_to_2024Q1",
+                "2024Q1_to_2024Q2",
+                "2024Q2_to_2024Q3"
+            ]
+        },
+        "variable_bindings": [
+            {
+                "model_type": "AssetRS_Binary",
+                "model_path": "AssetRS/RS_Binary"
+            },
+            {
+                "model_type": "AssetRS_Ranks",
+                "model_path": "AssetRS/RS_Ranks"
+            },
+            {
+                "model_type": "AssetRS_Level0",
+                "model_path": "AssetRS/RS_Level0"
+            },
+            {
+                "model_type": "AssetRS_LevelMin",
+                "model_path": "AssetRS/RS_LevelMin"
+            },
+            {
+                "model_type": "AssetW2V",
+                "model_path": "AssetW2V"
+            },
+            {
+                "quarter_t": "2023Q2",
+                "quarter_next": "2023Q3",
+                "quarter_label": "2023Q2->2023Q3",
+                "quarter_filename": "2023Q2_to_2023Q3"
+            },
+            {
+                "quarter_t": "2023Q3",
+                "quarter_next": "2023Q4",
+                "quarter_label": "2023Q3->2023Q4",
+                "quarter_filename": "2023Q3_to_2023Q4"
+            },
+            {
+                "quarter_t": "2023Q4",
+                "quarter_next": "2024Q1",
+                "quarter_label": "2023Q4->2024Q1",
+                "quarter_filename": "2023Q4_to_2024Q1"
+            },
+            {
+                "quarter_t": "2024Q1",
+                "quarter_next": "2024Q2",
+                "quarter_label": "2024Q1->2024Q2",
+                "quarter_filename": "2024Q1_to_2024Q2"
+            },
+            {
+                "quarter_t": "2024Q2",
+                "quarter_next": "2024Q3",
+                "quarter_label": "2024Q2->2024Q3",
+                "quarter_filename": "2024Q2_to_2024Q3"
+            }
+        ]
+    }
+]

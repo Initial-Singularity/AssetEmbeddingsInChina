@@ -1,3 +1,11 @@
+"""Template-based batch generation of JSON config files and runner scripts from variable bindings.
+
+A template (a JSON object or a command string) carries ``{name}`` / ``{name:format}`` placeholders; variable
+parameters are expanded into their Cartesian product, variable bindings pin parameters that must move together,
+and ``@function(...)`` strings produce parameter lists from registered helpers. Runs as
+``python -m scripts.tools.fast_generator config|script``.
+"""
+
 import os
 import re
 import ast
@@ -9,11 +17,21 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional, Callable
 
 
-# 便捷函数库
 def generate_time_quarters(
     start_year: int, start_quarter: int, end_year: int, end_quarter: int, format: str = "%YQ%Q"
 ) -> List[str]:
-    """生成时间季度列表，如2020Q1到2024Q4"""
+    """List the quarters from start to end inclusive, such as ``2020Q1`` to ``2024Q4``.
+
+    Args:
+        start_year: First year.
+        start_quarter: First quarter (1-4) of the first year.
+        end_year: Last year.
+        end_quarter: Last quarter (1-4) of the last year.
+        format: Label pattern; ``%Y`` is replaced by the year and ``%Q`` by the quarter number.
+
+    Returns:
+        Quarter labels in chronological order.
+    """
     quarters = []
     for year in range(start_year, end_year + 1):
         start_q = start_quarter if year == start_year else 1
@@ -26,7 +44,18 @@ def generate_time_quarters(
 def generate_time_months(
     start_year: int, start_month: int, end_year: int, end_month: int, format: str = "%Y-%m"
 ) -> List[str]:
-    """生成时间月份列表，如2020-01到2024-12"""
+    """List the months from start to end inclusive, such as ``2020-01`` to ``2024-12``.
+
+    Args:
+        start_year: First year.
+        start_month: First month (1-12) of the first year.
+        end_year: Last year.
+        end_month: Last month (1-12) of the last year.
+        format: Label pattern; ``%Y`` is replaced by the year and ``%m`` by the zero-padded month.
+
+    Returns:
+        Month labels in chronological order.
+    """
     months = []
     for year in range(start_year, end_year + 1):
         start_m = start_month if year == start_year else 1
@@ -37,7 +66,17 @@ def generate_time_months(
 
 
 def generate_date_range(start_date: str, end_date: str, freq: str = "D", format: str = "%Y-%m-%d") -> List[str]:
-    """生成日期范围列表，支持不同频率（D=日, W=周, M=月, Q=季度, Y=年）"""
+    """List the dates from start to end inclusive at a daily, weekly, monthly, quarterly or yearly step.
+
+    Args:
+        start_date: First date as ``YYYY-MM-DD``.
+        end_date: Last date as ``YYYY-MM-DD``.
+        freq: Step size: ``D`` day, ``W`` week, ``M`` month, ``Q`` quarter, ``Y`` year.
+        format: ``strftime`` pattern for the labels.
+
+    Returns:
+        Date labels in chronological order.
+    """
     from datetime import datetime, timedelta
 
     start = datetime.strptime(start_date, "%Y-%m-%d")
@@ -54,7 +93,6 @@ def generate_date_range(start_date: str, end_date: str, freq: str = "D", format:
         elif freq == "W":
             current += timedelta(weeks=1)
         elif freq == "M":
-            # 月份增加
             month = current.month
             year = current.year
             if month == 12:
@@ -65,10 +103,9 @@ def generate_date_range(start_date: str, end_date: str, freq: str = "D", format:
             try:
                 current = current.replace(year=year, month=month)
             except ValueError:
-                # 处理月末日期问题
+                # the day does not exist in the target month (Jan 31 -> Feb): fall back to its first day
                 current = current.replace(year=year, month=month, day=1)
         elif freq == "Q":
-            # 季度增加（3个月）
             for _ in range(3):
                 month = current.month
                 year = current.year
@@ -88,27 +125,36 @@ def generate_date_range(start_date: str, end_date: str, freq: str = "D", format:
 
 
 def generate_cross_product(*lists) -> List[List]:
-    """生成多个列表的笛卡尔积"""
+    """Return the Cartesian product of the given lists, one list per combination.
+
+    Args:
+        *lists: The lists to combine.
+
+    Returns:
+        Every combination as a list, in ``itertools.product`` order.
+    """
     from itertools import product
 
     return [list(combo) for combo in product(*lists)]
 
 
 class FunctionRegistry:
-    """便捷函数注册器"""
+    """Name-to-callable registry behind the ``@function(...)`` syntax of variable parameters.
+
+    The built-in entries are the time helpers of this module (``generate_time_quarters``, ``generate_time_months``,
+    ``generate_date_range``), the numeric sequences ``range``, ``linspace``, ``logspace`` and ``geomspace``, and the
+    list helpers ``repeat``, ``zip_lists`` and ``generate_cross_product``.
+    """
 
     def __init__(self):
         self._functions: Dict[str, Callable] = {}
         self._register_builtin_functions()
 
     def _register_builtin_functions(self):
-        """注册内置便捷函数"""
-        # 时间相关函数
         self.register("generate_time_quarters", generate_time_quarters)
         self.register("generate_time_months", generate_time_months)
         self.register("generate_date_range", generate_date_range)
 
-        # 数值序列生成函数
         self.register("range", lambda start, stop, step=1: list(range(start, stop, step)))
         self.register("linspace", lambda start, stop, num: [start + i * (stop - start) / (num - 1) for i in range(num)])
         self.register(
@@ -118,28 +164,49 @@ class FunctionRegistry:
             "geomspace", lambda start, stop, num: [start * (stop / start) ** (i / (num - 1)) for i in range(num)]
         )
 
-        # 列表操作函数
         self.register("repeat", lambda value, times: [value] * times)
         self.register("zip_lists", lambda *lists: [list(item) for item in zip(*lists)])
         self.register("generate_cross_product", generate_cross_product)
 
     def register(self, name: str, func: Callable):
-        """注册新的便捷函数"""
+        """Register ``func`` under ``name``, replacing any earlier entry with that name.
+
+        Args:
+            name: The name used after ``@`` in a variable-parameter string.
+            func: The callable to run.
+        """
         self._functions[name] = func
 
     def call(self, name: str, *args, **kwargs) -> Any:
-        """调用注册的函数"""
+        """Run the registered function ``name`` with the given arguments.
+
+        Args:
+            name: A registered function name.
+            *args: Positional arguments passed through.
+            **kwargs: Keyword arguments passed through.
+
+        Returns:
+            Whatever the function returns.
+
+        Raises:
+            ValueError: If no function is registered under ``name``.
+        """
         if name not in self._functions:
             raise ValueError(f"Function '{name}' not found in registry")
         return self._functions[name](*args, **kwargs)
 
     def list_functions(self) -> List[str]:
-        """列出所有可用函数"""
+        """Return the registered function names in registration order."""
         return list(self._functions.keys())
 
 
 class BaseTemplateGenerator(ABC):
-    """模板生成器基类"""
+    """Shared machinery of the generators: template, variable parameters, variable bindings and output naming.
+
+    Subclasses decide how a template is copied and what ``generate`` writes. Variable parameters expand into their
+    Cartesian product; variable bindings with the same key set form one group whose members are alternatives, and
+    the groups multiply with each other and with the free (unbound) parameters.
+    """
 
     def __init__(self):
         self.base_template: Any = {}
@@ -150,26 +217,36 @@ class BaseTemplateGenerator(ABC):
         self.function_registry = FunctionRegistry()
 
     def set_template(self, template: Any):
-        """设置基础模板"""
+        """Store a copy of ``template`` as the base template.
+
+        Args:
+            template: A JSON-like object or a string with ``{name}`` placeholders.
+        """
         self.base_template = self._copy_template(template)
 
     @abstractmethod
     def _copy_template(self, template: Any) -> Any:
-        """复制模板的抽象方法"""
         pass
 
     def _parse_function_call(self, value: str) -> Any:
-        """
-        解析函数调用字符串，支持 @function_name(arg1, arg2, key=value) 格式
-        例如: @generate_time_quarters(2020, 1, 2024, 4, format="%YQ%Q")
+        """Evaluate an ``@name(arg, ..., key=value)`` string through the registry; other values pass through.
+
+        Arguments must be Python literals (scalars, lists, tuples, dicts); names and nested calls are rejected.
+
+        Args:
+            value: The variable-parameter value.
+
+        Returns:
+            The function's result, or ``value`` itself when it is not an ``@`` string.
+
+        Raises:
+            ValueError: On malformed syntax, a non-literal argument, an unknown function or a failing call.
         """
         if not isinstance(value, str) or not value.startswith("@"):
             return value
 
-        # 移除 @ 前缀
         call_str = value[1:]
 
-        # 解析函数名和参数
         match = re.match(r"(\w+)\((.*)\)$", call_str)
         if not match:
             raise ValueError(f"Invalid function call syntax: {value}")
@@ -177,15 +254,12 @@ class BaseTemplateGenerator(ABC):
         func_name = match.group(1)
         args_str = match.group(2).strip()
 
-        # 解析参数
         args = []
         kwargs = {}
 
         if args_str:
-            # 简单的参数解析（支持数字、字符串、布尔值）
-
             try:
-                # 构造一个临时函数调用来解析参数
+                # wrap the argument list in a dummy call so ast separates positional from keyword arguments
                 temp_call = f"temp_func({args_str})"
                 parsed = ast.parse(temp_call, mode="eval")
                 call_node = parsed.body
@@ -209,7 +283,6 @@ class BaseTemplateGenerator(ABC):
             except (SyntaxError, ValueError) as e:
                 raise ValueError(f"Failed to parse function arguments in '{value}': {e}")
 
-        # 调用函数
         try:
             result = self.function_registry.call(func_name, *args, **kwargs)
             return result
@@ -217,17 +290,16 @@ class BaseTemplateGenerator(ABC):
             raise ValueError(f"Error calling function '{func_name}': {e}")
 
     def _process_variable_params(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """处理可变参数，解析其中的函数调用"""
+        """Resolve ``@`` calls in the values; a call inside a list splices its result into that list."""
         processed = {}
         for key, value in params.items():
             if isinstance(value, str) and value.startswith("@"):
                 result = self._parse_function_call(value)
-                # 确保结果是列表（用于参数组合）
+                # a scalar result must still be a list: the Cartesian product iterates over it
                 if not isinstance(result, list):
                     result = [result]
                 processed[key] = result
             elif isinstance(value, list):
-                # 处理列表中的函数调用
                 processed_list = []
                 for item in value:
                     if isinstance(item, str) and item.startswith("@"):
@@ -244,51 +316,59 @@ class BaseTemplateGenerator(ABC):
         return processed
 
     def set_variable_params(self, **params):
-        """
-        设置可变参数，支持函数调用
-        例如: set_variable_params(
-            embedding_dim=[4,8,16],
-            epochs=[10,20],
-            quarter="@generate_time_quarters(2020, 1, 2024, 4)"
-        )
+        """Replace the variable parameters, resolving ``@function(...)`` strings into value lists.
+
+        Args:
+            **params: Parameter name to a list of values, a single value, or an ``@`` call string.
         """
         self.variable_params = self._process_variable_params(params)
 
     def add_variable_binding(self, binding_dict: Dict[str, Any]):
-        """
-        添加变量绑定关系
-        例如: add_variable_binding({"size": "tiny", "dim": 4, "lr": 0.001})
+        """Append one binding, a dict of parameter values that are only ever used together.
+
+        Args:
+            binding_dict: Parameter name to the value it takes in this binding.
         """
         self.variable_bindings.append(binding_dict)
 
     def add_variable_bindings(self, binding_dicts: List[Dict[str, Any]]):
-        """
-        添加多个变量绑定关系
-        例如: add_variable_bindings([{"size": "tiny", "dim": 4, "lr": 0.001}, {"size": "base", "dim": 8, "lr": 0.01}])
+        """Append several bindings.
+
+        Args:
+            binding_dicts: Bindings as accepted by ``add_variable_binding``.
         """
         self.variable_bindings.extend(binding_dicts)
 
     def clear_variable_bindings(self):
-        """清空所有变量绑定关系"""
+        """Remove every binding."""
         self.variable_bindings = []
 
     def set_variable_bindings(self, binding_dicts: List[Dict[str, Any]]):
-        """设置变量绑定关系"""
+        """Replace the bindings with ``binding_dicts``.
+
+        Args:
+            binding_dicts: Bindings as accepted by ``add_variable_binding``.
+        """
         self.variable_bindings = binding_dicts
 
     def set_output_dir(self, dir_template: str):
-        """设置输出目录，支持{var_name}格式"""
+        """Set the output directory; ``{name}`` placeholders are filled per combination.
+
+        Args:
+            dir_template: Directory path, possibly with placeholders.
+        """
         self.output_dir = dir_template
 
     def set_filename(self, filename_template: str):
-        """设置文件名模板，支持{var_name}格式"""
+        """Set the file name; ``{name}`` placeholders are filled per combination.
+
+        Args:
+            filename_template: File name, possibly with placeholders.
+        """
         self.filename_template = filename_template
 
     def _format_value(self, value: Any, format_spec: str) -> str:
-        """
-        格式化值，支持 Python format 字符串语法
-        例如: {value:.2f}, {value:04d}, {value:>10s}
-        """
+        """Render ``value`` with a Python format spec (``.2f``, ``04d``, ``>10s``); non-scalars are str()-ed first."""
         if format_spec:
             if isinstance(value, (int, float)):
                 return f"{value:{format_spec}}"
@@ -299,17 +379,25 @@ class BaseTemplateGenerator(ABC):
         return str(value)
 
     def replace_template_vars(self, value: Any, replacements: Dict[str, Any]) -> Any:
-        """
-        替换模板变量，支持 {var_name:format} 格式
-        例如: {dim}, {lr:.4f}, {epoch:03d}
+        """Fill ``{name}`` and ``{name:format}`` placeholders in a string, recursing through dicts and lists.
+
+        A string that is exactly one placeholder is replaced by the value itself, so ``"{dim}"`` becomes the
+        integer ``128`` rather than ``"128"``; a format spec always yields a string. Placeholders whose name is not
+        in ``replacements`` are left untouched.
+
+        Args:
+            value: A string, dict, list or scalar.
+            replacements: Parameter name to value.
+
+        Returns:
+            The filled copy; scalars other than strings are returned as they are.
         """
         if isinstance(value, str):
-            # 匹配所有 {变量名:格式} 或 {变量名} 的模式
             pattern = r"\{([^{}:]+)(?::([^{}]*))?\}"
             matches = list(re.finditer(pattern, value))
 
             if len(matches) == 1 and matches[0].group(0) == value:
-                # 如果整个字符串就是一个占位符，返回原始类型的替换值
+                # a whole-string placeholder keeps the value's own type unless a format spec forces a string
                 var_name = matches[0].group(1)
                 format_spec = matches[0].group(2) or ""
 
@@ -320,9 +408,8 @@ class BaseTemplateGenerator(ABC):
                         return replacements[var_name]
                 return value
 
-            # 否则做字符串替换
             result = value
-            for match in reversed(matches):  # 从后往前替换，避免位置偏移
+            for match in reversed(matches):  # right to left so the earlier match offsets stay valid
                 var_name = match.group(1)
                 format_spec = match.group(2) or ""
 
@@ -340,10 +427,7 @@ class BaseTemplateGenerator(ABC):
             return value
 
     def _identify_binding_groups(self) -> List[List[Dict[str, Any]]]:
-        """
-        识别独立的绑定组
-        返回: 绑定组列表，每个绑定组包含共享相同键的绑定
-        """
+        """Group the bindings by key set: bindings with identical keys are alternatives within one group."""
         if not self.variable_bindings:
             return []
 
@@ -354,12 +438,10 @@ class BaseTemplateGenerator(ABC):
             if i in used_bindings:
                 continue
 
-            # 创建新的绑定组
             group = [binding]
             used_bindings.add(i)
             binding_keys = set(binding.keys())
 
-            # 查找具有相同键集合的其他绑定
             for j, other_binding in enumerate(self.variable_bindings):
                 if j > i and j not in used_bindings:
                     if set(other_binding.keys()) == binding_keys:
@@ -371,21 +453,17 @@ class BaseTemplateGenerator(ABC):
         return binding_groups
 
     def _get_param_combinations(self) -> List[Dict[str, Any]]:
-        """获取所有参数组合，支持多组独立绑定"""
+        """Enumerate the parameter combinations: product of the binding groups times the free parameters."""
         if self.variable_bindings:
-            # 识别独立的绑定组
             binding_groups = self._identify_binding_groups()
 
-            # 收集所有绑定中出现的键
             all_bound_keys = set()
             for group in binding_groups:
                 if group:
                     all_bound_keys.update(group[0].keys())
 
-            # 识别自由参数（未在任何绑定中声明的参数）
             free_param_names = [name for name in self.variable_params.keys() if name not in all_bound_keys]
 
-            # 生成自由参数的所有组合
             if free_param_names:
                 free_param_values = [
                     self.variable_params[name]
@@ -397,12 +475,10 @@ class BaseTemplateGenerator(ABC):
             else:
                 free_combos = [{}]
 
-            # 生成所有绑定组的笛卡尔积
             if binding_groups:
-                # 每个绑定组作为一个整体参与笛卡尔积
+                # a group takes part in the product as one unit: its members are alternatives, not factors
                 binding_group_combos = list(product(*binding_groups))
 
-                # 合并每个笛卡尔积结果中的所有绑定
                 merged_binding_combos = []
                 for combo_tuple in binding_group_combos:
                     merged = {}
@@ -410,7 +486,6 @@ class BaseTemplateGenerator(ABC):
                         merged.update(binding)
                     merged_binding_combos.append(merged)
 
-                # 将绑定组合与自由参数组合
                 param_combinations = []
                 for binding_combo in merged_binding_combos:
                     for free_combo in free_combos:
@@ -421,7 +496,6 @@ class BaseTemplateGenerator(ABC):
             else:
                 param_combinations = free_combos
         else:
-            # 没有绑定时，使用所有参数的笛卡尔积
             if not self.variable_params:
                 param_combinations = [{}]
             else:
@@ -437,33 +511,26 @@ class BaseTemplateGenerator(ABC):
         return param_combinations
 
     def validate_bindings(self) -> bool:
-        """
-        验证绑定的有效性
-        返回 True 如果所有绑定都有效，否则返回 False
+        """Check that every bound key is a variable parameter and every bound value is among its allowed values.
+
+        Each violation is printed; with no bindings the check passes.
+
+        Returns:
+            True if all bindings are valid, False otherwise.
         """
         if not self.variable_bindings:
             return True
 
         is_valid = True
 
-        # 识别绑定组
         binding_groups = self._identify_binding_groups()
 
-        # print(f"Found {len(binding_groups)} binding group(s):")
-        for i, group in enumerate(binding_groups):
-            # print(f"  Group {i+1}: {len(group)} binding(s) with keys {list(group[0].keys())}")
-            pass
-
-        # 验证每个绑定
         for i, binding in enumerate(self.variable_bindings):
-            # 检查绑定中的每个键
             for key, value in binding.items():
-                # 检查键是否在 variable_params 中定义
                 if key not in self.variable_params:
                     print(f"Error in binding {i}: Key '{key}' not defined in variable_params")
                     is_valid = False
                 else:
-                    # 检查值是否在允许的范围内
                     valid_values = self.variable_params[key]
                     if isinstance(valid_values, list):
                         if value not in valid_values:
@@ -475,17 +542,18 @@ class BaseTemplateGenerator(ABC):
         return is_valid
 
     def validate_function_calls(self) -> bool:
-        """
-        验证变量参数中的函数调用是否有效
-        返回 True 如果所有函数调用都有效，否则返回 False
+        """Check the syntax and function names of every ``@`` call in the variable parameters without running them.
+
+        Each violation is printed.
+
+        Returns:
+            True if all calls are well formed and registered, False otherwise.
         """
         is_valid = True
 
         for key, value in self.variable_params.items():
             try:
-                # 尝试解析函数调用（如果是的话）
                 if isinstance(value, str) and value.startswith("@"):
-                    # 测试解析但不执行
                     self._validate_single_function_call(value)
                 elif isinstance(value, list):
                     for i, item in enumerate(value):
@@ -502,26 +570,22 @@ class BaseTemplateGenerator(ABC):
         return is_valid
 
     def _validate_single_function_call(self, value: str):
-        """验证单个函数调用的语法和函数存在性"""
+        """Raise ValueError if ``value`` is an ``@`` call with bad syntax or an unregistered name; never calls it."""
         if not isinstance(value, str) or not value.startswith("@"):
             return
 
-        # 移除 @ 前缀
         call_str = value[1:]
 
-        # 解析函数名和参数
         match = re.match(r"(\w+)\((.*)\)$", call_str)
         if not match:
             raise ValueError(f"Invalid function call syntax: {value}")
 
         func_name = match.group(1)
 
-        # 检查函数是否存在
         if func_name not in self.function_registry._functions:
             available_funcs = ", ".join(self.function_registry.list_functions())
             raise ValueError(f"Function '{func_name}' not found. Available functions: {available_funcs}")
 
-        # 检查参数语法（不执行）
         args_str = match.group(2).strip()
         if args_str:
             import ast
@@ -533,7 +597,11 @@ class BaseTemplateGenerator(ABC):
                 raise ValueError(f"Invalid function arguments syntax: {e}")
 
     def get_binding_info(self) -> str:
-        """获取绑定信息的可读描述"""
+        """Describe the bindings: their count, the groups with their key sets, and the resulting combination count.
+
+        Returns:
+            A multi-line summary, or ``"No bindings defined"``.
+        """
         if not self.variable_bindings:
             return "No bindings defined"
 
@@ -546,7 +614,6 @@ class BaseTemplateGenerator(ABC):
             keys = list(group[0].keys())
             info.append(f"  Group {i+1}: {len(group)} combinations of {keys}")
 
-        # 计算总组合数
         total_combos = len(self._get_param_combinations())
         info.append(f"Total parameter combinations: {total_combos}")
 
@@ -554,12 +621,15 @@ class BaseTemplateGenerator(ABC):
 
     @abstractmethod
     def generate(self):
-        """生成所有文件的抽象方法"""
+        """Write every output and return what was produced."""
         pass
 
 
 class ConfigGenerator(BaseTemplateGenerator):
-    """JSON 配置文件生成器"""
+    """Generator that writes one JSON config file per parameter combination.
+
+    Defaults to ``configs/config.json``; set the directory and file name templates to spread the files out.
+    """
 
     def __init__(self):
         super().__init__()
@@ -567,31 +637,36 @@ class ConfigGenerator(BaseTemplateGenerator):
         self.filename_template = "config.json"
 
     def _copy_template(self, template: Dict[str, Any]) -> Dict[str, Any]:
-        """复制配置模板"""
         return template.copy()
 
     def set_config_template(self, config: Dict[str, Any]):
-        """设置基础配置模板（向后兼容）"""
+        """Set the base template; older name of ``set_template``, kept for callers that still use it.
+
+        Args:
+            config: The JSON object with placeholders.
+        """
         self.set_template(config)
 
     def generate_configs(self) -> List[str]:
-        """生成所有配置文件（向后兼容）"""
+        """Write every config file without the validation and per-file error handling of ``generate``.
+
+        Older entry point kept for callers that still use it; each written path is printed.
+
+        Returns:
+            The paths of the written files.
+        """
         param_combinations = self._get_param_combinations()
         generated_files = []
 
         for combo in param_combinations:
-            # 创建当前配置
             current_config = self.replace_template_vars(self.base_template, combo)
 
-            # 创建输出目录
             current_output_dir = Path(self.replace_template_vars(self.output_dir, combo))
             current_output_dir.mkdir(parents=True, exist_ok=True)
 
-            # 生成文件名
             filename = self.replace_template_vars(self.filename_template, combo)
             filepath = current_output_dir / filename
 
-            # 保存配置文件
             with open(filepath, "w", encoding="utf-8") as f:
                 json.dump(current_config, f, ensure_ascii=False, indent=4)
 
@@ -601,13 +676,18 @@ class ConfigGenerator(BaseTemplateGenerator):
         return generated_files
 
     def generate(self) -> List[str]:
-        """生成所有配置文件"""
-        # 验证函数调用
+        """Validate the function calls and bindings, then write one config file per combination.
+
+        A combination that fails (an unwritable path, say) is reported and skipped; the others are still
+        written. Validation failure aborts before anything is written.
+
+        Returns:
+            The paths of the written files; empty when validation failed.
+        """
         if not self.validate_function_calls():
             print("Function call validation failed. Generation aborted.")
             return []
 
-        # 验证绑定
         if not self.validate_bindings():
             print("Binding validation failed. Generation aborted.")
             return []
@@ -617,23 +697,18 @@ class ConfigGenerator(BaseTemplateGenerator):
 
         for combo in param_combinations:
             try:
-                # 创建当前配置
                 current_config = self.replace_template_vars(self.base_template, combo)
 
-                # 创建输出目录
                 current_output_dir = Path(self.replace_template_vars(self.output_dir, combo))
                 current_output_dir.mkdir(parents=True, exist_ok=True)
 
-                # 生成文件名
                 filename = self.replace_template_vars(self.filename_template, combo)
                 filepath = current_output_dir / filename
 
-                # 保存配置文件
                 with open(filepath, "w", encoding="utf-8") as f:
                     json.dump(current_config, f, ensure_ascii=False, indent=4)
 
                 generated_files.append(str(filepath))
-                # print(f"Generated config: {filepath}")
 
             except Exception as e:
                 print(f"Error generating config for combination {combo}: {e}")
@@ -645,7 +720,10 @@ class ConfigGenerator(BaseTemplateGenerator):
 
 
 class CommandGenerator(BaseTemplateGenerator):
-    """单个命令生成器，管理一个命令模板的变量和绑定"""
+    """Generator for one command template with its own variable parameters and bindings.
+
+    ``generate`` yields one command line per parameter combination.
+    """
 
     def __init__(self, template: str):
         super().__init__()
@@ -654,27 +732,42 @@ class CommandGenerator(BaseTemplateGenerator):
         self.variable_bindings = []
 
     def _copy_template(self, template: str) -> str:
-        """复制模板"""
         return template
 
     def add_variable_binding(self, binding_dict: Dict[str, Any]):
-        """添加变量绑定关系"""
+        """Append one binding.
+
+        Args:
+            binding_dict: Parameter name to the value it takes in this binding.
+        """
         self.variable_bindings.append(binding_dict)
 
     def add_variable_bindings(self, binding_dicts: List[Dict[str, Any]]):
-        """添加多个变量绑定关系"""
+        """Append several bindings.
+
+        Args:
+            binding_dicts: Bindings as accepted by ``add_variable_binding``.
+        """
         self.variable_bindings.extend(binding_dicts)
 
     def set_variable_bindings(self, binding_dicts: List[Dict[str, Any]]):
-        """设置变量绑定关系"""
+        """Replace the bindings with ``binding_dicts``.
+
+        Args:
+            binding_dicts: Bindings as accepted by ``add_variable_binding``.
+        """
         self.variable_bindings = binding_dicts
 
     def clear_variable_bindings(self):
-        """清空所有变量绑定关系"""
+        """Remove every binding."""
         self.variable_bindings = []
 
     def generate(self) -> List[str]:
-        """生成所有命令变体"""
+        """Fill the command template for every parameter combination.
+
+        Returns:
+            The command lines, in combination order.
+        """
         param_combinations = self._get_param_combinations()
         commands = []
 
@@ -686,22 +779,28 @@ class CommandGenerator(BaseTemplateGenerator):
 
 
 class ScriptGenerator(BaseTemplateGenerator):
-    """脚本文件生成器，支持批处理和Shell脚本"""
+    """Generator that writes one shell script from a sequence of command blocks.
+
+    Each block is a `CommandGenerator`; its expanded command lines are written in order, with a blank line after
+    every block. Defaults to ``scripts/script.sh``.
+    """
 
     def __init__(self):
         super().__init__()
         self.output_dir = "scripts"
         self.filename_template = "script.sh"
-        self.command_generators = []  # 存储命令生成器
+        self.command_generators = []
 
     def _copy_template(self, template: str) -> str:
-        """复制模板"""
         return template
 
     def add_command(self, template: str, bindings: Optional[List[Dict[str, Any]]] = None, **params):
-        """
-        添加带特定 bindings 的命令块
-        例如: add_command_with_bindings("python main.py --arg1 {a}", [{"a": 1}, {"a": 2}], epochs=[10, 20])
+        """Append a command block with its own variable parameters and bindings.
+
+        Args:
+            template: Command line with ``{name}`` placeholders.
+            bindings: Bindings for this block, or None for none.
+            **params: Variable parameters for this block, as for ``set_variable_params``.
         """
         command_gen = CommandGenerator(template)
         command_gen.set_variable_params(**params)
@@ -710,12 +809,13 @@ class ScriptGenerator(BaseTemplateGenerator):
         self.command_generators.append(command_gen)
 
     def add_commands(self, command_dicts: List[Dict[str, Any]]):
-        """
-        批量添加命令块
-        例如: add_commands([{"template":
-                                "python main.py --arg1 {a}",
-                             "bindings": [{"a": 1}, {"a": 2}],
-                             "epochs": [10, 20]}])
+        """Append several command blocks given as dicts with the keys ``template``, ``bindings`` and ``params``.
+
+        The keys are popped from each dict, so the dicts are modified in place; a missing key means an empty
+        template, no bindings or no parameters.
+
+        Args:
+            command_dicts: One dict per block.
         """
         for cmd in command_dicts:
             template = cmd.pop("template", "")
@@ -724,37 +824,33 @@ class ScriptGenerator(BaseTemplateGenerator):
             self.add_command(template, bindings, **params)
 
     def clear_commands(self):
-        """清空所有命令块"""
+        """Remove every command block."""
         self.command_generators = []
 
     def generate(self) -> List[str]:
-        """生成脚本文件"""
+        """Write the script: the expanded lines of every block, a blank line after each block.
+
+        Returns:
+            A one-element list with the path of the written script.
+        """
         generated_files = []
 
-        # 创建输出目录
         output_path = Path(self.output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
 
-        # 生成文件名
         filename = self.replace_template_vars(self.filename_template, {})
         filepath = output_path / filename
 
-        # 生成脚本内容
         script_content = []
 
-        # 添加命令块
         for command_gen in self.command_generators:
-            # 生成该命令块的所有变体
             commands = command_gen.generate()
 
-            # 添加到脚本内容
             for command in commands:
                 script_content.append(command)
 
-            # 在命令块之间添加空行
             script_content.append("")
 
-        # 写入文件
         with open(filepath, "w", encoding="utf-8") as f:
             f.write("\n".join(script_content))
 
@@ -765,47 +861,61 @@ class ScriptGenerator(BaseTemplateGenerator):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="配置和脚本生成器")
-    subparsers = parser.add_subparsers(dest="command", help="子命令")
+    parser = argparse.ArgumentParser(description="Config and script generator")
+    subparsers = parser.add_subparsers(dest="command", help="subcommand")
 
-    # 添加子命令
-    config_parser = subparsers.add_parser("config", help="生成配置文件")
-    config_preset_group = config_parser.add_argument_group("preset", "预设配置选项")
+    config_parser = subparsers.add_parser("config", help="generate config files")
+    config_preset_group = config_parser.add_argument_group("preset", "preset options")
     config_preset_group.add_argument(
-        "--from-preset", "-f", type=str, help="JSON 预设文件加载路径，从中加载配置模板和相关信息进行批量生成配置文件"
+        "--from-preset",
+        "-f",
+        type=str,
+        help="JSON preset file to load; its templates, variable parameters, bindings and output settings drive the batch",
     )
-    # TODO config_preset_group.add_argument('--save-preset', "-s", type=str, help='JSON 预设文件保存路径，用于将当前设置保存为预设文件，便于后续加载使用')
+    config_preset_group.add_argument(
+        "--set-variable",
+        "-V",
+        action="append",
+        default=[],
+        metavar="NAME=VALUE",
+        help="override a variable_params entry of every preset (repeatable); VALUE is parsed as a Python literal, e.g. -V dim=128",
+    )
     config_iteractive_group = config_parser.add_argument_group(
-        "interactive", "交互式配置选项（与预设配置不能同时指定）"
+        "interactive", "interactive options (not combinable with a preset)"
     )
-    config_iteractive_group.add_argument("--template", "-t", type=str, help="JSON 配置模板字符串或文件路径")
+    config_iteractive_group.add_argument(
+        "--template", "-t", type=str, help="JSON config template, as a string or a file path"
+    )
     config_iteractive_group.add_argument(
         "--variable-params",
         "-v",
         type=str,
-        help='可变参数，JSON 字符串格式，类型为Dict[str, List[Any]]，例如 \'{"dim": [4,8,16], "lr": [0.001,0.01]}\'',
+        help='variable parameters as a JSON object of type Dict[str, List[Any]], e.g. \'{"dim": [4,8,16], "lr": [0.001,0.01]}\'',
     )
     config_iteractive_group.add_argument(
         "--variable-bindings",
         "-b",
         type=str,
-        help='变量绑定关系，JSON 字符串格式，类型为List[Dict[str, Any]]，例如 \'[{"size":"tiny","dim":4},{"size":"base","dim":8}]\'',
+        help='variable bindings as a JSON array of type List[Dict[str, Any]], e.g. \'[{"size":"tiny","dim":4},{"size":"base","dim":8}]\'',
     )
     config_iteractive_group.add_argument(
-        "--output-dir", "-o", type=str, default="configs", help="输出目录，支持{var_name}格式，默认configs"
+        "--output-dir",
+        "-o",
+        type=str,
+        default="configs",
+        help="output directory, {var_name} placeholders allowed (default: configs)",
     )
     config_iteractive_group.add_argument(
-        "--filename", "-n", type=str, default="config.json", help="文件名模板，支持{var_name}格式，默认config.json"
+        "--filename",
+        "-n",
+        type=str,
+        default="config.json",
+        help="file name template, {var_name} placeholders allowed (default: config.json)",
     )
 
-    script_parser = subparsers.add_parser("script", help="生成脚本文件")
-    script_preset_group = script_parser.add_argument_group("config", "配置选项")
-    script_preset_group.add_argument("--from-preset", "-f", type=str, help="JSON 配置模板文件路径")
-
-    # TODO script_interactive_group = script_parser.add_argument_group("interactive", "交互式配置选项（与预设配置不能同时指定）")
-    # script_interactive_group.add_argument('--add-command', "-c", type=str, action='append', help='可变参数，JSON 字符串格式，类型为Dict[str, List[Any]]，例如 \'{"dim": [4,8,16], "lr": [0.001,0.01]}\'')
-    # script_interactive_group.add_argument('--output-dir', "-o", type=str, default="scripts", help='输出目录,默认scripts/')
-    # script_interactive_group.add_argument('--filename', "-n", type=str, default="script.py", help='文件名模板，默认script.py')
+    script_parser = subparsers.add_parser("script", help="generate a script file")
+    script_preset_group = script_parser.add_argument_group("config", "preset options")
+    script_preset_group.add_argument("--from-preset", "-f", type=str, help="JSON preset file with the command blocks")
 
     args = parser.parse_args()
 
@@ -816,8 +926,15 @@ if __name__ == "__main__":
             for preset in presets:
                 generator = ConfigGenerator()
                 generator.set_template(preset.get("template", {}))
-                # 处理可能包含函数调用的变量参数
                 var_params = preset.get("variable_params", {})
+                for item in args.set_variable:
+                    name, sep, raw = item.partition("=")
+                    if not name or not sep:
+                        raise SystemExit(f"--set-variable expects NAME=VALUE, got {item!r}")
+                    try:
+                        var_params[name] = ast.literal_eval(raw)
+                    except (ValueError, SyntaxError):
+                        var_params[name] = raw
                 generator.set_variable_params(**var_params)
                 generator.set_variable_bindings(preset.get("variable_bindings", []))
                 generator.set_output_dir(preset.get("output_dir", "configs"))
@@ -827,7 +944,6 @@ if __name__ == "__main__":
             if not args.template:
                 print("Error: --template is required when not using --from-preset")
                 exit(1)
-            # 解析模板
             if os.path.isfile(args.template):
                 with open(args.template, "r", encoding="utf-8") as f:
                     template = json.load(f)
@@ -839,7 +955,6 @@ if __name__ == "__main__":
                     exit(1)
             generator = ConfigGenerator()
             generator.set_template(template)
-            # 解析可变参数
             if args.variable_params:
                 try:
                     var_params = json.loads(args.variable_params)
@@ -849,7 +964,6 @@ if __name__ == "__main__":
                 except (json.JSONDecodeError, ValueError) as e:
                     print(f"Error: Invalid variable_params - {e}")
                     exit(1)
-            # 解析变量绑定
             if args.variable_bindings:
                 try:
                     var_bindings = json.loads(args.variable_bindings)
@@ -870,7 +984,7 @@ if __name__ == "__main__":
         generator.set_filename(preset.get("filename", "script.sh"))
         commands = preset.get("commands", [])
         for cmd in commands:
-            # 创建副本以避免修改原始数据
+            # pop() below would otherwise strip the keys from the loaded preset itself
             cmd_copy = cmd.copy()
             template = cmd_copy.pop("template", "")
             bindings = cmd_copy.pop("variable_bindings", None)

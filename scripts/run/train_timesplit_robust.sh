@@ -22,6 +22,7 @@
 source scripts/run/run_helper.sh
 
 DB="results/db/timesplit_robust.db"
+EXP="timesplit_robust"  # runs.experiment; the --experiment flag of every script below
 DIMS="4 8 10 16 32 64 128"
 QUARTERS="2020Q4 2021Q1 2021Q2 2021Q3 2021Q4 2022Q1 2022Q2 2022Q3 2022Q4 2023Q1 2023Q2 2023Q3 2023Q4 2024Q1 2024Q2 2024Q3"
 RS_VARIANTS="Binary Ranks Level0 LevelMin"
@@ -31,22 +32,24 @@ FT_PREFIX="configs/timesplit_robust/finetune"
 # === Pretrain ===
 echo "=== Pretrain: W2V ==="
 for dim in $DIMS; do
-    try_run -m w2v -m pretrain -m timesplit -m "d${dim}" "W2V pretrain d${dim}" \
+    cfg="${PT_PREFIX}/AssetW2V/AssetW2V_d${dim}_pretrained.json"
+    job -m w2v -m pretrain -m timesplit -m "d${dim}" -m "$cfg" "W2V pretrain d${dim}" \
         uv run python -m asset_embeddings.scripts.train.w2v \
-            --config "${PT_PREFIX}/AssetW2V/AssetW2V_d${dim}_pretrained.json" \
+            --config "$cfg" \
             --log "checkpoints/timesplit_robust/pretrained/AssetW2V/d${dim}/train.log" \
                   "logs/timesplit_robust/train/pretrained/AssetW2V/d${dim}.log" \
-            -r "$DB"
+            -r "$DB" -e "$EXP"
 done
 
 echo "=== Pretrain: BERT ==="
 for dim in $DIMS; do
-    try_run -m bert -m pretrain -m timesplit -m "d${dim}" "BERT pretrain d${dim}" \
+    cfg="${PT_PREFIX}/AssetBERT/AssetBERT_d${dim}_pretrained.json"
+    job -m bert -m pretrain -m timesplit -m "d${dim}" -m "$cfg" "BERT pretrain d${dim}" \
         uv run python -m asset_embeddings.scripts.train.bert \
-            --config "${PT_PREFIX}/AssetBERT/AssetBERT_d${dim}_pretrained.json" \
+            --config "$cfg" \
             --log "checkpoints/timesplit_robust/pretrained/AssetBERT/d${dim}/train.log" \
                   "logs/timesplit_robust/train/pretrained/AssetBERT/d${dim}.log" \
-            -r "$DB"
+            -r "$DB" -e "$EXP"
 done
 
 # === Finetune ===
@@ -54,12 +57,13 @@ echo "=== Finetune: RS ==="
 for variant in $RS_VARIANTS; do
     for dim in $DIMS; do
         for quarter in $QUARTERS; do
-            try_run -m "rs_${variant,,}" -m rs -m finetune -m timesplit -m "d${dim}" -m "${quarter,,}" "RS_${variant} finetune d${dim} ${quarter}" \
+            cfg="${FT_PREFIX}/AssetRS/RS_${variant}/d${dim}/AssetRS_${variant}_d${dim}_${quarter}.json"
+            job -m "rs_${variant,,}" -m rs -m finetune -m timesplit -m "d${dim}" -m "${quarter,,}" -m "$cfg" "RS_${variant} finetune d${dim} ${quarter}" \
                 uv run python -m asset_embeddings.scripts.train.rs \
-                    --config "${FT_PREFIX}/AssetRS/RS_${variant}/d${dim}/AssetRS_${variant}_d${dim}_${quarter}.json" \
+                    --config "$cfg" \
                     --log "checkpoints/timesplit_robust/finetune/AssetRS/RS_${variant}/d${dim}/${quarter}/train.log" \
                           "logs/timesplit_robust/train/finetune/AssetRS/RS_${variant}/d${dim}/${quarter}.log" \
-                    -r "$DB"
+                    -r "$DB" -e "$EXP"
         done
     done
 done
@@ -67,24 +71,26 @@ done
 echo "=== Finetune: W2V ==="
 for dim in $DIMS; do
     for quarter in $QUARTERS; do
-        try_run -m w2v -m finetune -m timesplit -m "d${dim}" -m "${quarter,,}" "W2V finetune d${dim} ${quarter}" \
+        cfg="${FT_PREFIX}/AssetW2V/d${dim}/AssetW2V_d${dim}_${quarter}.json"
+        job -m w2v -m finetune -m timesplit -m "d${dim}" -m "${quarter,,}" -m "$cfg" "W2V finetune d${dim} ${quarter}" \
             uv run python -m asset_embeddings.scripts.train.w2v \
-                --config "${FT_PREFIX}/AssetW2V/d${dim}/AssetW2V_d${dim}_${quarter}.json" \
+                --config "$cfg" \
                 --log "checkpoints/timesplit_robust/finetune/AssetW2V/d${dim}/${quarter}/train.log" \
                       "logs/timesplit_robust/train/finetune/AssetW2V/d${dim}/${quarter}.log" \
-                -r "$DB"
+                -r "$DB" -e "$EXP"
     done
 done
 
 echo "=== Finetune: BERT ==="
 for dim in $DIMS; do
     for quarter in $QUARTERS; do
-        try_run -m bert -m finetune -m timesplit -m "d${dim}" -m "${quarter,,}" "BERT finetune d${dim} ${quarter}" \
+        cfg="${FT_PREFIX}/AssetBERT/d${dim}/AssetBERT_d${dim}_${quarter}.json"
+        job -m bert -m finetune -m timesplit -m "d${dim}" -m "${quarter,,}" -m "$cfg" "BERT finetune d${dim} ${quarter}" \
             uv run python -m asset_embeddings.scripts.train.bert \
-                --config "${FT_PREFIX}/AssetBERT/d${dim}/AssetBERT_d${dim}_${quarter}.json" \
+                --config "$cfg" \
                 --log "checkpoints/timesplit_robust/finetune/AssetBERT/d${dim}/${quarter}/train.log" \
                       "logs/timesplit_robust/train/finetune/AssetBERT/d${dim}/${quarter}.log" \
-                -r "$DB"
+                -r "$DB" -e "$EXP"
     done
 done
 

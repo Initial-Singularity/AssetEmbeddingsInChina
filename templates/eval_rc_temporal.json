@@ -1,0 +1,700 @@
+[
+    {
+        "name": "RC temporal - main - Embedding models",
+        "description": "Temporal RC (6 periods 2023Q2-2024Q3): RC slopes fitted on earlier periods (T-1, or the mean over every earlier period) and applied unchanged to T. 6 models x 7 dims x 2 alignments (raw/Procrustes) x 2 penalty tiers (fixed 0.5 / CV) x 2 slope windows (previous/expanding) = 336 configs.",
+        "template": {
+            "model_type": "{model_type}",
+            "embedding_path": [
+                "checkpoints/finetune/{model_path}/d{dim}/2023Q2/{model_type}_d{dim}_2023Q2{_add_best}_embedding.csv",
+                "checkpoints/finetune/{model_path}/d{dim}/2023Q3/{model_type}_d{dim}_2023Q3{_add_best}_embedding.csv",
+                "checkpoints/finetune/{model_path}/d{dim}/2023Q4/{model_type}_d{dim}_2023Q4{_add_best}_embedding.csv",
+                "checkpoints/finetune/{model_path}/d{dim}/2024Q1/{model_type}_d{dim}_2024Q1{_add_best}_embedding.csv",
+                "checkpoints/finetune/{model_path}/d{dim}/2024Q2/{model_type}_d{dim}_2024Q2{_add_best}_embedding.csv",
+                "checkpoints/finetune/{model_path}/d{dim}/2024Q3/{model_type}_d{dim}_2024Q3{_add_best}_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": [
+                "embedding"
+            ],
+            "align_chars": true,
+            "ridge_alpha": "{ridge_alpha}",
+            "seed": 42,
+            "scoring": "cross_section",
+            "align": "{align}",
+            "slope_window": "{slope_window}"
+        },
+        "output_dir": "configs/rc_temporal/main/{slope_window}/{tier}/d{dim}",
+        "filename": "{model_type}_d{dim}_{_align}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "model_type": [
+                "AssetRS_Binary",
+                "AssetRS_Ranks",
+                "AssetRS_Level0",
+                "AssetRS_LevelMin",
+                "AssetW2V",
+                "AssetBERT"
+            ],
+            "model_path": [
+                "AssetRS/RS_Binary",
+                "AssetRS/RS_Ranks",
+                "AssetRS/RS_Level0",
+                "AssetRS/RS_LevelMin",
+                "AssetW2V",
+                "AssetBERT"
+            ],
+            "_add_best": [
+                "",
+                "_best"
+            ],
+            "tier": [
+                "fixed",
+                "cv"
+            ],
+            "ridge_alpha": [
+                0.5,
+                null
+            ],
+            "align": [
+                "none",
+                "procrustes"
+            ],
+            "_align": [
+                "raw",
+                "aligned"
+            ],
+            "slope_window": [
+                "previous",
+                "expanding"
+            ]
+        },
+        "variable_bindings": [
+            {
+                "model_type": "AssetRS_Binary",
+                "model_path": "AssetRS/RS_Binary",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetRS_Ranks",
+                "model_path": "AssetRS/RS_Ranks",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetRS_Level0",
+                "model_path": "AssetRS/RS_Level0",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetRS_LevelMin",
+                "model_path": "AssetRS/RS_LevelMin",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetW2V",
+                "model_path": "AssetW2V",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetBERT",
+                "model_path": "AssetBERT",
+                "_add_best": "_best"
+            },
+            {
+                "tier": "fixed",
+                "ridge_alpha": 0.5
+            },
+            {
+                "tier": "cv",
+                "ridge_alpha": null
+            },
+            {
+                "align": "none",
+                "_align": "raw"
+            },
+            {
+                "align": "procrustes",
+                "_align": "aligned"
+            }
+        ]
+    },
+    {
+        "name": "RC temporal - main - Without FT",
+        "description": "Temporal RC (6 periods 2023Q2-2024Q3) of the pretrained embeddings without finetuning, the same embedding in every period, so the frame is fixed and only raw coordinates are scored. 2 models x 7 dims x 2 penalty tiers x 2 slope windows = 56 configs.",
+        "template": {
+            "model_type": "{model_type}",
+            "embedding_path": [
+                "checkpoints/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": [
+                "embedding"
+            ],
+            "align_chars": true,
+            "ridge_alpha": "{ridge_alpha}",
+            "seed": 42,
+            "scoring": "cross_section",
+            "align": "none",
+            "slope_window": "{slope_window}"
+        },
+        "output_dir": "configs/rc_temporal/main/{slope_window}/{tier}/d{dim}",
+        "filename": "{model_type}_d{dim}_raw.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "model_type": [
+                "AssetBERT_static",
+                "AssetW2V_static"
+            ],
+            "model_path": [
+                "AssetBERT",
+                "AssetW2V"
+            ],
+            "_add_best": [
+                "",
+                "_best"
+            ],
+            "tier": [
+                "fixed",
+                "cv"
+            ],
+            "ridge_alpha": [
+                0.5,
+                null
+            ],
+            "slope_window": [
+                "previous",
+                "expanding"
+            ]
+        },
+        "variable_bindings": [
+            {
+                "model_type": "AssetBERT_static",
+                "model_path": "AssetBERT",
+                "_add_best": "_best"
+            },
+            {
+                "model_type": "AssetW2V_static",
+                "model_path": "AssetW2V",
+                "_add_best": ""
+            },
+            {
+                "tier": "fixed",
+                "ridge_alpha": 0.5
+            },
+            {
+                "tier": "cv",
+                "ridge_alpha": null
+            }
+        ]
+    },
+    {
+        "name": "RC temporal - main - Chars",
+        "description": "Temporal RC (6 periods 2023Q2-2024Q3) of the characteristics baseline, raw coordinates, 2 penalty tiers x 2 slope windows = 4 configs.",
+        "template": {
+            "model_type": "Chars",
+            "embedding_path": null,
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": [
+                "chars"
+            ],
+            "align_chars": false,
+            "ridge_alpha": "{ridge_alpha}",
+            "seed": 42,
+            "scoring": "cross_section",
+            "align": "none",
+            "slope_window": "{slope_window}"
+        },
+        "output_dir": "configs/rc_temporal/main/{slope_window}/{tier}",
+        "filename": "Chars.json",
+        "variable_params": {
+            "tier": [
+                "fixed",
+                "cv"
+            ],
+            "ridge_alpha": [
+                0.5,
+                null
+            ],
+            "slope_window": [
+                "previous",
+                "expanding"
+            ]
+        },
+        "variable_bindings": [
+            {
+                "tier": "fixed",
+                "ridge_alpha": 0.5
+            },
+            {
+                "tier": "cv",
+                "ridge_alpha": null
+            }
+        ]
+    },
+    {
+        "name": "RC temporal - timesplit - Embedding models",
+        "description": "Temporal RC (16 periods 2020Q4-2024Q3): RC slopes fitted on earlier periods (T-1, or the mean over every earlier period) and applied unchanged to T. 6 models x 7 dims x 2 alignments (raw/Procrustes) x 2 penalty tiers (fixed 0.5 / CV) x 2 slope windows (previous/expanding) = 336 configs.",
+        "template": {
+            "model_type": "{model_type}",
+            "embedding_path": [
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2020Q4/{model_type}_d{dim}_2020Q4{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2021Q1/{model_type}_d{dim}_2021Q1{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2021Q2/{model_type}_d{dim}_2021Q2{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2021Q3/{model_type}_d{dim}_2021Q3{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2021Q4/{model_type}_d{dim}_2021Q4{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2022Q1/{model_type}_d{dim}_2022Q1{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2022Q2/{model_type}_d{dim}_2022Q2{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2022Q3/{model_type}_d{dim}_2022Q3{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2022Q4/{model_type}_d{dim}_2022Q4{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2023Q1/{model_type}_d{dim}_2023Q1{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2023Q2/{model_type}_d{dim}_2023Q2{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2023Q3/{model_type}_d{dim}_2023Q3{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2023Q4/{model_type}_d{dim}_2023Q4{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2024Q1/{model_type}_d{dim}_2024Q1{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2024Q2/{model_type}_d{dim}_2024Q2{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2024Q3/{model_type}_d{dim}_2024Q3{_add_best}_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2020Q4.csv",
+                "data/processed/Benchmark/2021Q1.csv",
+                "data/processed/Benchmark/2021Q2.csv",
+                "data/processed/Benchmark/2021Q3.csv",
+                "data/processed/Benchmark/2021Q4.csv",
+                "data/processed/Benchmark/2022Q1.csv",
+                "data/processed/Benchmark/2022Q2.csv",
+                "data/processed/Benchmark/2022Q3.csv",
+                "data/processed/Benchmark/2022Q4.csv",
+                "data/processed/Benchmark/2023Q1.csv",
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": [
+                "embedding"
+            ],
+            "align_chars": true,
+            "ridge_alpha": "{ridge_alpha}",
+            "seed": 42,
+            "scoring": "cross_section",
+            "align": "{align}",
+            "slope_window": "{slope_window}"
+        },
+        "output_dir": "configs/rc_temporal/timesplit/{slope_window}/{tier}/d{dim}",
+        "filename": "{model_type}_d{dim}_{_align}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "model_type": [
+                "AssetRS_Binary",
+                "AssetRS_Ranks",
+                "AssetRS_Level0",
+                "AssetRS_LevelMin",
+                "AssetW2V",
+                "AssetBERT"
+            ],
+            "model_path": [
+                "AssetRS/RS_Binary",
+                "AssetRS/RS_Ranks",
+                "AssetRS/RS_Level0",
+                "AssetRS/RS_LevelMin",
+                "AssetW2V",
+                "AssetBERT"
+            ],
+            "_add_best": [
+                "",
+                "_best"
+            ],
+            "tier": [
+                "fixed",
+                "cv"
+            ],
+            "ridge_alpha": [
+                0.5,
+                null
+            ],
+            "align": [
+                "none",
+                "procrustes"
+            ],
+            "_align": [
+                "raw",
+                "aligned"
+            ],
+            "slope_window": [
+                "previous",
+                "expanding"
+            ]
+        },
+        "variable_bindings": [
+            {
+                "model_type": "AssetRS_Binary",
+                "model_path": "AssetRS/RS_Binary",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetRS_Ranks",
+                "model_path": "AssetRS/RS_Ranks",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetRS_Level0",
+                "model_path": "AssetRS/RS_Level0",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetRS_LevelMin",
+                "model_path": "AssetRS/RS_LevelMin",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetW2V",
+                "model_path": "AssetW2V",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetBERT",
+                "model_path": "AssetBERT",
+                "_add_best": "_best"
+            },
+            {
+                "tier": "fixed",
+                "ridge_alpha": 0.5
+            },
+            {
+                "tier": "cv",
+                "ridge_alpha": null
+            },
+            {
+                "align": "none",
+                "_align": "raw"
+            },
+            {
+                "align": "procrustes",
+                "_align": "aligned"
+            }
+        ]
+    },
+    {
+        "name": "RC temporal - timesplit - Without FT",
+        "description": "Temporal RC (16 periods 2020Q4-2024Q3) of the pretrained embeddings without finetuning, the same embedding in every period, so the frame is fixed and only raw coordinates are scored. 2 models x 7 dims x 2 penalty tiers x 2 slope windows = 56 configs.",
+        "template": {
+            "model_type": "{model_type}",
+            "embedding_path": [
+                "checkpoints/timesplit_robust/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/pretrained/{model_path}/d{dim}/{model_path}_d{dim}_pretrained{_add_best}_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2020Q4.csv",
+                "data/processed/Benchmark/2021Q1.csv",
+                "data/processed/Benchmark/2021Q2.csv",
+                "data/processed/Benchmark/2021Q3.csv",
+                "data/processed/Benchmark/2021Q4.csv",
+                "data/processed/Benchmark/2022Q1.csv",
+                "data/processed/Benchmark/2022Q2.csv",
+                "data/processed/Benchmark/2022Q3.csv",
+                "data/processed/Benchmark/2022Q4.csv",
+                "data/processed/Benchmark/2023Q1.csv",
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": [
+                "embedding"
+            ],
+            "align_chars": true,
+            "ridge_alpha": "{ridge_alpha}",
+            "seed": 42,
+            "scoring": "cross_section",
+            "align": "none",
+            "slope_window": "{slope_window}"
+        },
+        "output_dir": "configs/rc_temporal/timesplit/{slope_window}/{tier}/d{dim}",
+        "filename": "{model_type}_d{dim}_raw.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "model_type": [
+                "AssetBERT_static",
+                "AssetW2V_static"
+            ],
+            "model_path": [
+                "AssetBERT",
+                "AssetW2V"
+            ],
+            "_add_best": [
+                "",
+                "_best"
+            ],
+            "tier": [
+                "fixed",
+                "cv"
+            ],
+            "ridge_alpha": [
+                0.5,
+                null
+            ],
+            "slope_window": [
+                "previous",
+                "expanding"
+            ]
+        },
+        "variable_bindings": [
+            {
+                "model_type": "AssetBERT_static",
+                "model_path": "AssetBERT",
+                "_add_best": "_best"
+            },
+            {
+                "model_type": "AssetW2V_static",
+                "model_path": "AssetW2V",
+                "_add_best": ""
+            },
+            {
+                "tier": "fixed",
+                "ridge_alpha": 0.5
+            },
+            {
+                "tier": "cv",
+                "ridge_alpha": null
+            }
+        ]
+    },
+    {
+        "name": "RC temporal - timesplit - Chars",
+        "description": "Temporal RC (16 periods 2020Q4-2024Q3) of the characteristics baseline, raw coordinates, 2 penalty tiers x 2 slope windows = 4 configs.",
+        "template": {
+            "model_type": "Chars",
+            "embedding_path": null,
+            "benchmark_path": [
+                "data/processed/Benchmark/2020Q4.csv",
+                "data/processed/Benchmark/2021Q1.csv",
+                "data/processed/Benchmark/2021Q2.csv",
+                "data/processed/Benchmark/2021Q3.csv",
+                "data/processed/Benchmark/2021Q4.csv",
+                "data/processed/Benchmark/2022Q1.csv",
+                "data/processed/Benchmark/2022Q2.csv",
+                "data/processed/Benchmark/2022Q3.csv",
+                "data/processed/Benchmark/2022Q4.csv",
+                "data/processed/Benchmark/2023Q1.csv",
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": [
+                "chars"
+            ],
+            "align_chars": false,
+            "ridge_alpha": "{ridge_alpha}",
+            "seed": 42,
+            "scoring": "cross_section",
+            "align": "none",
+            "slope_window": "{slope_window}"
+        },
+        "output_dir": "configs/rc_temporal/timesplit/{slope_window}/{tier}",
+        "filename": "Chars.json",
+        "variable_params": {
+            "tier": [
+                "fixed",
+                "cv"
+            ],
+            "ridge_alpha": [
+                0.5,
+                null
+            ],
+            "slope_window": [
+                "previous",
+                "expanding"
+            ]
+        },
+        "variable_bindings": [
+            {
+                "tier": "fixed",
+                "ridge_alpha": 0.5
+            },
+            {
+                "tier": "cv",
+                "ridge_alpha": null
+            }
+        ]
+    }
+]

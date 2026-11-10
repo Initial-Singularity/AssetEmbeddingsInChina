@@ -24,6 +24,25 @@
         - MinMaxTracker
         - EarlyStopTracker
 
-## 错误处理
+## 资源
 
-::: asset_embeddings.utils.log_utils.log_exceptions_inclass
+每个 `Run` 持有一个探针；训练器只在 VRAM 高水位变化时向它索取一行记录。
+
+::: asset_embeddings.utils.memory_utils
+    options:
+      show_root_heading: false
+      show_root_toc_entry: false
+      members:
+        - ResourceProbe
+
+## 日志
+
+见 [日志系统](../../explanation/logging-system.md)。
+
+::: asset_embeddings.logger.configure_logging
+
+::: asset_embeddings.logger.failure_report
+
+::: asset_embeddings.logger.job_log_paths
+
+::: asset_embeddings.logger.error_dir

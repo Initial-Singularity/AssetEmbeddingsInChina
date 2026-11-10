@@ -1,442 +1,244 @@
 # Logging system
 
-This document describes the AssetEmbeddings logging system, including color support, the various output formats, and `Logger_Preparer`.
+This document describes how the AssetEmbeddingsInChina scripts log: one process-wide setup call, standard module loggers, one job log file per config run, and one error file per failed run.
 
 ## Contents
 
 - [Overview](#overview)
-- [LoggerConfig configuration](#loggerconfig-configuration)
-- [Logger_Preparer](#logger_preparer)
+- [configure_logging](#configure_logging)
+- [Module loggers](#module-loggers)
+- [The job log file](#the-job-log-file)
+- [Error files](#error-files)
+- [Console output](#console-output)
 - [Color system](#color-system)
-- [Handler types](#handler-types)
-- [Coloring strategies](#coloring-strategies)
-- [Error-handling decorator](#error-handling-decorator)
-- [Examples](#examples)
+- [Notebooks](#notebooks)
+- [Distributed launches](#distributed-launches)
+- [FAQ](#faq)
 
 ---
 
 ## Overview
 
-The logging system is made up of the following components:
-
 | File | Component | Description |
 |------|------|------|
-| `asset_embeddings/logger.py` | ColorParser | Color-string parsing |
-| `asset_embeddings/logger.py` | ColoredConsoleFormatter | Colored console formatting |
-| `asset_embeddings/logger.py` | ColoredHTMLFormatter | HTML / Notebook formatting |
-| `asset_embeddings/logger.py` | Handler classes | The various log-output mechanisms |
-| `asset_embeddings/preparers.py` | Logger_Preparer | Config-driven logger creation |
-| `asset_embeddings/utils/log_utils.py` | log_exceptions_inclass | Exception-handling decorator |
+| `asset_embeddings/logger.py` | `configure_logging` | The one place handlers are installed (root logger) |
+| `asset_embeddings/logger.py` | `error_dir`, `write_error_block`, `failure_report`, `job_log_paths` | Error files |
+| `asset_embeddings/logger.py` | `ColorParser`, `ColoredConsoleFormatter`, `ColoredHTMLFormatter` | Color for the terminal and for notebooks |
+| `asset_embeddings/logger.py` | `TqdmLoggingHandler`, `SysLoggingHandler`, `NotebookLoggingHandler` | The three console channels |
+| `asset_embeddings/configs/object_configs.py` | `LoggerConfig` | The parameter object of `configure_logging` |
+| `asset_embeddings/records/run.py` | `Run` | Writes the error file of a failed run (see [Records system](records-system.md)) |
 
-### Features
+### Principles
 
-- **Colored output** — supports both ANSI terminal and HTML / Notebook color schemes.
-- **Multiple coloring strategies** — color the message, the level name, or the full format.
-- **tqdm compatibility** — log output that doesn't break progress bars.
-- **File rotation** — size-based rotating file logs.
-- **Config-driven creation** — declarative configuration through `LoggerConfig`.
+- **Libraries name, the entry point configures.** Every module has `logger = logging.getLogger(__name__)` and never touches a handler. `main()` calls `configure_logging(...)` once; everything else follows from the standard logger hierarchy. No logger object is passed around.
+- **The job log is the complete record of the process.** Handlers sit on the root logger, so the package's DEBUG output, the WARNINGs of third-party libraries (transformers, accelerate, gensim, torch) and captured Python warnings all land in the same file and on the same screen.
+- **File DEBUG, screen INFO.** The file keeps everything; the console shows INFO and above (DEBUG with `-v`).
+- **One file per config run, appended, never rotated.** A re-run of the same config adds a new block to the same file; each block starts with a `=====` header line.
+- **One error file per failed run.** Written once, by `Run.__exit__` (or `failure_report` in scripts without a `Run`), with the run identity, the config path, the job log path, the command line and the traceback.
+- **tqdm-safe, colored console.** Progress bars are never broken by log lines; colors are on the console only.
 
 ---
 
-## LoggerConfig configuration
-
-`LoggerConfig` defines all of a logger's configuration options:
+## configure_logging
 
 ```python
-from asset_embeddings.configs import LoggerConfig
+from asset_embeddings.logger import configure_logging
 
-config = LoggerConfig(
-    log_name="MyApp",
-    log_file="logs/app.log",
-    log_format="%(asctime)s [%(levelname)s] %(message)s",
-    date_format="%Y-%m-%d %H:%M:%S",
-    console_stream="tqdm",       # tqdm/std/html
-    console_level="INFO",
-    file_level="DEBUG",
-    enable_colors=True,
-    color_target="format",       # message/levelname/format
-    max_bytes=10*1024*1024,      # 10MB
-    backup_count=5
-)
+def main(args):
+    configure_logging(log_files=args.log, console_level="DEBUG" if args.verbose else "INFO")
+    ...
 ```
 
-### Configuration fields
+```python
+def configure_logging(
+    config: Optional[LoggerConfig] = None,
+    *,
+    log_files: Union[str, Sequence[str], None] = None,
+    console_level: Optional[str] = None,
+) -> None
+```
+
+Keyword arguments override the corresponding `LoggerConfig` fields; the scripts pass only those two. What it installs, in order:
+
+1. **Root logger.** The handlers go on the root; root level `WARNING`; `asset_embeddings` logger level `DEBUG`, and so is `__main__`, the name under which an entry-point module logs when it has something to say (`python -m asset_embeddings.scripts.eval.rv` and `python asset_embeddings/scripts/eval/rv.py` both execute the module as `__main__`; the train and eval entry scripts only drive a class from the package). Effective levels are therefore: records of `asset_embeddings.*` and of the entry-point module exist from DEBUG, records of every other logger (and of `py.warnings`) from WARNING. The command line is logged once at DEBUG, so `-v` shows it on the console.
+2. **Console handler** per `console_stream`: `tqdm` (default, writes through `tqdm.write`), `std` (plain stdout) or `html` (notebook), at `console_level`.
+3. **File handlers**, one `logging.FileHandler(path, mode="a", encoding="utf-8")` per path in `log_files`, at `file_level` (DEBUG by default). Parent directories are created. After the handlers are attached, one header line is written directly to each file:
+   `===== 2026-09-22T03:15:44 uv run python -m asset_embeddings.scripts.eval.rv -c … -r … -e main =====`
+4. **Short names.** A filter on every installed handler sets `record.short`: names under `asset_embeddings.` lose that prefix and a following `scripts.` (`asset_embeddings.scripts.train.bert` becomes `train.bert`, `asset_embeddings.preparers` becomes `preparers`, `asset_embeddings.records.store` becomes `records.store`); other names keep their first component (`transformers.modeling_utils` becomes `transformers`); `__main__` becomes the script's real short name (`train.w2v`), resolved from the module spec or the file's place in the package; `py.warnings` becomes `warnings`. The default format is `%(asctime)s [%(short)s][%(levelname)s]: %(message)s`.
+5. **Python warnings.** `logging.captureWarnings(True)`: `warnings.warn(...)` becomes a WARNING record of the `py.warnings` logger, once per location (Python's default filter). No module in the package silences warnings globally; a place that must be quiet uses a local `warnings.catch_warnings()`.
+6. **transformers.** HF keeps a private stderr handler on its own logger and does not propagate; when `transformers` is already imported, its default handler is removed and propagation enabled so its WARNINGs reach the root handlers.
+7. **Idempotent.** The handlers this function installed are tagged; a second call removes exactly those and installs afresh (a notebook re-running its setup cell, or the test suite, never accumulates handlers).
+
+### LoggerConfig
+
+`LoggerConfig` is a `Config` like any other in the project, but it never appears in a JSON config: it is the parameter object of `configure_logging`.
 
 | Field | Type | Default | Description |
 |------|------|--------|------|
-| `log_name` | str | `"app"` | Logger name |
-| `log_file` | str/list/None | `"app.log"` | Log file path (may be a list; `None` disables file logging) |
-| `log_format` | str | see below | Log format string |
-| `date_format` | str | `"%Y-%m-%d %H:%M:%S"` | Date format |
-| `console_stream` | str | `"tqdm"` | Console output type |
-| `console_level` | str | `"INFO"` | Console log level |
-| `file_level` | str | `"DEBUG"` | File log level |
-| `enable_colors` | bool | `True` | Whether to enable colors |
-| `color_target` | str | `"format"` | Coloring strategy |
-| `max_bytes` | int | `10_000_000` | Maximum log file size in bytes (10 MB) |
-| `backup_count` | int | `5` | Number of backup files |
+| `log_file` | `str \| list[str] \| None` | `None` | The job log file(s); `None` means console only. |
+| `log_format` | `str` | `%(asctime)s [%(short)s][%(levelname)s]: %(message)s` | Format string; `%(short)s` is the shortened logger name, `%(name)s` still works. |
+| `date_format` | `str` | `%Y-%m-%d %H:%M:%S` | Timestamp format. |
+| `console_level` | `DEBUG` … `CRITICAL` | `INFO` | Minimum level on the console. |
+| `console_stream` | `tqdm` / `std` / `html` | `tqdm` | Console channel. |
+| `file_level` | `DEBUG` … `CRITICAL` | `DEBUG` | Minimum level in the file(s). |
+| `enable_colors` | `bool` | `True` | Color on the console. |
+| `color_target` | `message` / `levelname` / `format` | `format` | What the console formatter colors. |
 
-### Default log format
+---
+
+## Module loggers
+
+Every module that logs:
 
 ```python
-"%(asctime)s [%(name)s][%(levelname)s]: %(message)s"
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+class Dataset_Preparer(Preparer):          # asset_embeddings/preparers.py
+    def prepare(self, tokenizer):
+        self.logger.info("Preparing Dataset...")   # classes keep `self.logger`; it is the module logger
+        ...
+```
+
+The train and eval entry scripts hold no classes: the trainers live in `asset_embeddings.trainers`, the evaluators in `asset_embeddings.evaluators`, and each `main()` only constructs one and drives it, so everything they log is a real node of the package tree (`trainers.bert`, `evaluators.base`, `preparers`, `records.run`). Within the tree, the component that does the work reports it: a dataset logs the files and records it loads, a preparer what it builds, and a trainer only the phases it owns (`Preparing Trainer...` / `Trainer Prepared.`), its own decisions (the split, the best epoch) and where it saved; it does not announce what a preparer is about to do. The trainers get `self.logger` from `BaseTrainer`, which binds the subclass's module logger. A module that does run as the entry point (a data script, a notebook cell) logs as `__main__`; `configure_logging` gives that logger the package's level and the short-name filter prints it under the script's real name, so nothing is lost there either. `self.logger` stays as an attribute because several hundred call sites use it and because a test can still install a quiet logger on one instance (`evaluator.logger = logging.getLogger("test.quiet")`). Nothing injects loggers: `Preparer` has no `set_logger`, `Run` and `RecordStore` take no `logger` argument, and the trainers and evaluators have no `set_logger` method. A message logged anywhere in the package, or by a library the process imports, reaches the same handlers.
+
+Typical lines of one run, as they appear in the file:
+
+```
+===== 2026-09-22T03:15:44 uv run python -m asset_embeddings.scripts.train.bert -c configs/main/finetune/AssetBERT/d16/AssetBERT_d16_2023Q2.json -l logs/main/train/finetune/AssetBERT/d16/2023Q2.log -r results/db/main.db -e main =====
+2026-09-22 03:15:44 [trainers.bert][INFO]: Loading configuration from `configs\main\finetune\AssetBERT\d16\AssetBERT_d16_2023Q2.json`
+2026-09-22 03:15:45 [records.run][INFO]: run 3f9a1c2e-… (#17) configs/main/finetune/AssetBERT/d16/AssetBERT_d16_2023Q2.json
+2026-09-22 03:15:45 [datasets.corpus][INFO]: Corpus: 6,876 portfolios, 680,469 holdings, 4,538 stocks from 1 file(s)
+2026-09-22 03:15:45 [preparers][INFO]: Loading model from checkpoint: `checkpoints\pretrained\AssetBERT\d16\AssetBERT_d16_pretrained_best\model.safetensors`
+2026-09-22 03:15:46 [transformers][WARNING]: Some weights of BertForMaskedLM were not initialized …
+2026-09-22 03:15:46 [warnings][WARNING]: …\sklearn\metrics\_regression.py:1266: UndefinedMetricWarning: …
+2026-09-22 03:15:47 [trainers.bert][DEBUG]: VRAM 702 MB allocated, 3894 MB reserved, peak 1210 MB; RAM 2105 MB
+2026-09-22 03:16:02 [trainers.bert][INFO]: Epoch:1, Train Loss:5.931200 (std 0.412300), Val Loss:5.812000 (std 0.398100)
+2026-09-22 03:20:41 [records.run][INFO]: run 3f9a1c2e-… completed after 297 s: peak RAM 2105 MB, peak VRAM 1210 MB
 ```
 
 ---
 
-## Logger_Preparer
+## The job log file
 
-`Logger_Preparer` is the recommended way to create a logger, following the project's Preparer pattern.
+Every training and evaluation script takes `--log` (`-l`) with one or more paths. The train runners under `scripts/run/`, and the eval runners for MP, pass two: one under the checkpoint directory of the run (`checkpoints/.../train.log`, or `refine.log` for MP, which travels with the artifact) and one under `logs/<experiment family>/<stage>/<model>/d<dim>[/<quarter>].log`, mirroring the `configs/` layout; both receive the same content. The RV and RC eval runners pass one path per model, shared across dimensions: `logs/<experiment family>/eval/<RV|RC>/<model>[_addChars].log`.
 
-### Basic usage
+The file is opened in append mode and never rotated (a run log is kilobytes to a few megabytes; rotation is a long-running-service idea). A re-run of the same config appends a new block; `grep '^=====' <file>` lists the runs the file holds, and the `[records.run]` line right after the header carries the `run_id` and `run_no` of the database row, so a block can be matched to `runs` and to its error file.
 
-```python
-from asset_embeddings.configs import LoggerConfig
-from asset_embeddings.preparers import Logger_Preparer
+The runner does not capture the process's stdout/stderr: anything a C library prints directly (CUDA, bitsandbytes) is visible only in the terminal.
 
-logger = Logger_Preparer().set_config(
-    LoggerConfig(
-        log_name="Training",
-        log_file="logs/train.log",
-        console_level="INFO",
-        file_level="DEBUG"
-    )
-).prepare()
+---
 
-logger.info("Training started")
-logger.debug("Detailed debug info")  # written to file only
-```
+## Error files
 
-### Chained configuration
+Debugging starts from `logs/error/`. The writer lives in `asset_embeddings/logger.py`:
 
 ```python
-logger = (
-    Logger_Preparer()
-    .set_config(LoggerConfig(
-        log_name="MyApp",
-        console_level="DEBUG" if args.verbose else "INFO"
-    ))
-    .prepare()
-)
+def error_dir() -> Path                       # $AE_ERROR_DIR or logs/error
+def job_log_paths() -> List[str]              # the files configure_logging installed
+def write_error_block(path, fields, exc_info) # `key : value` lines, a rule, the traceback; appends
+@contextmanager
+def failure_report(task, *, config_file=None) # for scripts without a Run
 ```
 
-### Multi-file logging
+**Scripts with a `Run`** (the ten train/eval scripts): `Run.__exit__` writes `logs/error/<experiment>/<task>_<run_id[:8]>_<stamp>.log` for any exception that leaves the `with Run` block, after logging the traceback once through `records.run`. Records write failures during the run, and a failing `finish_run` at exit, append to the same file first (table and record dump each); the traceback that ended the run is always the last block, so a run has at most one error file and it reads top to bottom in the order things went wrong. A failure before `run.set_config(...)` — a bad config path, an override typo — has no `runs` row yet; the file is still written, with the script stem as label (`rv_3f9a1c2e_…log`) and `run_no : -`. A `--result_file` that cannot be opened (a v4 file awaiting migration, an unwritable path) fails in `Run.from_args`, before the `with` block; `from_args` reports it the same way, so no failure of a run goes without its file.
+
+```
+run_id     : 3f9a1c2e-…
+run_no     : 17
+database   : results/db/main.db
+task       : RV
+experiment : main
+config     : configs/main/eval/RV/d16/AssetBERT_d16.json
+job log    : logs/main/eval/RV/AssetBERT.log
+command    : uv run python -m asset_embeddings.scripts.eval.rv -c … -r … -e main
+------------------------------------------------------------
+Traceback (most recent call last):
+  …
+ValueError: char_benchmark_path resolved to 3 file(s) but benchmark_path resolved to 2 file(s). …
+```
+
+**Scripts without a `Run`** (one-off tools) wrap their body:
 
 ```python
-config = LoggerConfig(
-    log_name="MultiLog",
-    log_file=[
-        "logs/all.log",
-        "logs/errors.log"
-    ],
-    file_level="DEBUG"
-)
-logger = Logger_Preparer().set_config(config).prepare()
+from asset_embeddings.logger import configure_logging, failure_report
+
+configure_logging(log_files=args.log, console_level="DEBUG" if args.verbose else "INFO")
+with failure_report(task="my_tool", config_file=getattr(args, "config", None)):
+    ...
 ```
+
+On an exception this writes `logs/error/my_tool_<stamp>.log` (task, config, job log, command, traceback), logs it once, and re-raises.
+
+The runners (`run_helper.sh`, `run_notify.sh`) collect every error file newer than the job's start marker with a recursive `find` and attach them to the failure e-mail. Setting `AE_ERROR_DIR` to another directory (a temporary one in tests, for example) keeps error files out of the repository's `logs/error/`.
+
+---
+
+## Console output
+
+Three channels, chosen by `console_stream`:
+
+| Channel | Handler | Use |
+|---|---|---|
+| `tqdm` (default) | `TqdmLoggingHandler` — `tqdm.write` | Scripts with progress bars: a log line is printed above the bar without breaking it |
+| `std` | `SysLoggingHandler` — `sys.stdout` | Plain terminals, piped output |
+| `html` | `NotebookLoggingHandler` — `IPython.display.HTML` | Notebooks (demos) |
+
+The console formatter is `ColoredConsoleFormatter` (ANSI) or `ColoredHTMLFormatter` (CSS); the file formatter is a plain `logging.Formatter` with the same format string, so files never contain escape codes.
 
 ---
 
 ## Color system
 
-### ColorParser
+`ColorParser` turns strings such as `"red bold"` or `"cyan dim"` into ANSI codes (terminal) or CSS (HTML).
 
-`ColorParser` converts color strings into ANSI codes or CSS styles.
+| Level | Console | HTML |
+|---|---|---|
+| DEBUG | blue | purple |
+| INFO | cyan | navy |
+| WARNING | yellow | orange |
+| ERROR | red | orangered |
+| CRITICAL | red bold | darkred bold |
 
-#### Supported ANSI colors
-
-| Color | Code | Background |
-|------|------|--------|
-| black | `Fore.BLACK` | `bg_black` |
-| red | `Fore.RED` | `bg_red` |
-| green | `Fore.GREEN` | `bg_green` |
-| yellow | `Fore.YELLOW` | `bg_yellow` |
-| blue | `Fore.BLUE` | `bg_blue` |
-| magenta | `Fore.MAGENTA` | `bg_magenta` |
-| cyan | `Fore.CYAN` | `bg_cyan` |
-| white | `Fore.WHITE` | `bg_white` |
-
-#### Supported styles
-
-| Style | Effect |
-|------|------|
-| bold | Bold / bright |
-| bright | Bright (same as bold) |
-| dim | Dim |
-| normal | Normal |
-
-#### Examples
-
-```python
-from asset_embeddings.logger import ColorParser
-
-# Parse into ANSI codes
-ansi = ColorParser.parse_ansi("red bold")  # red bold
-
-# Parse into a CSS style
-css = ColorParser.parse_html("navy bold")  # {'color': 'navy', 'font-weight': 'bold'}
-
-# Wrap text
-colored_text = ColorParser.colorize_ansi("ERROR", "red bold")
-html_text = ColorParser.colorize_html("ERROR", "red bold")
-```
-
-### Default level colors
-
-#### Console (ANSI)
-
-| Level | Color |
-|------|------|
-| DEBUG | blue |
-| INFO | cyan |
-| WARNING | yellow |
-| ERROR | red |
-| CRITICAL | red bold |
-
-#### HTML / Notebook
-
-| Level | Color |
-|------|------|
-| DEBUG | purple |
-| INFO | navy |
-| WARNING | orange |
-| ERROR | orangered |
-| CRITICAL | darkred bold |
-
-### Component colors (format mode)
-
-| Component | Console color | HTML color |
-|------|------------|-----------|
-| asctime | dim | gray |
-| name | green | darkgreen |
-| levelname | by level | by level |
-| message | none | none |
-| pathname | magenta | purple |
-| filename | magenta | purple |
-| funcName | cyan | teal |
-| lineno | dim | gray |
+`color_target` selects what is colored: `message` (the message text only), `levelname` (the level only) or `format` (each component of the format string: dim timestamp, level in its level color, and a green logger name when the format uses `%(name)s`; the default format prints the short name `%(short)s`, which stays uncolored). Supported ANSI colors: black, red, green, yellow, blue, magenta, cyan, white, their `bg_` variants, and the styles bold / bright / dim / normal; HTML accepts any CSS color name or hex code.
 
 ---
 
-## Handler types
-
-### TqdmLoggingHandler
-
-Outputs via `tqdm.write()`, so it doesn't break progress bars:
-
-```python
-# Selected automatically: console_stream="tqdm"
-config = LoggerConfig(console_stream="tqdm")
-```
-
-### SysLoggingHandler
-
-Standard `sys.stdout` output:
-
-```python
-config = LoggerConfig(console_stream="std")
-```
-
-### NotebookLoggingHandler
-
-Outputs via `IPython.display.HTML`, for use in Jupyter Notebook:
-
-```python
-config = LoggerConfig(console_stream="html")
-```
-
-### File handler
-
-Uses `RotatingFileHandler`, with size-based rotation:
-
-```python
-config = LoggerConfig(
-    log_file="logs/app.log",
-    max_bytes=10*1024*1024,  # rotate after 10MB
-    backup_count=5           # keep 5 backups
-)
-```
-
----
-
-## Coloring strategies
-
-Choose a coloring strategy through `color_target`:
-
-### "message" — color the message only
-
-```
-2024-01-15 10:30:00 [INFO] MyApp: <cyan>This is the message</cyan>
-```
-
-### "levelname" — color the level name only
-
-```
-2024-01-15 10:30:00 [<cyan>INFO</cyan>] MyApp: This is the message
-```
-
-### "format" — color the full format (recommended)
-
-```
-<dim>2024-01-15 10:30:00</dim> [<cyan>INFO</cyan>] <green>MyApp</green>: This is the message
-```
-
----
-
-## Error-handling decorator
-
-`asset_embeddings/utils/log_utils.py` provides the `log_exceptions_inclass` decorator for logging exceptions automatically.
-
-### Basic usage
-
-```python
-from asset_embeddings.utils.log_utils import log_exceptions_inclass
-
-class MyProcessor:
-    def __init__(self, logger):
-        self.logger = logger
-
-    @log_exceptions_inclass("logger")
-    def process(self, data):
-        # If an exception is raised, it automatically:
-        # 1. logs to self.logger
-        # 2. writes to the logs/error/ directory
-        # 3. re-raises the exception
-        return self._do_process(data)
-```
-
-### Features
-
-- Automatically logs the exception stack trace to the specified logger.
-- Creates a `{ClassName}_{timestamp}.log` error log in the `logs/error/` directory.
-- The exception is re-raised, so it doesn't interfere with normal error handling.
-
-### Error-log directory structure
-
-```
-logs/
-└── error/
-    ├── DataProcessor_20240115_103000_123456.log   # {ClassName}_%Y%m%d_%H%M%S_%f
-    └── DataProcessor_20240115_114523_654321.log
-```
-
----
-
-## Examples
-
-### Logging setup for a training script
-
-```python
-import argparse
-from asset_embeddings.configs import LoggerConfig
-from asset_embeddings.preparers import Logger_Preparer
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--verbose", "-v", action="store_true")
-parser.add_argument("--log", "-l", type=str, default=None)
-args = parser.parse_args()
-
-logger = Logger_Preparer().set_config(
-    LoggerConfig(
-        log_name="BERT Training",
-        log_file=args.log,
-        console_stream="tqdm",      # compatible with progress bars
-        console_level="DEBUG" if args.verbose else "INFO",
-        file_level="DEBUG",
-        enable_colors=True,
-        color_target="format"
-    )
-).prepare()
-
-logger.info("Starting training...")
-logger.debug("Config: %s", config.to_dict())
-```
-
-### Logging setup for a Notebook
+## Notebooks
 
 ```python
 from asset_embeddings.configs import LoggerConfig
-from asset_embeddings.preparers import Logger_Preparer
+from asset_embeddings.logger import configure_logging
 
-logger = Logger_Preparer().set_config(
-    LoggerConfig(
-        log_name="Notebook",
-        console_stream="html",      # HTML output
-        console_level="INFO",
-        enable_colors=True,
-        color_target="format"
-    )
-).prepare()
-
-logger.info("This will appear with HTML formatting")
+configure_logging(LoggerConfig(console_stream="html", log_file=None, console_level="INFO"))
 ```
 
-### Data-processing script
+Every `asset_embeddings.*` INFO line then renders as colored HTML in the cell output; re-running the cell replaces the handlers rather than adding to them.
 
-```python
-from asset_embeddings.configs import LoggerConfig
-from asset_embeddings.preparers import Logger_Preparer
-from asset_embeddings.utils.log_utils import log_exceptions_inclass
+---
 
-class DataProcessor:
-    def __init__(self, logger):
-        self.logger = logger
+## Distributed launches
 
-    @log_exceptions_inclass("logger")
-    def load_data(self, path):
-        self.logger.info(f"Loading data from {path}")
-        # ... loading logic
-        self.logger.debug(f"Loaded {len(df)} records")
-        return df
-
-    @log_exceptions_inclass("logger")
-    def process(self, df):
-        self.logger.info("Processing data...")
-        # ... processing logic
-        return result
-
-if __name__ == "__main__":
-    logger = Logger_Preparer().set_config(
-        LoggerConfig(
-            log_name="DataProcessor",
-            log_file="logs/data_process.log",
-            console_level="INFO",
-            file_level="DEBUG"
-        )
-    ).prepare()
-
-    processor = DataProcessor(logger)
-    df = processor.load_data("data/raw/input.csv")
-    result = processor.process(df)
-```
+`configure_logging` reads `LOCAL_RANK`. On a non-main rank the console shows WARNING and above only and no file handler is installed, so the job log is written once, by the main process; the same rule (`is_local_main_process`) decides which rank owns the `runs` row and writes the error file of a failed run; a non-main rank logs the traceback and writes no file.
 
 ---
 
 ## FAQ
 
-### How do I disable colored output?
+### How do I disable colors?
 
-```python
-config = LoggerConfig(enable_colors=False)
-```
+`configure_logging(LoggerConfig(enable_colors=False, ...))`. Files never carry colors.
 
-### How are ANSI codes handled in log files?
+### How do I see DEBUG on the screen?
 
-File logs use the standard `Formatter` and don't include color codes. Colors apply only to console / HTML output.
+`-v` / `--verbose` on any script sets `console_level="DEBUG"`; the file is at DEBUG regardless.
 
-### How do I write to multiple files at different levels at once?
+### A library floods the log with warnings
 
-Currently, when `LoggerConfig.log_file` is a list, all files use the same `file_level`. If you need different levels, add the handler manually:
+Python emits each warning once per location by default, so the volume is bounded. If a specific warning is known and harmless, silence it locally around the call (`with warnings.catch_warnings(): warnings.simplefilter("ignore", SomeWarning)`), not at import time.
 
-```python
-logger = Logger_Preparer().set_config(config).prepare()
+### Where is the traceback of a failed run?
 
-# Add a handler that logs ERROR only
-error_handler = logging.FileHandler("logs/errors.log")
-error_handler.setLevel(logging.ERROR)
-error_handler.setFormatter(logging.Formatter(config.log_format))
-logger.addHandler(error_handler)
-```
-
-### What if tqdm and logging conflict?
-
-Use `console_stream="tqdm"`; logs are output through `tqdm.write()` and won't break progress bars.
+Three places, by design: the job log (once, from `records.run`), the error file under `logs/error/<experiment>/`, and `runs.error_message` in the database. The error file is the entry point; its header names the other two.

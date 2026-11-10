@@ -14,9 +14,9 @@
 #   {output}/{ModelType}/{Variant}/d{dim}/{quarter}/*_embedding.csv
 #
 # Usage:
-#   bash scripts/collect_embeddings.sh -i checkpoints/finetune -o data/embeddings
-#   bash scripts/collect_embeddings.sh -i checkpoints/finetune -o data/embeddings --dry-run
-#   bash scripts/collect_embeddings.sh -i checkpoints/finetune -o data/embeddings --overwrite
+#   bash scripts/ops/collect_embeddings.sh -i checkpoints/finetune -o data/embeddings
+#   bash scripts/ops/collect_embeddings.sh -i checkpoints/finetune -o data/embeddings --dry-run
+#   bash scripts/ops/collect_embeddings.sh -i checkpoints/finetune -o data/embeddings --overwrite
 
 set -euo pipefail
 
@@ -52,8 +52,8 @@ Options:
   -h, --help        Show this help
 
 Examples:
-  bash scripts/collect_embeddings.sh -i checkpoints/finetune -o data/embeddings
-  bash scripts/collect_embeddings.sh -i checkpoints/finetune -o data/embeddings --dry-run
+  bash scripts/ops/collect_embeddings.sh -i checkpoints/finetune -o data/embeddings
+  bash scripts/ops/collect_embeddings.sh -i checkpoints/finetune -o data/embeddings --dry-run
 EOF
     exit "${1:-0}"
 }

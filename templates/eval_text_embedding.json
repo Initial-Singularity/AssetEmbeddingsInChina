@@ -1,0 +1,844 @@
+[
+    {
+        "name": "Text Embedding RV - All combos",
+        "description": "RV evaluation for text embeddings. Binding group (provider, model, model_slug, transform) has 24 entries: openai-{small,large} & local (Qwen 0.6B/4B/8B + bge-m3) get 3 transforms each (native, pca-universal, pca-perperiod) = 18; cohere/voyage/gemini lack native (target_dims not in supported_native_dims), so 2 transforms each = 6. Cartesian with 7 dims × 2 langs (zh, en) × 2 variants (plain, +Chars) = 672 configs.",
+        "template": {
+            "model_type": "Text_{model_slug}_{language}_{transform}",
+            "embedding_path": [
+                "data/text_embeddings/embeddings/{model_slug}/{model_slug}_{language}_{transform}_d{dim}/2023Q2/embedding.csv",
+                "data/text_embeddings/embeddings/{model_slug}/{model_slug}_{language}_{transform}_d{dim}/2023Q3/embedding.csv",
+                "data/text_embeddings/embeddings/{model_slug}/{model_slug}_{language}_{transform}_d{dim}/2023Q4/embedding.csv",
+                "data/text_embeddings/embeddings/{model_slug}/{model_slug}_{language}_{transform}_d{dim}/2024Q1/embedding.csv",
+                "data/text_embeddings/embeddings/{model_slug}/{model_slug}_{language}_{transform}_d{dim}/2024Q2/embedding.csv",
+                "data/text_embeddings/embeddings/{model_slug}/{model_slug}_{language}_{transform}_d{dim}/2024Q3/embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Emb_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": "{features}",
+            "align_chars": true,
+            "ridge_alpha": 0.5,
+            "seed": 42
+        },
+        "output_dir": "configs/text_embedding/eval/RV/d{dim}",
+        "filename": "{model_slug}_{language}_{transform}_d{dim}{_addChars}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "language": [
+                "zh",
+                "en"
+            ],
+            "provider": [
+                "openai",
+                "cohere",
+                "voyage",
+                "gemini",
+                "local"
+            ],
+            "model": [
+                "text-embedding-3-small",
+                "text-embedding-3-large",
+                "embed-v4.0",
+                "voyage-3-large",
+                "gemini-embedding-001",
+                "Qwen/Qwen3-Embedding-0.6B",
+                "Qwen/Qwen3-Embedding-4B",
+                "Qwen/Qwen3-Embedding-8B",
+                "BAAI/bge-m3"
+            ],
+            "model_slug": [
+                "openai_text-embedding-3-small",
+                "openai_text-embedding-3-large",
+                "cohere_embed-v4.0",
+                "voyage_voyage-3-large",
+                "gemini_gemini-embedding-001",
+                "local_Qwen-Qwen3-Embedding-0.6B",
+                "local_Qwen-Qwen3-Embedding-4B",
+                "local_Qwen-Qwen3-Embedding-8B",
+                "local_BAAI-bge-m3"
+            ],
+            "transform": [
+                "native",
+                "pca-universal",
+                "pca-perperiod"
+            ],
+            "_addChars": [
+                "",
+                "_addChars"
+            ],
+            "features": [
+                [
+                    "embedding"
+                ],
+                [
+                    "embedding",
+                    "chars"
+                ]
+            ]
+        },
+        "variable_bindings": [
+            {
+                "provider": "openai",
+                "model": "text-embedding-3-small",
+                "model_slug": "openai_text-embedding-3-small",
+                "transform": "native"
+            },
+            {
+                "provider": "openai",
+                "model": "text-embedding-3-small",
+                "model_slug": "openai_text-embedding-3-small",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "openai",
+                "model": "text-embedding-3-small",
+                "model_slug": "openai_text-embedding-3-small",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "openai",
+                "model": "text-embedding-3-large",
+                "model_slug": "openai_text-embedding-3-large",
+                "transform": "native"
+            },
+            {
+                "provider": "openai",
+                "model": "text-embedding-3-large",
+                "model_slug": "openai_text-embedding-3-large",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "openai",
+                "model": "text-embedding-3-large",
+                "model_slug": "openai_text-embedding-3-large",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "cohere",
+                "model": "embed-v4.0",
+                "model_slug": "cohere_embed-v4.0",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "cohere",
+                "model": "embed-v4.0",
+                "model_slug": "cohere_embed-v4.0",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "voyage",
+                "model": "voyage-3-large",
+                "model_slug": "voyage_voyage-3-large",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "voyage",
+                "model": "voyage-3-large",
+                "model_slug": "voyage_voyage-3-large",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "gemini",
+                "model": "gemini-embedding-001",
+                "model_slug": "gemini_gemini-embedding-001",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "gemini",
+                "model": "gemini-embedding-001",
+                "model_slug": "gemini_gemini-embedding-001",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-0.6B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-0.6B",
+                "transform": "native"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-0.6B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-0.6B",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-0.6B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-0.6B",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-4B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-4B",
+                "transform": "native"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-4B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-4B",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-4B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-4B",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-8B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-8B",
+                "transform": "native"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-8B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-8B",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-8B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-8B",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "local",
+                "model": "BAAI/bge-m3",
+                "model_slug": "local_BAAI-bge-m3",
+                "transform": "native"
+            },
+            {
+                "provider": "local",
+                "model": "BAAI/bge-m3",
+                "model_slug": "local_BAAI-bge-m3",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "local",
+                "model": "BAAI/bge-m3",
+                "model_slug": "local_BAAI-bge-m3",
+                "transform": "pca-perperiod"
+            },
+            {
+                "_addChars": "",
+                "features": [
+                    "embedding"
+                ]
+            },
+            {
+                "_addChars": "_addChars",
+                "features": [
+                    "embedding",
+                    "chars"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Text Embedding RC - All combos",
+        "description": "RC evaluation for text embeddings. Same binding structure as RV section: 24 model×transform × 7 dims × 2 langs × 2 variants = 672 configs.",
+        "template": {
+            "model_type": "Text_{model_slug}_{language}_{transform}",
+            "embedding_path": [
+                "data/text_embeddings/embeddings/{model_slug}/{model_slug}_{language}_{transform}_d{dim}/2023Q2/embedding.csv",
+                "data/text_embeddings/embeddings/{model_slug}/{model_slug}_{language}_{transform}_d{dim}/2023Q3/embedding.csv",
+                "data/text_embeddings/embeddings/{model_slug}/{model_slug}_{language}_{transform}_d{dim}/2023Q4/embedding.csv",
+                "data/text_embeddings/embeddings/{model_slug}/{model_slug}_{language}_{transform}_d{dim}/2024Q1/embedding.csv",
+                "data/text_embeddings/embeddings/{model_slug}/{model_slug}_{language}_{transform}_d{dim}/2024Q2/embedding.csv",
+                "data/text_embeddings/embeddings/{model_slug}/{model_slug}_{language}_{transform}_d{dim}/2024Q3/embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Emb_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": "{features}",
+            "align_chars": true,
+            "ridge_alpha": 0.5,
+            "seed": 42
+        },
+        "output_dir": "configs/text_embedding/eval/RC/d{dim}",
+        "filename": "{model_slug}_{language}_{transform}_d{dim}{_addChars}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "language": [
+                "zh",
+                "en"
+            ],
+            "provider": [
+                "openai",
+                "cohere",
+                "voyage",
+                "gemini",
+                "local"
+            ],
+            "model": [
+                "text-embedding-3-small",
+                "text-embedding-3-large",
+                "embed-v4.0",
+                "voyage-3-large",
+                "gemini-embedding-001",
+                "Qwen/Qwen3-Embedding-0.6B",
+                "Qwen/Qwen3-Embedding-4B",
+                "Qwen/Qwen3-Embedding-8B",
+                "BAAI/bge-m3"
+            ],
+            "model_slug": [
+                "openai_text-embedding-3-small",
+                "openai_text-embedding-3-large",
+                "cohere_embed-v4.0",
+                "voyage_voyage-3-large",
+                "gemini_gemini-embedding-001",
+                "local_Qwen-Qwen3-Embedding-0.6B",
+                "local_Qwen-Qwen3-Embedding-4B",
+                "local_Qwen-Qwen3-Embedding-8B",
+                "local_BAAI-bge-m3"
+            ],
+            "transform": [
+                "native",
+                "pca-universal",
+                "pca-perperiod"
+            ],
+            "_addChars": [
+                "",
+                "_addChars"
+            ],
+            "features": [
+                [
+                    "embedding"
+                ],
+                [
+                    "embedding",
+                    "chars"
+                ]
+            ]
+        },
+        "variable_bindings": [
+            {
+                "provider": "openai",
+                "model": "text-embedding-3-small",
+                "model_slug": "openai_text-embedding-3-small",
+                "transform": "native"
+            },
+            {
+                "provider": "openai",
+                "model": "text-embedding-3-small",
+                "model_slug": "openai_text-embedding-3-small",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "openai",
+                "model": "text-embedding-3-small",
+                "model_slug": "openai_text-embedding-3-small",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "openai",
+                "model": "text-embedding-3-large",
+                "model_slug": "openai_text-embedding-3-large",
+                "transform": "native"
+            },
+            {
+                "provider": "openai",
+                "model": "text-embedding-3-large",
+                "model_slug": "openai_text-embedding-3-large",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "openai",
+                "model": "text-embedding-3-large",
+                "model_slug": "openai_text-embedding-3-large",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "cohere",
+                "model": "embed-v4.0",
+                "model_slug": "cohere_embed-v4.0",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "cohere",
+                "model": "embed-v4.0",
+                "model_slug": "cohere_embed-v4.0",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "voyage",
+                "model": "voyage-3-large",
+                "model_slug": "voyage_voyage-3-large",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "voyage",
+                "model": "voyage-3-large",
+                "model_slug": "voyage_voyage-3-large",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "gemini",
+                "model": "gemini-embedding-001",
+                "model_slug": "gemini_gemini-embedding-001",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "gemini",
+                "model": "gemini-embedding-001",
+                "model_slug": "gemini_gemini-embedding-001",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-0.6B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-0.6B",
+                "transform": "native"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-0.6B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-0.6B",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-0.6B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-0.6B",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-4B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-4B",
+                "transform": "native"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-4B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-4B",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-4B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-4B",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-8B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-8B",
+                "transform": "native"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-8B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-8B",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-8B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-8B",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "local",
+                "model": "BAAI/bge-m3",
+                "model_slug": "local_BAAI-bge-m3",
+                "transform": "native"
+            },
+            {
+                "provider": "local",
+                "model": "BAAI/bge-m3",
+                "model_slug": "local_BAAI-bge-m3",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "local",
+                "model": "BAAI/bge-m3",
+                "model_slug": "local_BAAI-bge-m3",
+                "transform": "pca-perperiod"
+            },
+            {
+                "_addChars": "",
+                "features": [
+                    "embedding"
+                ]
+            },
+            {
+                "_addChars": "_addChars",
+                "features": [
+                    "embedding",
+                    "chars"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Text Embedding MP - via BERT head",
+        "description": "MP evaluation for text embeddings via BERT head (model_checkpoint=null, freeze_embedding=true, freeze_encoder=false; same recipe main_rerun uses for AssetW2V/RS via BERT head). 24 model×transform × 7 dims × 2 langs × 6 quarters = 2,016 configs. SMLM head is intentionally skipped — main_rerun showed SMLM cannot distinguish non-BERT embeddings.",
+        "template": {
+            "run": {
+                "period": "{quarter}"
+            },
+            "model": {
+                "model_type": "BERT",
+                "model_checkpoint": null,
+                "embedding_file": "data/text_embeddings/embeddings/{model_slug}/{model_slug}_{language}_{transform}_d{dim}/{quarter}/embedding.csv",
+                "vocab_size": 5093,
+                "hidden_size": "{dim}",
+                "num_hidden_layers": 4,
+                "num_attention_heads": 2,
+                "intermediate_size": 512,
+                "max_position_embeddings": 256,
+                "type_vocab_size": 1,
+                "freeze_embedding": true,
+                "freeze_encoder": false,
+                "embedding_model": "Text_{model_slug}_{language}_{transform}"
+            },
+            "tokenizer": {
+                "w2v_model": null,
+                "embedding_file": "data/text_embeddings/embeddings/{model_slug}/{model_slug}_{language}_{transform}_d{dim}/{quarter}/embedding.csv",
+                "vocab_file": null,
+                "pretrained_tokenizer_file": null,
+                "alias_file": null
+            },
+            "dataset": {
+                "data_path": "data/processed/MutualFundShareHoldings/finetune/{quarter}.csv",
+                "data_format": "csv",
+                "id_key": "InvestorID",
+                "portfolio_key": "Portfolio",
+                "proportion1_key": "Proportion1",
+                "proportion2_key": "Proportion2",
+                "include_proportion": true,
+                "max_length": 256,
+                "mask_prob": null,
+                "mask_indices": [
+                    2
+                ]
+            },
+            "dataloader": {
+                "batch_size": 32,
+                "shuffle": true,
+                "num_workers": 4,
+                "persistent_workers": true,
+                "pin_memory": true,
+                "drop_last": false
+            },
+            "optimizer": {
+                "optimizer_type": "PagedAdam8bit",
+                "optimizer_kwargs": null,
+                "learning_rate": 0.001,
+                "lr_scheduler_type": "cosine",
+                "lr_scheduler_warmup_steps": 100,
+                "lr_scheduler_train_steps": null,
+                "lr_scheduler_num_cycles": 0.5,
+                "lr_scheduler_power": 0
+            },
+            "accelerator": {
+                "mixed_precision": "auto",
+                "gradient_accumulation_steps": 1,
+                "accelerator_checkpoint": null,
+                "use_compile": true,
+                "compile_backend": "inductor",
+                "compile_mode": "default",
+                "compile_fullgraph": false,
+                "compile_dynamic": false,
+                "compile_cache_dir": null,
+                "allow_tf32": true
+            },
+            "train": {
+                "max_epochs": 30,
+                "validation_split": 0,
+                "test_split": 0.2,
+                "split_method": "random",
+                "best_metric": "test_loss",
+                "clip_grad_norm": 1.0,
+                "clip_grad_value": null,
+                "detect_anomaly": false,
+                "log_every_steps": 200,
+                "report_every_epochs": 1,
+                "save_every_epochs": 1,
+                "save_folder": "checkpoints/refine/text_embedding/BERT/{model_slug}/{language}/{transform}/d{dim}/{quarter}",
+                "save_name": "Text_{model_slug}_{language}_{transform}_d{dim}_{quarter}",
+                "save_format": ".safetensors",
+                "seed": 42
+            }
+        },
+        "output_dir": "configs/text_embedding/eval/MP/BERT/{model_slug}/{language}/{transform}/d{dim}",
+        "filename": "{quarter}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "language": [
+                "zh",
+                "en"
+            ],
+            "provider": [
+                "openai",
+                "cohere",
+                "voyage",
+                "gemini",
+                "local"
+            ],
+            "model": [
+                "text-embedding-3-small",
+                "text-embedding-3-large",
+                "embed-v4.0",
+                "voyage-3-large",
+                "gemini-embedding-001",
+                "Qwen/Qwen3-Embedding-0.6B",
+                "Qwen/Qwen3-Embedding-4B",
+                "Qwen/Qwen3-Embedding-8B",
+                "BAAI/bge-m3"
+            ],
+            "model_slug": [
+                "openai_text-embedding-3-small",
+                "openai_text-embedding-3-large",
+                "cohere_embed-v4.0",
+                "voyage_voyage-3-large",
+                "gemini_gemini-embedding-001",
+                "local_Qwen-Qwen3-Embedding-0.6B",
+                "local_Qwen-Qwen3-Embedding-4B",
+                "local_Qwen-Qwen3-Embedding-8B",
+                "local_BAAI-bge-m3"
+            ],
+            "transform": [
+                "native",
+                "pca-universal",
+                "pca-perperiod"
+            ],
+            "quarter": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ]
+        },
+        "variable_bindings": [
+            {
+                "provider": "openai",
+                "model": "text-embedding-3-small",
+                "model_slug": "openai_text-embedding-3-small",
+                "transform": "native"
+            },
+            {
+                "provider": "openai",
+                "model": "text-embedding-3-small",
+                "model_slug": "openai_text-embedding-3-small",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "openai",
+                "model": "text-embedding-3-small",
+                "model_slug": "openai_text-embedding-3-small",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "openai",
+                "model": "text-embedding-3-large",
+                "model_slug": "openai_text-embedding-3-large",
+                "transform": "native"
+            },
+            {
+                "provider": "openai",
+                "model": "text-embedding-3-large",
+                "model_slug": "openai_text-embedding-3-large",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "openai",
+                "model": "text-embedding-3-large",
+                "model_slug": "openai_text-embedding-3-large",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "cohere",
+                "model": "embed-v4.0",
+                "model_slug": "cohere_embed-v4.0",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "cohere",
+                "model": "embed-v4.0",
+                "model_slug": "cohere_embed-v4.0",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "voyage",
+                "model": "voyage-3-large",
+                "model_slug": "voyage_voyage-3-large",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "voyage",
+                "model": "voyage-3-large",
+                "model_slug": "voyage_voyage-3-large",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "gemini",
+                "model": "gemini-embedding-001",
+                "model_slug": "gemini_gemini-embedding-001",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "gemini",
+                "model": "gemini-embedding-001",
+                "model_slug": "gemini_gemini-embedding-001",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-0.6B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-0.6B",
+                "transform": "native"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-0.6B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-0.6B",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-0.6B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-0.6B",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-4B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-4B",
+                "transform": "native"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-4B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-4B",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-4B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-4B",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-8B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-8B",
+                "transform": "native"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-8B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-8B",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "local",
+                "model": "Qwen/Qwen3-Embedding-8B",
+                "model_slug": "local_Qwen-Qwen3-Embedding-8B",
+                "transform": "pca-perperiod"
+            },
+            {
+                "provider": "local",
+                "model": "BAAI/bge-m3",
+                "model_slug": "local_BAAI-bge-m3",
+                "transform": "native"
+            },
+            {
+                "provider": "local",
+                "model": "BAAI/bge-m3",
+                "model_slug": "local_BAAI-bge-m3",
+                "transform": "pca-universal"
+            },
+            {
+                "provider": "local",
+                "model": "BAAI/bge-m3",
+                "model_slug": "local_BAAI-bge-m3",
+                "transform": "pca-perperiod"
+            },
+            {
+                "dim": 4
+            },
+            {
+                "dim": 8
+            },
+            {
+                "dim": 10
+            },
+            {
+                "dim": 16
+            },
+            {
+                "dim": 32
+            },
+            {
+                "dim": 64
+            },
+            {
+                "dim": 128
+            }
+        ]
+    }
+]

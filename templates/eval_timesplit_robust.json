@@ -1,0 +1,927 @@
+[
+    {
+        "name": "RV TimeSplit Robust - Embedding models",
+        "description": "RV evaluation for 50/50 time-split robustness test. 6 models x 7 dims x 2 variants (plain/+Chars) = 84 configs.",
+        "template": {
+            "model_type": "{model_type}",
+            "embedding_path": [
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2020Q4/{model_type}_d{dim}_2020Q4{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2021Q1/{model_type}_d{dim}_2021Q1{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2021Q2/{model_type}_d{dim}_2021Q2{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2021Q3/{model_type}_d{dim}_2021Q3{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2021Q4/{model_type}_d{dim}_2021Q4{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2022Q1/{model_type}_d{dim}_2022Q1{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2022Q2/{model_type}_d{dim}_2022Q2{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2022Q3/{model_type}_d{dim}_2022Q3{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2022Q4/{model_type}_d{dim}_2022Q4{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2023Q1/{model_type}_d{dim}_2023Q1{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2023Q2/{model_type}_d{dim}_2023Q2{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2023Q3/{model_type}_d{dim}_2023Q3{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2023Q4/{model_type}_d{dim}_2023Q4{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2024Q1/{model_type}_d{dim}_2024Q1{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2024Q2/{model_type}_d{dim}_2024Q2{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2024Q3/{model_type}_d{dim}_2024Q3{_add_best}_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2020Q4.csv",
+                "data/processed/Benchmark/2021Q1.csv",
+                "data/processed/Benchmark/2021Q2.csv",
+                "data/processed/Benchmark/2021Q3.csv",
+                "data/processed/Benchmark/2021Q4.csv",
+                "data/processed/Benchmark/2022Q1.csv",
+                "data/processed/Benchmark/2022Q2.csv",
+                "data/processed/Benchmark/2022Q3.csv",
+                "data/processed/Benchmark/2022Q4.csv",
+                "data/processed/Benchmark/2023Q1.csv",
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": "{features}",
+            "align_chars": true,
+            "ridge_alpha": 0.5,
+            "seed": 42
+        },
+        "output_dir": "configs/timesplit_robust/eval/RV/d{dim}",
+        "filename": "{model_type}_d{dim}{_addChars}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "model_type": [
+                "AssetRS_Binary",
+                "AssetRS_Ranks",
+                "AssetRS_Level0",
+                "AssetRS_LevelMin",
+                "AssetW2V",
+                "AssetBERT"
+            ],
+            "model_path": [
+                "AssetRS/RS_Binary",
+                "AssetRS/RS_Ranks",
+                "AssetRS/RS_Level0",
+                "AssetRS/RS_LevelMin",
+                "AssetW2V",
+                "AssetBERT"
+            ],
+            "_addChars": [
+                "",
+                "_addChars"
+            ],
+            "_add_best": [
+                "",
+                "_best"
+            ],
+            "features": [
+                [
+                    "embedding"
+                ],
+                [
+                    "embedding",
+                    "chars"
+                ]
+            ]
+        },
+        "variable_bindings": [
+            {
+                "model_type": "AssetRS_Binary",
+                "model_path": "AssetRS/RS_Binary",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetRS_Ranks",
+                "model_path": "AssetRS/RS_Ranks",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetRS_Level0",
+                "model_path": "AssetRS/RS_Level0",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetRS_LevelMin",
+                "model_path": "AssetRS/RS_LevelMin",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetW2V",
+                "model_path": "AssetW2V",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetBERT",
+                "model_path": "AssetBERT",
+                "_add_best": "_best"
+            },
+            {
+                "_addChars": "",
+                "features": [
+                    "embedding"
+                ]
+            },
+            {
+                "_addChars": "_addChars",
+                "features": [
+                    "embedding",
+                    "chars"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "RV TimeSplit Robust - Baselines (Placebo/Chars)",
+        "description": "RV evaluation for baselines on 50/50 time-split robustness test. 2 configs.",
+        "template": {
+            "model_type": "{model_type}",
+            "embedding_path": null,
+            "benchmark_path": [
+                "data/processed/Benchmark/2020Q4.csv",
+                "data/processed/Benchmark/2021Q1.csv",
+                "data/processed/Benchmark/2021Q2.csv",
+                "data/processed/Benchmark/2021Q3.csv",
+                "data/processed/Benchmark/2021Q4.csv",
+                "data/processed/Benchmark/2022Q1.csv",
+                "data/processed/Benchmark/2022Q2.csv",
+                "data/processed/Benchmark/2022Q3.csv",
+                "data/processed/Benchmark/2022Q4.csv",
+                "data/processed/Benchmark/2023Q1.csv",
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": "{features}",
+            "align_chars": false,
+            "ridge_alpha": 0.5,
+            "seed": 42
+        },
+        "output_dir": "configs/timesplit_robust/eval/RV",
+        "filename": "{model_type}.json",
+        "variable_params": {
+            "model_type": [
+                "Placebo",
+                "Chars"
+            ],
+            "features": [
+                [
+                    "placebo"
+                ],
+                [
+                    "chars"
+                ]
+            ]
+        },
+        "variable_bindings": [
+            {
+                "features": [
+                    "placebo"
+                ],
+                "model_type": "Placebo"
+            },
+            {
+                "features": [
+                    "chars"
+                ],
+                "model_type": "Chars"
+            }
+        ]
+    },
+    {
+        "name": "RC TimeSplit Robust - Embedding models",
+        "description": "RC evaluation for 50/50 time-split robustness test. 6 models x 7 dims x 2 variants (plain/+Chars) = 84 configs.",
+        "template": {
+            "model_type": "{model_type}",
+            "embedding_path": [
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2020Q4/{model_type}_d{dim}_2020Q4{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2021Q1/{model_type}_d{dim}_2021Q1{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2021Q2/{model_type}_d{dim}_2021Q2{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2021Q3/{model_type}_d{dim}_2021Q3{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2021Q4/{model_type}_d{dim}_2021Q4{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2022Q1/{model_type}_d{dim}_2022Q1{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2022Q2/{model_type}_d{dim}_2022Q2{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2022Q3/{model_type}_d{dim}_2022Q3{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2022Q4/{model_type}_d{dim}_2022Q4{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2023Q1/{model_type}_d{dim}_2023Q1{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2023Q2/{model_type}_d{dim}_2023Q2{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2023Q3/{model_type}_d{dim}_2023Q3{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2023Q4/{model_type}_d{dim}_2023Q4{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2024Q1/{model_type}_d{dim}_2024Q1{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2024Q2/{model_type}_d{dim}_2024Q2{_add_best}_embedding.csv",
+                "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/2024Q3/{model_type}_d{dim}_2024Q3{_add_best}_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2020Q4.csv",
+                "data/processed/Benchmark/2021Q1.csv",
+                "data/processed/Benchmark/2021Q2.csv",
+                "data/processed/Benchmark/2021Q3.csv",
+                "data/processed/Benchmark/2021Q4.csv",
+                "data/processed/Benchmark/2022Q1.csv",
+                "data/processed/Benchmark/2022Q2.csv",
+                "data/processed/Benchmark/2022Q3.csv",
+                "data/processed/Benchmark/2022Q4.csv",
+                "data/processed/Benchmark/2023Q1.csv",
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": "{features}",
+            "align_chars": true,
+            "ridge_alpha": 0.5,
+            "seed": 42
+        },
+        "output_dir": "configs/timesplit_robust/eval/RC/d{dim}",
+        "filename": "{model_type}_d{dim}{_addChars}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "model_type": [
+                "AssetRS_Binary",
+                "AssetRS_Ranks",
+                "AssetRS_Level0",
+                "AssetRS_LevelMin",
+                "AssetW2V",
+                "AssetBERT"
+            ],
+            "model_path": [
+                "AssetRS/RS_Binary",
+                "AssetRS/RS_Ranks",
+                "AssetRS/RS_Level0",
+                "AssetRS/RS_LevelMin",
+                "AssetW2V",
+                "AssetBERT"
+            ],
+            "_addChars": [
+                "",
+                "_addChars"
+            ],
+            "_add_best": [
+                "",
+                "_best"
+            ],
+            "features": [
+                [
+                    "embedding"
+                ],
+                [
+                    "embedding",
+                    "chars"
+                ]
+            ]
+        },
+        "variable_bindings": [
+            {
+                "model_type": "AssetRS_Binary",
+                "model_path": "AssetRS/RS_Binary",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetRS_Ranks",
+                "model_path": "AssetRS/RS_Ranks",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetRS_Level0",
+                "model_path": "AssetRS/RS_Level0",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetRS_LevelMin",
+                "model_path": "AssetRS/RS_LevelMin",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetW2V",
+                "model_path": "AssetW2V",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetBERT",
+                "model_path": "AssetBERT",
+                "_add_best": "_best"
+            },
+            {
+                "_addChars": "",
+                "features": [
+                    "embedding"
+                ]
+            },
+            {
+                "_addChars": "_addChars",
+                "features": [
+                    "embedding",
+                    "chars"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "RC TimeSplit Robust - Baselines (Placebo/Chars)",
+        "description": "RC evaluation for baselines on 50/50 time-split robustness test. 2 configs.",
+        "template": {
+            "model_type": "{model_type}",
+            "embedding_path": null,
+            "benchmark_path": [
+                "data/processed/Benchmark/2020Q4.csv",
+                "data/processed/Benchmark/2021Q1.csv",
+                "data/processed/Benchmark/2021Q2.csv",
+                "data/processed/Benchmark/2021Q3.csv",
+                "data/processed/Benchmark/2021Q4.csv",
+                "data/processed/Benchmark/2022Q1.csv",
+                "data/processed/Benchmark/2022Q2.csv",
+                "data/processed/Benchmark/2022Q3.csv",
+                "data/processed/Benchmark/2022Q4.csv",
+                "data/processed/Benchmark/2023Q1.csv",
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": "{features}",
+            "align_chars": false,
+            "ridge_alpha": 0.5,
+            "seed": 42
+        },
+        "output_dir": "configs/timesplit_robust/eval/RC",
+        "filename": "{model_type}.json",
+        "variable_params": {
+            "model_type": [
+                "Placebo",
+                "Chars"
+            ],
+            "features": [
+                [
+                    "placebo"
+                ],
+                [
+                    "chars"
+                ]
+            ]
+        },
+        "variable_bindings": [
+            {
+                "features": [
+                    "placebo"
+                ],
+                "model_type": "Placebo"
+            },
+            {
+                "features": [
+                    "chars"
+                ],
+                "model_type": "Chars"
+            }
+        ]
+    },
+    {
+        "name": "MP TimeSplit Robust - AssetBERT via BERT head",
+        "description": "MP evaluation for AssetBERT on 50/50 time-split robustness test. 1 model x 7 dims x 16 quarters = 112 configs.",
+        "template": {
+            "run": {
+                "period": "{quarter}"
+            },
+            "model": {
+                "model_type": "BERT",
+                "model_checkpoint": "checkpoints/timesplit_robust/finetune/{model}/d{dim}/{quarter}/{model}_d{dim}_{quarter}_best/model.safetensors",
+                "embedding_file": "checkpoints/timesplit_robust/finetune/{model}/d{dim}/{quarter}/{model}_d{dim}_{quarter}_best_embedding.csv",
+                "vocab_size": 5093,
+                "hidden_size": "{dim}",
+                "num_hidden_layers": 4,
+                "num_attention_heads": 2,
+                "intermediate_size": 512,
+                "max_position_embeddings": 256,
+                "type_vocab_size": 1,
+                "freeze_embedding": true,
+                "freeze_encoder": false,
+                "embedding_model": "{model}"
+            },
+            "tokenizer": {
+                "w2v_model": null,
+                "embedding_file": "checkpoints/timesplit_robust/finetune/{model}/d{dim}/{quarter}/{model}_d{dim}_{quarter}_best_embedding.csv",
+                "vocab_file": null,
+                "pretrained_tokenizer_file": null,
+                "alias_file": null
+            },
+            "dataset": {
+                "data_path": "data/processed/MutualFundShareHoldings_TimeSplit/finetune/{quarter}.csv",
+                "data_format": "csv",
+                "id_key": "InvestorID",
+                "portfolio_key": "Portfolio",
+                "proportion1_key": "Proportion1",
+                "proportion2_key": "Proportion2",
+                "include_proportion": true,
+                "max_length": 256,
+                "mask_prob": null,
+                "mask_indices": [
+                    2
+                ]
+            },
+            "dataloader": {
+                "batch_size": 32,
+                "shuffle": true,
+                "num_workers": 4,
+                "pin_memory": true,
+                "drop_last": false
+            },
+            "optimizer": {
+                "optimizer_type": "PagedAdam8bit",
+                "optimizer_kwargs": null,
+                "learning_rate": 0.001,
+                "lr_scheduler_type": "cosine",
+                "lr_scheduler_warmup_steps": 100,
+                "lr_scheduler_train_steps": null,
+                "lr_scheduler_num_cycles": 0.5,
+                "lr_scheduler_power": 0
+            },
+            "accelerator": {
+                "mixed_precision": "auto",
+                "gradient_accumulation_steps": 1,
+                "accelerator_checkpoint": null,
+                "use_compile": true,
+                "compile_backend": "inductor",
+                "compile_mode": "default",
+                "compile_fullgraph": false,
+                "compile_dynamic": false,
+                "compile_cache_dir": null,
+                "allow_tf32": true
+            },
+            "train": {
+                "max_epochs": 30,
+                "validation_split": 0.2,
+                "test_split": 0.1,
+                "split_method": "random",
+                "best_metric": "val_loss",
+                "clip_grad_norm": 1.0,
+                "clip_grad_value": null,
+                "detect_anomaly": false,
+                "log_every_steps": 200,
+                "report_every_epochs": 1,
+                "save_every_epochs": 1,
+                "save_folder": "checkpoints/timesplit_robust/refine/BERT/{model}/d{dim}/{quarter}",
+                "save_name": "{model}_d{dim}_{quarter}",
+                "save_format": ".safetensors",
+                "seed": 42
+            }
+        },
+        "output_dir": "configs/timesplit_robust/eval/MP/BERT/{model}/d{dim}",
+        "filename": "{model}_d{dim}_{quarter}.json",
+        "variable_params": {
+            "model": [
+                "AssetBERT"
+            ],
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "quarter": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ]
+        },
+        "variable_bindings": null
+    },
+    {
+        "name": "MP TimeSplit Robust - RS/W2V via SMLM head",
+        "description": "MP evaluation for RS/W2V with SMLM on 50/50 time-split robustness test. 5 models x 7 dims x 16 quarters = 560 configs.",
+        "template": {
+            "run": {
+                "period": "{quarter}"
+            },
+            "model": {
+                "model_type": "SimplifiedMLM",
+                "model_checkpoint": null,
+                "embedding_file": "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/{quarter}/{model_type}_d{dim}_{quarter}_embedding.csv",
+                "vocab_size": 4940,
+                "hidden_size": "{dim}",
+                "max_position_embeddings": 256,
+                "type_vocab_size": 1,
+                "freeze_embedding": true,
+                "freeze_head": false,
+                "embedding_model": "{model_type}"
+            },
+            "tokenizer": {
+                "w2v_model": null,
+                "embedding_file": "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/{quarter}/{model_type}_d{dim}_{quarter}_embedding.csv",
+                "vocab_file": null,
+                "pretrained_tokenizer_file": null,
+                "alias_file": null
+            },
+            "dataset": {
+                "data_path": "data/processed/MutualFundShareHoldings_TimeSplit/finetune/{quarter}.csv",
+                "data_format": "csv",
+                "id_key": "InvestorID",
+                "portfolio_key": "Portfolio",
+                "proportion1_key": "Proportion1",
+                "proportion2_key": "Proportion2",
+                "include_proportion": true,
+                "max_length": 256,
+                "mask_prob": null,
+                "mask_indices": [
+                    2
+                ]
+            },
+            "dataloader": {
+                "batch_size": 32,
+                "shuffle": true,
+                "num_workers": 4,
+                "persistent_workers": true,
+                "pin_memory": true,
+                "drop_last": false
+            },
+            "optimizer": {
+                "optimizer_type": "PagedAdam8bit",
+                "optimizer_kwargs": null,
+                "learning_rate": 0.001,
+                "lr_scheduler_type": "cosine",
+                "lr_scheduler_warmup_steps": 100,
+                "lr_scheduler_train_steps": null,
+                "lr_scheduler_num_cycles": 0.5,
+                "lr_scheduler_power": 0
+            },
+            "accelerator": {
+                "mixed_precision": "auto",
+                "gradient_accumulation_steps": 1,
+                "accelerator_checkpoint": null,
+                "use_compile": true,
+                "compile_backend": "inductor",
+                "compile_mode": "default",
+                "compile_fullgraph": false,
+                "compile_dynamic": false,
+                "compile_cache_dir": null,
+                "allow_tf32": true
+            },
+            "train": {
+                "max_epochs": 30,
+                "validation_split": 0.2,
+                "test_split": 0.1,
+                "split_method": "random",
+                "best_metric": "val_loss",
+                "clip_grad_norm": 1.0,
+                "clip_grad_value": null,
+                "detect_anomaly": false,
+                "log_every_steps": 200,
+                "report_every_epochs": 1,
+                "save_every_epochs": 1,
+                "save_folder": "checkpoints/timesplit_robust/refine/SMLM/{model_path}/d{dim}/{quarter}",
+                "save_name": "SMLM_{model_type}_d{dim}_{quarter}",
+                "save_format": ".safetensors",
+                "seed": 42
+            }
+        },
+        "output_dir": "configs/timesplit_robust/eval/MP/SMLM/{model_path}/d{dim}",
+        "filename": "SMLM_{model_type}_d{dim}_{quarter}.json",
+        "variable_params": {
+            "model_type": [
+                "AssetRS_Binary",
+                "AssetRS_Ranks",
+                "AssetRS_Level0",
+                "AssetRS_LevelMin",
+                "AssetW2V"
+            ],
+            "model_path": [
+                "AssetRS/RS_Binary",
+                "AssetRS/RS_Ranks",
+                "AssetRS/RS_Level0",
+                "AssetRS/RS_LevelMin",
+                "AssetW2V"
+            ],
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "quarter": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ]
+        },
+        "variable_bindings": [
+            {
+                "model_type": "AssetRS_Binary",
+                "model_path": "AssetRS/RS_Binary"
+            },
+            {
+                "model_type": "AssetRS_Ranks",
+                "model_path": "AssetRS/RS_Ranks"
+            },
+            {
+                "model_type": "AssetRS_Level0",
+                "model_path": "AssetRS/RS_Level0"
+            },
+            {
+                "model_type": "AssetRS_LevelMin",
+                "model_path": "AssetRS/RS_LevelMin"
+            },
+            {
+                "model_type": "AssetW2V",
+                "model_path": "AssetW2V"
+            }
+        ]
+    },
+    {
+        "name": "MP TimeSplit Robust - RS/W2V via BERT head",
+        "description": "MP evaluation for RS/W2V with BERT head on 50/50 time-split robustness test. 5 models x 7 dims x 16 quarters = 560 configs.",
+        "template": {
+            "run": {
+                "period": "{quarter}"
+            },
+            "model": {
+                "model_type": "BERT",
+                "model_checkpoint": null,
+                "embedding_file": "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/{quarter}/{model_type}_d{dim}_{quarter}_embedding.csv",
+                "vocab_size": 5093,
+                "hidden_size": "{dim}",
+                "num_hidden_layers": 4,
+                "num_attention_heads": 2,
+                "intermediate_size": 512,
+                "max_position_embeddings": 256,
+                "type_vocab_size": 1,
+                "freeze_embedding": true,
+                "freeze_encoder": false,
+                "embedding_model": "{model_type}"
+            },
+            "tokenizer": {
+                "w2v_model": null,
+                "embedding_file": "checkpoints/timesplit_robust/finetune/{model_path}/d{dim}/{quarter}/{model_type}_d{dim}_{quarter}_embedding.csv",
+                "vocab_file": null,
+                "pretrained_tokenizer_file": null,
+                "alias_file": null
+            },
+            "dataset": {
+                "data_path": "data/processed/MutualFundShareHoldings_TimeSplit/finetune/{quarter}.csv",
+                "data_format": "csv",
+                "id_key": "InvestorID",
+                "portfolio_key": "Portfolio",
+                "proportion1_key": "Proportion1",
+                "proportion2_key": "Proportion2",
+                "include_proportion": true,
+                "max_length": 256,
+                "mask_prob": null,
+                "mask_indices": [
+                    2
+                ]
+            },
+            "dataloader": {
+                "batch_size": 32,
+                "shuffle": true,
+                "num_workers": 4,
+                "persistent_workers": true,
+                "pin_memory": true,
+                "drop_last": false
+            },
+            "optimizer": {
+                "optimizer_type": "PagedAdam8bit",
+                "optimizer_kwargs": null,
+                "learning_rate": 0.001,
+                "lr_scheduler_type": "cosine",
+                "lr_scheduler_warmup_steps": 100,
+                "lr_scheduler_train_steps": null,
+                "lr_scheduler_num_cycles": 0.5,
+                "lr_scheduler_power": 0
+            },
+            "accelerator": {
+                "mixed_precision": "auto",
+                "gradient_accumulation_steps": 1,
+                "accelerator_checkpoint": null,
+                "use_compile": true,
+                "compile_backend": "inductor",
+                "compile_mode": "default",
+                "compile_fullgraph": false,
+                "compile_dynamic": false,
+                "compile_cache_dir": null,
+                "allow_tf32": true
+            },
+            "train": {
+                "max_epochs": 30,
+                "validation_split": 0.2,
+                "test_split": 0.1,
+                "split_method": "random",
+                "best_metric": "val_loss",
+                "clip_grad_norm": 1.0,
+                "clip_grad_value": null,
+                "detect_anomaly": false,
+                "log_every_steps": 200,
+                "report_every_epochs": 1,
+                "save_every_epochs": 1,
+                "save_folder": "checkpoints/timesplit_robust/refine/BERT/{model_path}/d{dim}/{quarter}",
+                "save_name": "BERT_{model_type}_d{dim}_{quarter}",
+                "save_format": ".safetensors",
+                "seed": 42
+            }
+        },
+        "output_dir": "configs/timesplit_robust/eval/MP/BERT/{model_path}/d{dim}",
+        "filename": "BERT_{model_type}_d{dim}_{quarter}.json",
+        "variable_params": {
+            "model_type": [
+                "AssetRS_Binary",
+                "AssetRS_Ranks",
+                "AssetRS_Level0",
+                "AssetRS_LevelMin",
+                "AssetW2V"
+            ],
+            "model_path": [
+                "AssetRS/RS_Binary",
+                "AssetRS/RS_Ranks",
+                "AssetRS/RS_Level0",
+                "AssetRS/RS_LevelMin",
+                "AssetW2V"
+            ],
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "quarter": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ]
+        },
+        "variable_bindings": [
+            {
+                "model_type": "AssetRS_Binary",
+                "model_path": "AssetRS/RS_Binary"
+            },
+            {
+                "model_type": "AssetRS_Ranks",
+                "model_path": "AssetRS/RS_Ranks"
+            },
+            {
+                "model_type": "AssetRS_Level0",
+                "model_path": "AssetRS/RS_Level0"
+            },
+            {
+                "model_type": "AssetRS_LevelMin",
+                "model_path": "AssetRS/RS_LevelMin"
+            },
+            {
+                "model_type": "AssetW2V",
+                "model_path": "AssetW2V"
+            }
+        ]
+    }
+]

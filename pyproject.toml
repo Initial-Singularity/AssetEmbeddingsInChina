@@ -1,40 +1,35 @@
 [project]
 name = "AssetEmbeddingsInChina"
 version = "1.0.0"
-description = "NLP-based asset embeddings for China's A-share market — training pipeline for 'Do Asset Embeddings Need Complete Holdings? Lessons from China'"
+description = "NLP-based asset embeddings for China's A-share market — code for 'Do Asset Embeddings Need Complete Holdings? Lessons from China'"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "accelerate>=1.7.0",
     "bitsandbytes>=0.45.5",
-    "cohere>=5.15.0",
     "colorama>=0.4.6",
     "dadaptation>=3.2",
     "dotenv>=0.9.9",
     "gensim>=4.3.3",
-    "google-genai>=1.0",
     "ipython>=9.2.0",
     "lion-pytorch>=0.2.3",
     "matplotlib>=3.10.3",
     "numpy>=1.22,<2.1",
-    "openai>=1.78.1",
     "pandas>=2.2.3",
     "psutil>=7.0.0",
     "safetensors>=0.5.3",
     "scikit-learn>=1.6.1",
     "scipy>=1.13.1",
     "statsmodels>=0.14.4",
-    "tenacity>=9.1.2",
     "tensorboard>=2.19.0",
     "toml>=0.10.2",
     "torch>=2.6.0",
     "tqdm>=4.67.1",
     "transformers>=4.51.3",
-    "voyageai>=0.3",
 ]
 
 [project.optional-dependencies]
-# Demo-only extras. Not required for the core training pipeline.
+# Demo-only extras. Not required for the core training/eval pipeline.
 # Install with: `uv sync --extra notebook`
 notebook = [
     "jupyterlab>=4.0",
@@ -87,9 +82,20 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-# Baseline ignore：保留排版/无副作用 import 的旧账，避免大规模 reformat
-#   - E501：line-too-long (纯排版)
-#   - F401：unused-import (auto-fix 已清零，留作 ignore 防止后续 PR 噪声)
-#   - E402：module-level import not at top (脚本里 sys.path 改完再 import 是常见 pattern)
-#   - F841：unused-variable (皆为带副作用的赋值如 `store = RecordStore(...)`)
-ignore = ["E501", "F401", "E402", "F841"]
+# Baseline: the four ignores keep pre-existing layout debt out of every PR's diff.
+#   E501 line too long (layout only)
+#   F401 unused import (auto-fix cleared the tree; kept so a stray import is not a PR failure)
+#   E402 import not at top of file (examples adjust sys.path before importing)
+#   F841 unused variable (a dozen assignments kept for their side effects, e.g. `store = RecordStore(...)`)
+# Docstrings: Google convention (matches mkdocs.yml `docstring_style: google`).
+#   D105 magic methods and D107 __init__ need no docstring (the class docstring covers __init__;
+#   mkdocstrings merges them).
+select = ["E4", "E7", "E9", "F", "D"]
+ignore = ["E501", "F401", "E402", "F841", "D105", "D107"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+# Examples are the notebooks' companions.
+"examples/**" = ["D1"]

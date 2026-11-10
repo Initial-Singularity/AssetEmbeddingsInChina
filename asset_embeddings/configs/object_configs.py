@@ -1,3 +1,10 @@
+"""Component configs shared by the training and evaluation scripts.
+
+Holds the logger, tokenizer, dataset, dataloader, accelerator and optimizer configs and the AssetBERT and
+SimplifiedMLM model configs that the preparers turn into runtime objects. Every field is documented through
+its `ConfigField(doc=...)` string, which also renders into the CLI help and the config reference.
+"""
+
 import os
 from numbers import Number
 from typing import Union, List, Optional, Literal
@@ -14,7 +21,15 @@ from .constraints import (
 from .base import Config, ConfigField
 
 
-def path_preprocessor(p):
+def path_preprocessor(p: Union[str, List[str], None]) -> Union[str, List[str], None]:
+    """Normalize a path field value, passing `None` through and mapping over lists.
+
+    Args:
+        p: A path, a list of paths, or `None`.
+
+    Returns:
+        The same shape with every path passed through `os.path.normpath`.
+    """
     if p is None:
         return None
     if isinstance(p, list):
@@ -23,145 +38,137 @@ def path_preprocessor(p):
 
 
 class LoggerConfig(Config):
-    """Configuration for logging system with flexible output options.
+    """The parameter object of `asset_embeddings.logger.configure_logging`.
 
-    This configuration class manages all aspects of application logging including
-    output destinations, formatting, log levels, and file rotation settings.
-    It supports both console and file logging with independent level controls.
-
-    Attributes:
-        log_name: Name identifier for the logger instance.
-        log_file: Path(s) to log file(s), can be a single string or list of strings.
-        log_format: Format string for log messages using Python logging format.
-        date_format: Format string for timestamps in log messages.
-        console_level: Minimum log level for console output.
-        console_stream: Type of console output stream to use.
-        file_level: Minimum log level for file output.
-        max_bytes: Maximum size of log files before rotation (None for unlimited).
-        backup_count: Number of backup files to keep during rotation.
+    Describes the process-wide logging setup: the console channel (tqdm-safe terminal, plain stdout or notebook
+    HTML) with its level and colors, and the log file(s) the process appends to. Loggers themselves are the
+    standard module hierarchy (`logging.getLogger(__name__)`); this object never names one.
     """
 
-    log_name: str = ConfigField(default="app", constraint=TypeConstraint(str), doc="日志名称")
     log_file: Union[str, List[str], None] = ConfigField(
-        default="app.log", constraint=OptionalConstraint(TypeConstraint(str) | TypeConstraint(list)), doc="日志文件路径"
+        default=None,
+        constraint=OptionalConstraint(TypeConstraint(str) | TypeConstraint(list)),
+        doc="Path of the log file, or a list of paths; None keeps console output only",
     )
     log_format: str = ConfigField(
-        default="%(asctime)s [%(name)s][%(levelname)s]: %(message)s", constraint=TypeConstraint(str), doc="日志格式"
+        default="%(asctime)s [%(short)s][%(levelname)s]: %(message)s",
+        constraint=TypeConstraint(str),
+        doc="Log record format string",
     )
-    date_format: str = ConfigField(default="%Y-%m-%d %H:%M:%S", constraint=TypeConstraint(str), doc="日期格式")
+    date_format: str = ConfigField(
+        default="%Y-%m-%d %H:%M:%S", constraint=TypeConstraint(str), doc="Timestamp format string"
+    )
     console_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = ConfigField(
         default="INFO",
         constraint=ChoiceConstraint(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
-        doc="控制台日志级别",
+        doc="Minimum level shown on the console",
     )
     console_stream: Literal["tqdm", "std", "html"] = ConfigField(
-        default="tqdm", constraint=ChoiceConstraint(["tqdm", "std", "html"]), doc="控制台输出流"
+        default="tqdm",
+        constraint=ChoiceConstraint(["tqdm", "std", "html"]),
+        doc="Console output stream: tqdm, std or html",
     )
     file_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = ConfigField(
         default="DEBUG",
         constraint=ChoiceConstraint(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
-        doc="文件日志级别",
+        doc="Minimum level written to the log file",
     )
-    max_bytes: int = ConfigField(
-        default=10_000_000, constraint=OptionalConstraint(RangeConstraint(0, None)), doc="最大字节数，为None时不限制"
+    enable_colors: bool = ConfigField(
+        default=True, constraint=TypeConstraint(bool), doc="Whether console output is colored"
     )
-    backup_count: int = ConfigField(
-        default=5, constraint=OptionalConstraint(RangeConstraint(0, None)), doc="备份文件数量，为0时不备份"
-    )
-
-    # Color control settings
-    enable_colors: bool = ConfigField(default=True, constraint=TypeConstraint(bool), doc="是否启用颜色输出")
     color_target: Literal["message", "levelname", "format"] = ConfigField(
         default="format",
         constraint=ChoiceConstraint(["message", "levelname", "format"]),
-        doc="着色目标：message(仅消息), levelname(仅日志级别), format(格式化字符串所有组件)",
+        doc="What gets colored: message (message only), levelname (level name only) or format (every component of the format string)",
     )
 
 
 class TokenizerConfig(Config):
     """Configuration for text tokenization and vocabulary management.
 
-    This configuration manages tokenizer settings including pre-trained models,
-    vocabulary files, and word embeddings. It supports various tokenization
-    approaches from simple vocabulary-based to advanced pre-trained tokenizers.
-
-    Attributes:
-        w2v_model: Path to Word2Vec model file for embedding initialization.
-        embedding_file: Path to pre-computed embedding file.
-        vocab_file: Path to vocabulary file containing token mappings.
-        pretrained_tokenizer_file: Path to pre-trained tokenizer model.
-        alias_file: Path to file containing token aliases or synonyms.
+    Names the files a tokenizer can be built from: a Word2Vec model, a pre-computed embedding file, a plain
+    vocabulary file, a pretrained tokenizer file or an alias file. Which of them applies depends on the
+    tokenizer the preparer builds.
     """
 
     w2v_model: str = ConfigField(
-        default=None, constraint=OptionalConstraint(TypeConstraint(str)), doc="Word2Vec模型路径"
+        default=None, constraint=OptionalConstraint(TypeConstraint(str)), doc="Path of the Word2Vec model"
     )
     embedding_file: str = ConfigField(
-        default=None, constraint=OptionalConstraint(TypeConstraint(str)), doc="词嵌入文件路径"
+        default=None, constraint=OptionalConstraint(TypeConstraint(str)), doc="Path of the embedding file"
     )
     vocab_file: str = ConfigField(
-        default=None, constraint=OptionalConstraint(TypeConstraint(str)), doc="词汇表文件路径"
+        default=None, constraint=OptionalConstraint(TypeConstraint(str)), doc="Path of the vocabulary file"
     )
     pretrained_tokenizer_file: str = ConfigField(
-        default=None, constraint=OptionalConstraint(TypeConstraint(str)), doc="预训练分词器文件路径"
+        default=None,
+        constraint=OptionalConstraint(TypeConstraint(str)),
+        doc="Path of the pretrained tokenizer file",
     )
-    alias_file: str = ConfigField(default=None, constraint=OptionalConstraint(TypeConstraint(str)), doc="别名文件路径")
+    alias_file: str = ConfigField(
+        default=None, constraint=OptionalConstraint(TypeConstraint(str)), doc="Path of the alias file"
+    )
 
 
 class DatasetConfig(Config):
     """Configuration for dataset creation and preprocessing.
 
-    This configuration manages dataset-related settings including data sources,
-    field mappings, and preprocessing options. It focuses on "what the data is"
-    rather than "how to load it in batches".
+    Covers what the data is: the data sources (portfolio CSV files or a corpus directory built by ``data.corpus``),
+    the column names of the portfolio table and the masking options. How the data is loaded in batches belongs to `DataLoaderConfig`.
 
-    Attributes:
-        data_path: Path to data file or directory containing training data.
-        data_format: Format of the input data files.
-        id_key: Field name for unique identifier in the dataset.
-        portfolio_key: Field name for portfolio data in the dataset.
-        proportion1_key: Field name for shareholding proportion relative to total shares.
-        proportion2_key: Field name for shareholding proportion relative to tradable A-shares.
-        include_proportion: Whether to include proportion information in data.
-        max_length: Maximum sequence length for truncation/padding.
-        mask_prob: Probability of masking tokens for masked language modeling.
-        mask_indices: Specific indices to mask (alternative to probability-based masking).
-        cache_size: Number of data files to cache in memory for streaming.
-        num_repeats: Number of times to repeat the dataset.
+    Note:
+        `mask_prob` and `mask_indices` are mutually exclusive; the cross constraint rejects a config that
+        sets both.
     """
 
     data_path: Union[str, List[str]] = ConfigField(
-        default=None, required=True, preprocessor=path_preprocessor, doc="数据文件, 文件夹路径或数据文件路径列表"
+        default=None,
+        required=True,
+        preprocessor=path_preprocessor,
+        doc="Data file, directory, or list of data file paths",
     )
-    data_format: Literal["csv", "json", "binary"] = ConfigField(
-        default="csv", constraint=ChoiceConstraint(["csv", "json", "binary"]), doc="数据文件格式"
+    data_format: Literal["csv"] = ConfigField(
+        default="csv",
+        constraint=ChoiceConstraint(["csv"]),
+        doc="Format of the data files; only 'csv' (the datasets count records as csv lines)",
     )
     id_key: str = ConfigField(
-        default="InvestorID", constraint=TypeConstraint(str), doc="ID字段名,用于区分不同Portfolio"
+        default="InvestorID",
+        constraint=TypeConstraint(str),
+        doc="Name of the ID column that distinguishes portfolios",
     )
-    portfolio_key: str = ConfigField(default="Portfolio", constraint=TypeConstraint(str), doc="Portfolio字段名")
+    portfolio_key: str = ConfigField(
+        default="Portfolio", constraint=TypeConstraint(str), doc="Name of the portfolio column"
+    )
     proportion1_key: str = ConfigField(
         default="Proportion1",
         constraint=TypeConstraint(str),
-        doc="持股比例(相对总股本)字段名,当`include_proportion`为True时使用",
+        doc="Name of the holding-proportion column relative to total shares; used when `include_proportion` is True",
     )
     proportion2_key: str = ConfigField(
         default="Proportion2",
         constraint=TypeConstraint(str),
-        doc="持股比例(相对流通A股)字段名,当`include_proportion`为True时使用",
+        doc="Name of the holding-proportion column relative to tradable A-shares; used when `include_proportion` is True",
     )
-    include_proportion: bool = ConfigField(default=False, constraint=TypeConstraint(bool), doc="是否包含比例信息")
-    max_length: int = ConfigField(default=50, constraint=TypeConstraint(int), doc="最大序列长度")
+    include_proportion: bool = ConfigField(
+        default=False, constraint=TypeConstraint(bool), doc="Whether holding proportions are included"
+    )
+    max_length: int = ConfigField(default=50, constraint=TypeConstraint(int), doc="Maximum sequence length")
     mask_prob: float = ConfigField(
         default=0.15,
         constraint=OptionalConstraint(RangeConstraint(0.0, 1.0)),
-        doc="掩码概率，与`mask_indices`字段不兼容",
+        doc="Masking probability; incompatible with `mask_indices`",
     )
     mask_indices: Optional[List[int]] = ConfigField(
-        default=None, constraint=OptionalConstraint(TypeConstraint(list)), doc="指定掩码位置，与`mask_prob`字段不兼容"
+        default=None,
+        constraint=OptionalConstraint(TypeConstraint(list)),
+        doc="Fixed positions to mask; incompatible with `mask_prob`",
     )
-    num_repeats: int = ConfigField(default=1, constraint=TypeConstraint(int), doc="数据集重复倍数")
-    cache_size: int = ConfigField(default=10, constraint=TypeConstraint(int), doc="数据缓存文件数（适配流式加载）")
+    num_repeats: int = ConfigField(
+        default=1,
+        constraint=TypeConstraint(int) & RangeConstraint(1, None),
+        doc="Times the training split is replayed per epoch; the validation and test splits are not repeated",
+    )
 
     _cross_constraints = [
         MutualExclusionConstraint("mask_prob", "mask_indices", name="mask_mode_exclusion"),
@@ -169,28 +176,32 @@ class DatasetConfig(Config):
 
 
 class DataLoaderConfig(Config):
-    """Configuration for PyTorch DataLoader.
+    """Configuration for the PyTorch DataLoader.
 
-    This configuration manages DataLoader-related settings focusing on
-    "how to load data in batches" rather than dataset creation.
+    Covers how the data is loaded in batches (batch size, shuffling, worker processes, memory pinning), as
+    opposed to what the data is, which `DatasetConfig` holds.
 
-    Attributes:
-        batch_size: Number of samples per batch for training/inference.
-        shuffle: Whether to shuffle the dataset during loading.
-        num_workers: Number of worker processes for data loading.
-        pin_memory: Whether to pin memory for faster GPU transfer.
+    Note:
+        PyTorch rejects `persistent_workers=True` with `num_workers=0`; the cross constraint catches that
+        combination up front.
     """
 
-    batch_size: int = ConfigField(default=32, constraint=TypeConstraint(int), doc="批次大小")
-    shuffle: bool = ConfigField(default=True, constraint=TypeConstraint(bool), doc="是否打乱数据")
-    num_workers: int = ConfigField(default=4, constraint=TypeConstraint(int), doc="工作进程数")
+    batch_size: int = ConfigField(default=32, constraint=TypeConstraint(int), doc="Batch size")
+    shuffle: bool = ConfigField(default=True, constraint=TypeConstraint(bool), doc="Whether the data is shuffled")
+    num_workers: int = ConfigField(default=4, constraint=TypeConstraint(int), doc="Number of loader worker processes")
     persistent_workers: bool = ConfigField(
-        default=True, constraint=TypeConstraint(bool), doc="是否保持工作进程存活以重用（PyTorch 1.7+）"
+        default=True,
+        constraint=TypeConstraint(bool),
+        doc="Whether worker processes stay alive for reuse between epochs (PyTorch 1.7+)",
     )
     pin_memory: bool = ConfigField(
-        default=True, constraint=TypeConstraint(bool), doc="是否将数据固定在内存中（适用于 GPU 加速）"
+        default=True,
+        constraint=TypeConstraint(bool),
+        doc="Whether batches are pinned in memory for faster GPU transfer",
     )
-    drop_last: bool = ConfigField(default=False, constraint=TypeConstraint(bool), doc="是否丢弃最后一个不完整的批次")
+    drop_last: bool = ConfigField(
+        default=False, constraint=TypeConstraint(bool), doc="Whether the last incomplete batch is dropped"
+    )
 
     _cross_constraints = [
         LambdaCrossConstraint(
@@ -202,79 +213,73 @@ class DataLoaderConfig(Config):
 
 
 class AcceleratorConfig(Config):
-    """Configuration for HuggingFace Accelerator with torch.compile support.
+    """Configuration for the HuggingFace Accelerator, including torch.compile.
 
-    This configuration manages Accelerator initialization, mixed precision,
-    gradient accumulation, and torch.compile settings. It is designed to be
-    used with Accelerator_Preparer.
-
-    Attributes:
-        mixed_precision: Mixed precision training mode.
-        gradient_accumulation_steps: Number of steps for gradient accumulation.
-        accelerator_checkpoint: Path to HuggingFace Accelerator checkpoint.
-        use_compile: Whether to enable torch.compile.
-        compile_backend: torch.compile backend (inductor, eager, aot_eager).
-        compile_mode: torch.compile optimization mode.
-        compile_fullgraph: Whether to require full graph compilation (no graph breaks).
-        compile_dynamic: Whether to enable dynamic shapes.
-        compile_cache_dir: Persistent compile cache directory.
-        allow_tf32: Whether to enable TF32 acceleration on Ampere/Ada GPUs.
+    Covers Accelerator initialization, mixed precision, gradient accumulation, checkpoint restore and the
+    torch.compile and TF32 switches. Consumed by `Accelerator_Preparer`.
     """
 
     mixed_precision: Literal["auto", "no", "fp16", "bf16", "fp8"] = ConfigField(
-        default="no", constraint=ChoiceConstraint(["auto", "no", "fp16", "bf16", "fp8"]), doc="混合精度训练模式"
+        default="no",
+        constraint=ChoiceConstraint(["auto", "no", "fp16", "bf16", "fp8"]),
+        doc="Mixed-precision training mode",
     )
     gradient_accumulation_steps: int = ConfigField(
-        default=1, constraint=TypeConstraint(int) & RangeConstraint(1, None), doc="梯度累积步数"
+        default=1,
+        constraint=TypeConstraint(int) & RangeConstraint(1, None),
+        doc="Number of gradient accumulation steps",
     )
     accelerator_checkpoint: Optional[str] = ConfigField(
         default=None,
         constraint=OptionalConstraint(TypeConstraint(str)),
         preprocessor=path_preprocessor,
-        doc="HF Accelerator检查点路径",
+        doc="Path of the HF Accelerator checkpoint",
     )
-    use_compile: bool = ConfigField(default=False, constraint=TypeConstraint(bool), doc="是否启用 torch.compile")
+    use_compile: bool = ConfigField(
+        default=False, constraint=TypeConstraint(bool), doc="Whether torch.compile is enabled"
+    )
     compile_backend: str = ConfigField(
-        default="inductor", constraint=ChoiceConstraint(["inductor", "eager", "aot_eager"]), doc="torch.compile 后端"
+        default="inductor",
+        constraint=ChoiceConstraint(["inductor", "eager", "aot_eager"]),
+        doc="torch.compile backend",
     )
     compile_mode: str = ConfigField(
         default="reduce-overhead",
         constraint=ChoiceConstraint(["default", "reduce-overhead", "max-autotune"]),
-        doc="torch.compile 优化模式",
+        doc="torch.compile optimization mode",
     )
     compile_fullgraph: bool = ConfigField(
-        default=False, constraint=TypeConstraint(bool), doc="是否要求完整图编译（不允许 graph break）"
+        default=False,
+        constraint=TypeConstraint(bool),
+        doc="Whether full-graph compilation is required (no graph breaks)",
     )
     compile_dynamic: bool = ConfigField(
-        default=False, constraint=TypeConstraint(bool), doc="是否启用动态 shape（batch size 变化时需开启）"
+        default=False,
+        constraint=TypeConstraint(bool),
+        doc="Whether dynamic shapes are enabled (needed when the batch size varies)",
     )
     compile_cache_dir: Optional[str] = ConfigField(
         default=None,
         constraint=OptionalConstraint(TypeConstraint(str)),
         preprocessor=path_preprocessor,
-        doc="torch.compile 持久化缓存目录，None 使用 PyTorch 默认",
+        doc="Persistent torch.compile cache directory; None uses the PyTorch default",
     )
     allow_tf32: bool = ConfigField(
-        default=True, constraint=TypeConstraint(bool), doc="是否启用 TF32 加速（Ampere/Ada 架构 GPU）"
+        default=True,
+        constraint=TypeConstraint(bool),
+        doc="Whether TF32 acceleration is enabled (Ampere/Ada GPUs)",
     )
 
 
 class OptimizerConfig(Config):
-    """Configuration for model optimization including optimizer and learning rate scheduling.
+    """Configuration for the optimizer and the learning-rate schedule.
 
-    This configuration manages optimizer selection, learning rate scheduling, and related
-    hyperparameters for training machine learning models. It supports various optimizers
-    including 8-bit variants for memory efficiency and multiple learning rate schedules.
+    Selects the optimizer (including the 8-bit and paged variants) with its extra keyword arguments, the
+    initial learning rate and the scheduler with its warmup, step count, cycle and power parameters.
 
-    Attributes:
-        optimizer_type: Type of optimizer algorithm to use.
-        optimizer_kwargs: Additional optimizer-specific parameters.
-        learning_rate: Initial learning rate for training.
-        lr_scheduler_type: Type of learning rate scheduling strategy.
-        lr_scheduler_warmup_steps: Number of warmup steps for learning rate.
-        lr_scheduler_train_steps: Total training steps for scheduling.
-        lr_scheduler_num_cycles: Number of cycles for cosine scheduling.
-        lr_scheduler_power: Power parameter for polynomial scheduling.
+    Note:
+        The `adafactor` scheduler only works with the `Adafactor` optimizer; the cross constraint rejects
+        any other pairing.
     """
 
     optimizer_type: Literal[
@@ -310,39 +315,45 @@ class OptimizerConfig(Config):
                 "Adafactor",
             ]
         ),
-        doc="优化器类型",
+        doc="Optimizer type",
         required=True,
     )
     optimizer_kwargs: Optional[dict] = ConfigField(
         default=None,
         constraint=OptionalConstraint(TypeConstraint(dict)),
-        doc=r"可选优化器附加参数。未指定的则使用默认参数。默认为`null`",
+        doc="Optional extra optimizer keyword arguments; unspecified ones keep their defaults, default `null`",
     )
-    learning_rate: float = ConfigField(default=1e-3, constraint=RangeConstraint(1e-5, 1e-1), doc="初始学习率")
+    learning_rate: float = ConfigField(
+        default=1e-3, constraint=RangeConstraint(1e-5, 1e-1), doc="Initial learning rate"
+    )
     lr_scheduler_type: Literal["constant", "linear", "cosine", "cosine_with_restarts", "polynomial", "adafactor"] = (
         ConfigField(
             default="linear",
             constraint=ChoiceConstraint(
                 ["constant", "linear", "cosine", "cosine_with_restarts", "polynomial", "adafactor"]
             ),
-            doc="学习率调度器类型，支持`constant`, `linear`, `cosine`, `cosine_with_restarts`, `polynomial` 和`adafactor`",
+            doc="Learning-rate scheduler type: `constant`, `linear`, `cosine`, `cosine_with_restarts`, `polynomial` or `adafactor`",
         )
     )
     lr_scheduler_warmup_steps: int = ConfigField(
-        default=0, constraint=TypeConstraint(int), doc="学习率预热步数，对除`adafactor`以外的所有类型生效"
+        default=0,
+        constraint=TypeConstraint(int),
+        doc="Number of learning-rate warmup steps; applies to every scheduler type except `adafactor`",
     )
     lr_scheduler_train_steps: int = ConfigField(
         default=None,
         constraint=OptionalConstraint(TypeConstraint(int)),
-        doc=r"总训练步数，设为`null`则自动获取： $\text{steps} = \text{len(dataloader)} \times \text{epoches}$",
+        doc=r"Total training steps; `null` derives them as $\text{steps} = \text{len(dataloader)} \times \text{epochs}$",
     )
     lr_scheduler_num_cycles: float = ConfigField(
         default=None,
         constraint=OptionalConstraint(TypeConstraint(Number)),
-        doc="适用于 `cosine` 与`cosine_with_restarts`调度器的周期数",
+        doc="Number of cycles for the `cosine` and `cosine_with_restarts` schedulers",
     )
     lr_scheduler_power: float = ConfigField(
-        default=None, constraint=OptionalConstraint(TypeConstraint(Number)), doc="适用于 `polynomial` 调度器的幂指数"
+        default=None,
+        constraint=OptionalConstraint(TypeConstraint(Number)),
+        doc="Power exponent for the `polynomial` scheduler",
     )
 
     _cross_constraints = [
@@ -355,62 +366,107 @@ class OptimizerConfig(Config):
 
 
 class AssetBERTModelConfig(Config):
-    """Configuration for AssetBERT model architecture and initialization.
+    """Configuration for the AssetBERT model architecture and initialization.
 
-    This configuration defines the architecture and initialization parameters for
-    BERT models adapted for financial asset sequences. It supports various embedding
-    initialization strategies and model freezing options for transfer learning.
-
-    Attributes:
-        model_type: Type identifier for the model architecture.
-        model_checkpoint: Path to pre-trained model checkpoint.
-        w2v_model: Path to Word2Vec model for embedding initialization.
-        embedding_file: Path to embedding file for initialization.
-        vocab_size: Size of the vocabulary.
-        hidden_size: Dimensionality of hidden layers.
-        num_hidden_layers: Number of transformer layers.
-        num_attention_heads: Number of attention heads per layer.
-        intermediate_size: Size of feed-forward intermediate layer.
-        max_position_embeddings: Maximum sequence length.
-        type_vocab_size: Number of token types (usually 1 for single sequences).
-        freeze_embedding: Whether to freeze embedding layer during training.
-        freeze_encoder: Whether to freeze encoder layers during training.
+    Defines the BERT architecture adapted to portfolio sequences (vocabulary, width, depth, heads, positions)
+    and how its weights start: from a checkpoint, a Word2Vec model or an embedding file, with the embedding
+    layer or the encoder optionally frozen for transfer learning.
     """
 
-    model_type: str = ConfigField(default="BERT", constraint=ChoiceConstraint(["BERT"]))
+    model_type: str = ConfigField(default="BERT", constraint=ChoiceConstraint(["BERT"]), doc="Model type identifier")
     model_checkpoint: str = ConfigField(
         default=None,
         constraint=OptionalConstraint(TypeConstraint(str)),
         preprocessor=path_preprocessor,
-        doc="预训练模型检查点",
+        doc="Pretrained model checkpoint path",
     )
     w2v_model: str = ConfigField(
         default=None,
         constraint=OptionalConstraint(TypeConstraint(str)),
         preprocessor=path_preprocessor,
-        doc="Word2Vec模型路径",
+        doc="Path of the Word2Vec model",
     )
     embedding_file: str = ConfigField(
         default=None,
         constraint=OptionalConstraint(TypeConstraint(str)),
         preprocessor=path_preprocessor,
-        doc="嵌入文件路径",
+        doc="Path of the embedding file",
     )
-    vocab_size: int = ConfigField(default=5521, constraint=TypeConstraint(int), doc="词汇表大小", required=True)
-    hidden_size: int = ConfigField(default=100, constraint=TypeConstraint(int), doc="隐藏层大小", required=True)
+    vocab_size: int = ConfigField(default=5521, constraint=TypeConstraint(int), doc="Vocabulary size", required=True)
+    hidden_size: int = ConfigField(default=100, constraint=TypeConstraint(int), doc="Hidden layer size", required=True)
     num_hidden_layers: int = ConfigField(
-        default=4, constraint=TypeConstraint(int), doc="Transformer层数", required=True
+        default=4, constraint=TypeConstraint(int), doc="Number of Transformer layers", required=True
     )
-    num_attention_heads: int = ConfigField(default=2, constraint=TypeConstraint(int), doc="注意力头数", required=True)
-    intermediate_size: int = ConfigField(default=512, constraint=TypeConstraint(int), doc="中间层大小", required=True)
+    num_attention_heads: int = ConfigField(
+        default=2, constraint=TypeConstraint(int), doc="Number of attention heads", required=True
+    )
+    intermediate_size: int = ConfigField(
+        default=512, constraint=TypeConstraint(int), doc="Feed-forward intermediate layer size", required=True
+    )
     max_position_embeddings: int = ConfigField(
-        default=64, constraint=TypeConstraint(int), doc="最大位置嵌入(序列的最大长度)", required=True
+        default=64,
+        constraint=TypeConstraint(int),
+        doc="Maximum position embeddings (the maximum sequence length)",
+        required=True,
     )
-    type_vocab_size: int = ConfigField(default=1, constraint=TypeConstraint(int), doc="类型词汇表大小", required=True)
-    freeze_embedding: bool = ConfigField(default=False, constraint=TypeConstraint(bool), doc="是否冻结嵌入层")
-    freeze_encoder: bool = ConfigField(default=False, constraint=TypeConstraint(bool), doc="是否冻结编码器")
+    type_vocab_size: int = ConfigField(
+        default=1, constraint=TypeConstraint(int), doc="Token-type vocabulary size", required=True
+    )
+    freeze_embedding: bool = ConfigField(
+        default=False, constraint=TypeConstraint(bool), doc="Whether the embedding layer is frozen"
+    )
+    freeze_encoder: bool = ConfigField(
+        default=False, constraint=TypeConstraint(bool), doc="Whether the encoder is frozen"
+    )
     embedding_model: str = ConfigField(
         default=None,
         constraint=OptionalConstraint(TypeConstraint(str)),
-        doc="上游嵌入模型名称 (e.g., 'AssetBERT', 'AssetW2V', 'RS_Binary', 'Chars')",
+        doc="Name of the upstream embedding model (e.g., 'AssetBERT', 'AssetW2V', 'RS_Binary', 'Chars')",
+    )
+
+
+class SimplifiedMLMModelConfig(Config):
+    """Configuration for the simplified masked-language-model architecture.
+
+    Defines the lightweight MLM (an embedding layer and a prediction head, no Transformer encoder) used
+    where full BERT training is too costly, together with its initialization from a checkpoint or an
+    embedding file and the freezing switches for the embedding layer and the head.
+    """
+
+    model_type: str = ConfigField(
+        default="SimplifiedMLM", constraint=ChoiceConstraint(["SimplifiedMLM"]), doc="Model type identifier"
+    )
+    model_checkpoint: str = ConfigField(
+        default=None,
+        constraint=OptionalConstraint(TypeConstraint(str)),
+        preprocessor=path_preprocessor,
+        doc="Pretrained model checkpoint path",
+    )
+    embedding_file: str = ConfigField(
+        default=None,
+        constraint=OptionalConstraint(TypeConstraint(str)),
+        preprocessor=path_preprocessor,
+        doc="Path of the embedding file",
+    )
+    vocab_size: int = ConfigField(default=5521, constraint=TypeConstraint(int), doc="Vocabulary size", required=True)
+    hidden_size: int = ConfigField(default=100, constraint=TypeConstraint(int), doc="Hidden layer size", required=True)
+    max_position_embeddings: int = ConfigField(
+        default=64,
+        constraint=TypeConstraint(int),
+        doc="Maximum position embeddings (the maximum sequence length)",
+        required=True,
+    )
+    type_vocab_size: int = ConfigField(
+        default=1, constraint=TypeConstraint(int), doc="Token-type vocabulary size", required=True
+    )
+    freeze_embedding: bool = ConfigField(
+        default=False, constraint=TypeConstraint(bool), doc="Whether the embedding layer is frozen"
+    )
+    freeze_head: bool = ConfigField(
+        default=False, constraint=TypeConstraint(bool), doc="Whether the MLM prediction head is frozen"
+    )
+    embedding_model: str = ConfigField(
+        default=None,
+        constraint=OptionalConstraint(TypeConstraint(str)),
+        doc="Name of the upstream embedding model (e.g., 'AssetBERT', 'AssetW2V', 'RS_Binary', 'Chars')",
     )

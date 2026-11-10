@@ -1,6 +1,6 @@
 # Configuration system
 
-This document describes the AssetEmbeddings configuration system: the `Config` base class, the
+This document describes the AssetEmbeddingsInChina configuration system: the `Config` base class, the
 `ConfigField` descriptor, and the constraint-validation framework.
 
 ## Contents
@@ -35,8 +35,9 @@ asset_embeddings/configs/
 ├── base.py            # Config base class and ConfigField descriptor
 ├── constraints.py     # constraint-validation framework
 ├── container.py       # ConfigContainer hierarchical config container
-├── object_configs.py  # model / logger / tokenizer config classes
-├── runtime_configs.py # training runtime config classes
+├── object_configs.py  # model / logger / tokenizer / dataset / optimizer / accelerator config classes
+├── train_configs.py   # RS and W2V training, MLMLoopConfig, AssetBERTTrainConfig, MPTrainConfig, RunMetadataConfig
+├── eval_configs.py    # EvalDataConfig, FeatureConfig, RidgeConfig, GroupingConfig and the four evaluation configs
 └── __init__.py        # module exports
 ```
 
@@ -114,6 +115,9 @@ config = TrainingConfig(learning_rate=0.01, batch_size=64)
 
 # Option 3: chained loading
 config = TrainingConfig().from_file("config.yaml").from_args(parser)
+
+# Option 4: from a dict (a key that names no field raises KeyError)
+config = TrainingConfig().from_dict({"learning_rate": 0.01, "batch_size": 64})
 ```
 
 ### Accessing values
@@ -195,7 +199,7 @@ str_or_int = TypeConstraint(str) | TypeConstraint(int)
 # Nested composition
 complex_constraint = (
     (TypeConstraint(int) & RangeConstraint(0, 100)) |
-    (TypeConstraint(str) & LengthConstraint(10))
+    (TypeConstraint(str) & LengthConstraint(10, None))
 )
 ```
 
@@ -365,9 +369,17 @@ A representative (not exhaustive) sample of the cross-constraints the project's 
 |-----------|--------|------|
 | `DataLoaderConfig` | `persistent_workers_guard` | `persistent_workers` must be False when `num_workers=0` |
 | `DatasetConfig` | `mask_mode_exclusion` | at most one of `mask_prob` / `mask_indices` is set |
-| `AssetBERTTrainConfig` | `best_metric_requires_val_split` | `validation_split` is required when `best_metric` is a val/eval loss |
-| `AssetBERTTrainConfig` | `early_stop_metric_requires_val_split` | same, for `early_stop_metric` |
+| `MLMLoopConfig` | `best_metric_split_exists` | `best_metric="val_loss"` needs `validation_split > 0`, `"test_loss"` needs `test_split > 0` (only `MPTrainConfig` has one) |
+| `MLMLoopConfig` | `early_stop_metric_split_exists` | same, for `early_stop_metric` |
+| `AssetBERTTrainConfig` / `MPTrainConfig` | (the same two) | inherited from MLMLoopConfig |
 | `OptimizerConfig` | `adafactor_scheduler_requires_optimizer` | `lr_scheduler_type="adafactor"` requires `optimizer_type="Adafactor"` |
+| `EvalDataConfig` | `embedding_path_per_period`, `benchmark_path_per_period` | a path is a list with one file per entry of `periods`, or a single file when there is one period |
+| `FeatureConfig` | `embedding_path_matches_features` | `embedding_path` is set exactly when `"embedding"` is in `features` |
+| `FeatureConfig` | `char_benchmark_path_per_period` | the per-period rule, for `char_benchmark_path` |
+| `GroupingConfig` | `group_path_per_period` | the per-period rule, for `group_path` |
+| `GroupingConfig` | `fixed_requires_bins`, `bin_labels_match_bins` | under `grouping="fixed"`, `bins` is a non-empty, strictly increasing list of inner cut points, and a set `bin_labels` has `len(bins) + 1` entries |
+| `GroupingConfig` | `grouped_no_char_benchmark_path` | the grouped evaluation refuses a set `char_benchmark_path` |
+| `RVEvalConfig`, `RCEvalConfig`, `GroupedRVEvalConfig`, … | (inherited) | each evaluation config combines the field groups above and inherits their constraints |
 
 ---
 
@@ -396,8 +408,8 @@ from asset_embeddings.configs.constraints import TypeConstraint, ChoiceConstrain
 class MyConfig(Config):
     count: int = ConfigField(default=0, constraint=TypeConstraint(int))
     name: Optional[str] = ConfigField(default=None, constraint=OptionalConstraint(TypeConstraint(str)))
-    mode: Literal["train", "val", "test"] = ConfigField(
-        default="train", constraint=ChoiceConstraint(["train", "val", "test"])
+    mode: Literal["train", "eval", "test"] = ConfigField(
+        default="train", constraint=ChoiceConstraint(["train", "eval", "test"])
     )
     layers: List[int] = ConfigField(default=[64, 128, 256], constraint=TypeConstraint(list))
 ```
@@ -582,8 +594,38 @@ class BERTTrainConfig(BaseTrainConfig):
 
 ### Nested configs
 
-For complex configs, use `ConfigContainer` (see `asset_embeddings/configs/container.py`) or nest
-manually:
+For complex configs, use `ConfigContainer` (see `asset_embeddings/configs/container.py`). A container
+holds named child configs (or nested containers), reachable as attributes, as items, and through
+dotted paths; a subclass declares its children as type annotations, and each child is created on
+construction unless one is supplied. The loading methods forward to every child: `from_file` reads
+each child's own top-level section of the file, `from_args` routes `<child>_<field>` arguments to
+`<child>`, and `from_env` reads `<PREFIX>_<CHILD>_<FIELD>`.
+
+```python
+from asset_embeddings.configs import Config, ConfigField, ConfigContainer
+from asset_embeddings.configs.constraints import TypeConstraint
+
+class DatasetConfig(Config):
+    path: str = ConfigField(required=True, constraint=TypeConstraint(str))
+    batch_size: int = ConfigField(default=32, constraint=TypeConstraint(int))
+
+class ModelConfig(Config):
+    hidden_size: int = ConfigField(default=256, constraint=TypeConstraint(int))
+
+class TrainContainer(ConfigContainer):
+    dataset: DatasetConfig                                    # created as DatasetConfig() on construction
+    model: ModelConfig = lambda: ModelConfig(hidden_size=64)  # or from a factory
+
+container = TrainContainer().from_file("train.json")   # {"dataset": {...}, "model": {...}}
+container.model.hidden_size                             # attribute access
+container["dataset"].batch_size                         # item access
+container.get_nested("model.hidden_size")               # dotted path
+container.set_nested("dataset.batch_size", 64)          # chainable
+container.to_dict(flatten=True)                         # {"dataset.path": ..., "model.hidden_size": ...}
+container.validate().freeze()                           # children first, then the container's own cross-constraints
+```
+
+Without a container, nest manually through `dict`-typed fields:
 
 ```python
 class DatasetConfig(Config):
@@ -610,8 +652,7 @@ class FullConfig(Config):
 
 ### How are fields that aren't defined on the config handled?
 
-`from_file()` and `from_dict()` load only the fields defined on the config class. Unknown keys are
-ignored, but a `UserWarning` is emitted to surface typos rather than swallow them silently.
+`from_file()` and `from_dict()` refuse them: a key that names no field raises `KeyError` before any value is applied, and so does a `ConfigContainer` section that names no child config. A typo or a retired key would otherwise leave the field it meant at its default. Assigning an attribute that is not a field raises `AttributeError` for the same reason.
 
 ### Can I add fields dynamically at runtime?
 
@@ -620,7 +661,7 @@ configuration, store the extra data in a `dict`-typed field.
 
 ### What happens when constraint validation fails?
 
-A `ConstraintError` is raised, with a detailed error message.
+A failed field or cross-field constraint raises `ConstraintError` with a detailed message. A required field left as `None` raises `ValueError`, and `ConfigContainer.validate()` re-raises any child's failure as `ValueError("Validation failed for config '<name>': ...")`.
 
 ### How do I debug config-loading issues?
 

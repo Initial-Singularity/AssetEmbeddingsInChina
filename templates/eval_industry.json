@@ -1,0 +1,400 @@
+[
+    {
+        "name": "RV Industry Eval - No Embedding (IndustryDummy / Chars+IndustryDummy)",
+        "description": "Generates RV configs for industry-only and chars+industry variants, both aligned and non-aligned.",
+        "template": {
+            "model_type": "{_prefix}",
+            "embedding_path": null,
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": "{features}",
+            "align_chars": false,
+            "ridge_alpha": 0.5,
+            "seed": 42
+        },
+        "output_dir": "configs/industry/eval/RV/d{dim}",
+        "filename": "{_prefix}_d{dim}{_nonaligned}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "_prefix": [
+                "IndustryDummy",
+                "Chars_IndustryDummy"
+            ],
+            "_nonaligned": [
+                "",
+                "_nonaligned"
+            ],
+            "features": [
+                [
+                    "industry"
+                ],
+                [
+                    "chars",
+                    "industry"
+                ]
+            ]
+        },
+        "variable_bindings": [
+            {
+                "_nonaligned": "",
+                "_prefix": "IndustryDummy",
+                "features": [
+                    "industry"
+                ]
+            },
+            {
+                "_nonaligned": "_nonaligned",
+                "_prefix": "IndustryDummy",
+                "features": [
+                    "industry"
+                ]
+            },
+            {
+                "_nonaligned": "",
+                "_prefix": "Chars_IndustryDummy",
+                "features": [
+                    "chars",
+                    "industry"
+                ]
+            },
+            {
+                "_nonaligned": "_nonaligned",
+                "_prefix": "Chars_IndustryDummy",
+                "features": [
+                    "chars",
+                    "industry"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "RV Industry Eval - AssetBERT with IndustryDummy",
+        "description": "Generates RV configs for AssetBERT + industry dummy, 3 variants: aligned, nonaligned, addChars.",
+        "template": {
+            "model_type": "AssetBERT",
+            "embedding_path": [
+                "checkpoints/finetune/AssetBERT/d{dim}/2023Q2/AssetBERT_d{dim}_2023Q2_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2023Q3/AssetBERT_d{dim}_2023Q3_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2023Q4/AssetBERT_d{dim}_2023Q4_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2024Q1/AssetBERT_d{dim}_2024Q1_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2024Q2/AssetBERT_d{dim}_2024Q2_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2024Q3/AssetBERT_d{dim}_2024Q3_best_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": "{features}",
+            "align_chars": "{align_chars}",
+            "ridge_alpha": 0.5,
+            "seed": 42
+        },
+        "output_dir": "configs/industry/eval/RV/d{dim}",
+        "filename": "AssetBERT_d{dim}{_addChars}_IndustryDummy{_nonaligned}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "_addChars": [
+                "",
+                "_addChars"
+            ],
+            "_nonaligned": [
+                "",
+                "_nonaligned"
+            ],
+            "features": [
+                [
+                    "embedding",
+                    "industry"
+                ],
+                [
+                    "embedding",
+                    "chars",
+                    "industry"
+                ]
+            ],
+            "align_chars": [
+                true,
+                false
+            ]
+        },
+        "variable_bindings": [
+            {
+                "_addChars": "",
+                "_nonaligned": "",
+                "align_chars": true,
+                "features": [
+                    "embedding",
+                    "industry"
+                ]
+            },
+            {
+                "_addChars": "",
+                "_nonaligned": "_nonaligned",
+                "align_chars": false,
+                "features": [
+                    "embedding",
+                    "industry"
+                ]
+            },
+            {
+                "_addChars": "_addChars",
+                "_nonaligned": "",
+                "align_chars": true,
+                "features": [
+                    "embedding",
+                    "chars",
+                    "industry"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "RC Industry Eval - No Embedding (IndustryDummy / Chars+IndustryDummy)",
+        "description": "Generates RC configs for industry-only and chars+industry variants, both aligned and non-aligned.",
+        "template": {
+            "model_type": "{_prefix}",
+            "embedding_path": null,
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": "{features}",
+            "align_chars": false,
+            "ridge_alpha": 0.5,
+            "seed": 42
+        },
+        "output_dir": "configs/industry/eval/RC/d{dim}",
+        "filename": "{_prefix}_d{dim}{_nonaligned}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "_prefix": [
+                "IndustryDummy",
+                "Chars_IndustryDummy"
+            ],
+            "_nonaligned": [
+                "",
+                "_nonaligned"
+            ],
+            "features": [
+                [
+                    "industry"
+                ],
+                [
+                    "chars",
+                    "industry"
+                ]
+            ]
+        },
+        "variable_bindings": [
+            {
+                "_nonaligned": "",
+                "_prefix": "IndustryDummy",
+                "features": [
+                    "industry"
+                ]
+            },
+            {
+                "_nonaligned": "_nonaligned",
+                "_prefix": "IndustryDummy",
+                "features": [
+                    "industry"
+                ]
+            },
+            {
+                "_nonaligned": "",
+                "_prefix": "Chars_IndustryDummy",
+                "features": [
+                    "chars",
+                    "industry"
+                ]
+            },
+            {
+                "_nonaligned": "_nonaligned",
+                "_prefix": "Chars_IndustryDummy",
+                "features": [
+                    "chars",
+                    "industry"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "RC Industry Eval - AssetBERT with IndustryDummy",
+        "description": "Generates RC configs for AssetBERT + industry dummy, 3 variants: aligned, nonaligned, addChars.",
+        "template": {
+            "model_type": "AssetBERT",
+            "embedding_path": [
+                "checkpoints/finetune/AssetBERT/d{dim}/2023Q2/AssetBERT_d{dim}_2023Q2_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2023Q3/AssetBERT_d{dim}_2023Q3_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2023Q4/AssetBERT_d{dim}_2023Q4_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2024Q1/AssetBERT_d{dim}_2024Q1_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2024Q2/AssetBERT_d{dim}_2024Q2_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2024Q3/AssetBERT_d{dim}_2024Q3_best_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": "{features}",
+            "align_chars": "{align_chars}",
+            "ridge_alpha": 0.5,
+            "seed": 42
+        },
+        "output_dir": "configs/industry/eval/RC/d{dim}",
+        "filename": "AssetBERT_d{dim}{_addChars}_IndustryDummy{_nonaligned}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "_addChars": [
+                "",
+                "_addChars"
+            ],
+            "_nonaligned": [
+                "",
+                "_nonaligned"
+            ],
+            "features": [
+                [
+                    "embedding",
+                    "industry"
+                ],
+                [
+                    "embedding",
+                    "chars",
+                    "industry"
+                ]
+            ],
+            "align_chars": [
+                true,
+                false
+            ]
+        },
+        "variable_bindings": [
+            {
+                "_addChars": "",
+                "_nonaligned": "",
+                "align_chars": true,
+                "features": [
+                    "embedding",
+                    "industry"
+                ]
+            },
+            {
+                "_addChars": "",
+                "_nonaligned": "_nonaligned",
+                "align_chars": false,
+                "features": [
+                    "embedding",
+                    "industry"
+                ]
+            },
+            {
+                "_addChars": "_addChars",
+                "_nonaligned": "",
+                "align_chars": true,
+                "features": [
+                    "embedding",
+                    "chars",
+                    "industry"
+                ]
+            }
+        ]
+    }
+]

@@ -1,0 +1,449 @@
+[
+    {
+        "name": "RV NoPtInit - AssetBERT no_pt_init",
+        "description": "RV evaluation for AssetBERT_no_pt_init across 16 quarters. 7 dims x 2 (plain/+Chars) = 14 configs.",
+        "template": {
+            "model_type": "AssetBERT_no_pt_init",
+            "embedding_path": [
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2020Q4/AssetBERT_no_pt_init_d{dim}_2020Q4_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2021Q1/AssetBERT_no_pt_init_d{dim}_2021Q1_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2021Q2/AssetBERT_no_pt_init_d{dim}_2021Q2_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2021Q3/AssetBERT_no_pt_init_d{dim}_2021Q3_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2021Q4/AssetBERT_no_pt_init_d{dim}_2021Q4_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2022Q1/AssetBERT_no_pt_init_d{dim}_2022Q1_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2022Q2/AssetBERT_no_pt_init_d{dim}_2022Q2_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2022Q3/AssetBERT_no_pt_init_d{dim}_2022Q3_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2022Q4/AssetBERT_no_pt_init_d{dim}_2022Q4_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2023Q1/AssetBERT_no_pt_init_d{dim}_2023Q1_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2023Q2/AssetBERT_no_pt_init_d{dim}_2023Q2_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2023Q3/AssetBERT_no_pt_init_d{dim}_2023Q3_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2023Q4/AssetBERT_no_pt_init_d{dim}_2023Q4_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2024Q1/AssetBERT_no_pt_init_d{dim}_2024Q1_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2024Q2/AssetBERT_no_pt_init_d{dim}_2024Q2_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2024Q3/AssetBERT_no_pt_init_d{dim}_2024Q3_best_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2020Q4.csv",
+                "data/processed/Benchmark/2021Q1.csv",
+                "data/processed/Benchmark/2021Q2.csv",
+                "data/processed/Benchmark/2021Q3.csv",
+                "data/processed/Benchmark/2021Q4.csv",
+                "data/processed/Benchmark/2022Q1.csv",
+                "data/processed/Benchmark/2022Q2.csv",
+                "data/processed/Benchmark/2022Q3.csv",
+                "data/processed/Benchmark/2022Q4.csv",
+                "data/processed/Benchmark/2023Q1.csv",
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": "{features}",
+            "align_chars": true,
+            "ridge_alpha": 0.5,
+            "seed": 42
+        },
+        "output_dir": "configs/pt_strategy_ablation/no_pt_init/eval/RV/d{dim}",
+        "filename": "AssetBERT_no_pt_init_d{dim}{_addChars}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "_addChars": [
+                "",
+                "_addChars"
+            ],
+            "features": [
+                [
+                    "embedding"
+                ],
+                [
+                    "embedding",
+                    "chars"
+                ]
+            ]
+        },
+        "variable_bindings": [
+            {
+                "_addChars": "",
+                "features": [
+                    "embedding"
+                ]
+            },
+            {
+                "_addChars": "_addChars",
+                "features": [
+                    "embedding",
+                    "chars"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "RC NoPtInit - AssetBERT no_pt_init",
+        "description": "RC evaluation for AssetBERT_no_pt_init across 16 quarters. 7 dims x 2 (plain/+Chars) = 14 configs.",
+        "template": {
+            "model_type": "AssetBERT_no_pt_init",
+            "embedding_path": [
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2020Q4/AssetBERT_no_pt_init_d{dim}_2020Q4_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2021Q1/AssetBERT_no_pt_init_d{dim}_2021Q1_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2021Q2/AssetBERT_no_pt_init_d{dim}_2021Q2_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2021Q3/AssetBERT_no_pt_init_d{dim}_2021Q3_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2021Q4/AssetBERT_no_pt_init_d{dim}_2021Q4_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2022Q1/AssetBERT_no_pt_init_d{dim}_2022Q1_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2022Q2/AssetBERT_no_pt_init_d{dim}_2022Q2_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2022Q3/AssetBERT_no_pt_init_d{dim}_2022Q3_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2022Q4/AssetBERT_no_pt_init_d{dim}_2022Q4_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2023Q1/AssetBERT_no_pt_init_d{dim}_2023Q1_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2023Q2/AssetBERT_no_pt_init_d{dim}_2023Q2_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2023Q3/AssetBERT_no_pt_init_d{dim}_2023Q3_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2023Q4/AssetBERT_no_pt_init_d{dim}_2023Q4_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2024Q1/AssetBERT_no_pt_init_d{dim}_2024Q1_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2024Q2/AssetBERT_no_pt_init_d{dim}_2024Q2_best_embedding.csv",
+                "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/2024Q3/AssetBERT_no_pt_init_d{dim}_2024Q3_best_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2020Q4.csv",
+                "data/processed/Benchmark/2021Q1.csv",
+                "data/processed/Benchmark/2021Q2.csv",
+                "data/processed/Benchmark/2021Q3.csv",
+                "data/processed/Benchmark/2021Q4.csv",
+                "data/processed/Benchmark/2022Q1.csv",
+                "data/processed/Benchmark/2022Q2.csv",
+                "data/processed/Benchmark/2022Q3.csv",
+                "data/processed/Benchmark/2022Q4.csv",
+                "data/processed/Benchmark/2023Q1.csv",
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": "{features}",
+            "align_chars": true,
+            "ridge_alpha": 0.5,
+            "seed": 42
+        },
+        "output_dir": "configs/pt_strategy_ablation/no_pt_init/eval/RC/d{dim}",
+        "filename": "AssetBERT_no_pt_init_d{dim}{_addChars}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "_addChars": [
+                "",
+                "_addChars"
+            ],
+            "features": [
+                [
+                    "embedding"
+                ],
+                [
+                    "embedding",
+                    "chars"
+                ]
+            ]
+        },
+        "variable_bindings": [
+            {
+                "_addChars": "",
+                "features": [
+                    "embedding"
+                ]
+            },
+            {
+                "_addChars": "_addChars",
+                "features": [
+                    "embedding",
+                    "chars"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "MP NoPtInit - AssetBERT no_pt_init via BERT head",
+        "description": "MP evaluation for AssetBERT_no_pt_init via BERT head. 7 dims x 16 quarters = 112 configs.",
+        "template": {
+            "run": {
+                "period": "{quarter}"
+            },
+            "model": {
+                "model_type": "BERT",
+                "model_checkpoint": "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/{quarter}/AssetBERT_no_pt_init_d{dim}_{quarter}_best/model.safetensors",
+                "embedding_file": "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/{quarter}/AssetBERT_no_pt_init_d{dim}_{quarter}_best_embedding.csv",
+                "vocab_size": "{vocab_size}",
+                "hidden_size": "{dim}",
+                "num_hidden_layers": 4,
+                "num_attention_heads": 2,
+                "intermediate_size": 512,
+                "max_position_embeddings": 256,
+                "type_vocab_size": 1,
+                "freeze_embedding": true,
+                "freeze_encoder": false,
+                "embedding_model": "AssetBERT_no_pt_init"
+            },
+            "tokenizer": {
+                "w2v_model": null,
+                "embedding_file": "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d{dim}/{quarter}/AssetBERT_no_pt_init_d{dim}_{quarter}_best_embedding.csv",
+                "vocab_file": null,
+                "pretrained_tokenizer_file": null,
+                "alias_file": null
+            },
+            "dataset": {
+                "data_path": "data/processed/MutualFundShareHoldings_TimeSplit/finetune/{quarter}.csv",
+                "data_format": "csv",
+                "id_key": "InvestorID",
+                "portfolio_key": "Portfolio",
+                "proportion1_key": "Proportion1",
+                "proportion2_key": "Proportion2",
+                "include_proportion": true,
+                "max_length": 256,
+                "mask_prob": null,
+                "mask_indices": [
+                    2
+                ]
+            },
+            "dataloader": {
+                "batch_size": 32,
+                "shuffle": true,
+                "num_workers": 4,
+                "pin_memory": true,
+                "drop_last": false
+            },
+            "optimizer": {
+                "optimizer_type": "PagedAdam8bit",
+                "optimizer_kwargs": null,
+                "learning_rate": 0.001,
+                "lr_scheduler_type": "cosine",
+                "lr_scheduler_warmup_steps": 100,
+                "lr_scheduler_train_steps": null,
+                "lr_scheduler_num_cycles": 0.5,
+                "lr_scheduler_power": 0
+            },
+            "accelerator": {
+                "mixed_precision": "auto",
+                "gradient_accumulation_steps": 1,
+                "accelerator_checkpoint": null,
+                "use_compile": true,
+                "compile_backend": "inductor",
+                "compile_mode": "default",
+                "compile_fullgraph": false,
+                "compile_dynamic": false,
+                "compile_cache_dir": null,
+                "allow_tf32": true
+            },
+            "train": {
+                "max_epochs": 30,
+                "validation_split": 0.2,
+                "test_split": 0.1,
+                "split_method": "random",
+                "best_metric": "val_loss",
+                "clip_grad_norm": 1.0,
+                "clip_grad_value": null,
+                "detect_anomaly": false,
+                "log_every_steps": 200,
+                "report_every_epochs": 1,
+                "save_every_epochs": 1,
+                "save_folder": "checkpoints/pt_strategy_ablation/no_pt_init/refine/BERT/AssetBERT_no_pt_init/d{dim}/{quarter}",
+                "save_name": "AssetBERT_no_pt_init_d{dim}_{quarter}",
+                "save_format": ".safetensors",
+                "seed": 42
+            }
+        },
+        "output_dir": "configs/pt_strategy_ablation/no_pt_init/eval/MP/BERT/AssetBERT_no_pt_init/d{dim}",
+        "filename": "AssetBERT_no_pt_init_d{dim}_{quarter}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "quarter": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "vocab_size": [
+                2794,
+                1420,
+                3024,
+                1625,
+                3479,
+                1804,
+                3662,
+                1844,
+                4025,
+                2127,
+                4543,
+                2324,
+                4960,
+                2089,
+                4769,
+                1917
+            ]
+        },
+        "variable_bindings": [
+            {
+                "dim": 4
+            },
+            {
+                "dim": 8
+            },
+            {
+                "dim": 10
+            },
+            {
+                "dim": 16
+            },
+            {
+                "dim": 32
+            },
+            {
+                "dim": 64
+            },
+            {
+                "dim": 128
+            },
+            {
+                "quarter": "2020Q4",
+                "vocab_size": 2794
+            },
+            {
+                "quarter": "2021Q1",
+                "vocab_size": 1420
+            },
+            {
+                "quarter": "2021Q2",
+                "vocab_size": 3024
+            },
+            {
+                "quarter": "2021Q3",
+                "vocab_size": 1625
+            },
+            {
+                "quarter": "2021Q4",
+                "vocab_size": 3479
+            },
+            {
+                "quarter": "2022Q1",
+                "vocab_size": 1804
+            },
+            {
+                "quarter": "2022Q2",
+                "vocab_size": 3662
+            },
+            {
+                "quarter": "2022Q3",
+                "vocab_size": 1844
+            },
+            {
+                "quarter": "2022Q4",
+                "vocab_size": 4025
+            },
+            {
+                "quarter": "2023Q1",
+                "vocab_size": 2127
+            },
+            {
+                "quarter": "2023Q2",
+                "vocab_size": 4543
+            },
+            {
+                "quarter": "2023Q3",
+                "vocab_size": 2324
+            },
+            {
+                "quarter": "2023Q4",
+                "vocab_size": 4960
+            },
+            {
+                "quarter": "2024Q1",
+                "vocab_size": 2089
+            },
+            {
+                "quarter": "2024Q2",
+                "vocab_size": 4769
+            },
+            {
+                "quarter": "2024Q3",
+                "vocab_size": 1917
+            }
+        ]
+    }
+]

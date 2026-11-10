@@ -1,6 +1,6 @@
 # Examples
 
-End-to-end walkthrough of the project's canonical training chain — **W2V-PT → W2V-FT → BERT-PT → BERT-FT** — on a synthetic dataset shipped in [`data/`](data/). CPU only, ~1 minute, fully redistributable (every number is generated; see [`data/README.md`](data/README.md)).
+End-to-end walkthrough of the project's canonical training chain — **W2V → BERT-PT → BERT-FT → RV ×3** — on a synthetic dataset shipped in [`data/`](data/). CPU only, ~1 minute, fully redistributable (every number is generated; see [`data/README.md`](data/README.md)).
 
 Two equivalent entry points share the same pipeline:
 
@@ -30,13 +30,12 @@ uv run python examples/quickstart.py
 
 ## What you should see
 
-The pipeline produces four asset-embedding artifacts:
+The pipeline produces three asset-embedding artifacts and scores them against the bundled benchmark. Expected RV @ 2024Q2:
 
-| Model | Trained on | Artifact |
-|---|---|---|
-| W2V-PT | PT data | `_output/w2v/w2v_d16_embedding.csv` |
-| W2V-FT | FT data | `_output/w2v_ft/w2v_ft_d16_embedding.csv` |
-| BERT-PT | PT data | `_output/bert_pt/bert_pt_d16_best_contextual_embedding.csv` |
-| BERT-FT | FT data | `_output/bert_ft/bert_ft_d16_best_contextual_embedding.csv` |
+| Model | Trained on | RV | Note |
+|---|---|---|---|
+| W2V | PT data | ~0.53 | baseline |
+| BERT-PT | PT data | ~0.53 | matches W2V (same training data) |
+| BERT-FT | FT data | ~0.60 | **+0.07 from fine-tuning** |
 
-Each CSV is a `(Token, Embed_1..Embed_d)` matrix. The final cell prints the four shapes plus the top-5 cosine neighbours of one stock in each space — the synthetic universe has latent cluster structure, so neighbours stay within a stock's cluster, and the two fine-tuned models pick up the FT-period drift together while staying comparable to their pretrained starting points.
+The +0.07 gap reflects the synthetic data's cluster-level drift between PT and FT periods. On real CSMAR data the lift is typically larger.

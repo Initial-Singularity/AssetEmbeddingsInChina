@@ -2,15 +2,22 @@
 # run_helper.sh — Error-tolerant run helper for exploration batches.
 #
 # Source this file from exploration scripts. Provides:
-#   try_run [-m tag]... "description" command args...
+#   job [-m tag]... "description" command args...
 #   print_summary
 #
-# Marker-based filtering (set via run_notify.sh -k / --exclude):
-#   try_run -m bert -m pretrain -m d64 "BERT pretrain d64" uv run python ...
-#   Each -m adds a tag for filtering. Filter rules:
-#     AE_FILTER_INCLUDE="bert,pretrain|w2v"  — |-separated OR groups, comma-separated AND
-#     AE_FILTER_EXCLUDE="rs_binary,rs_ranks" — comma-separated, any match → skip
-#   Commands without -m flags are always executed (untagged = unconditional).
+# Marker-based filtering (set via run_notify.sh -k / --exclude / --filter-file / --exclude-file):
+#   job -m bert -m pretrain -m d64 -m "$cfg" "BERT pretrain d64" uv run python ... --config "$cfg"
+#   Each -m adds a tag for filtering; by convention the last tag is the config path exactly as passed to
+#   --config (repo-relative, forward slashes), which is the key shared with runs.config_file. Inputs:
+#     AE_FILTER_INCLUDE="bert,pretrain|w2v"  — |-separated OR groups, comma-separated AND terms
+#     AE_FILTER_EXCLUDE="rs_binary,rs_ranks" — comma-separated, any match → skip (checked before include)
+#     AE_FILTER_INCLUDE_FILE=path            — one AND-group per line (comma-separated); lines are OR-ed
+#     AE_FILTER_EXCLUDE_FILE=path            — one term per line
+#   Blank lines and lines starting with # are ignored. Terms and tags are lowercased. A term containing
+#   * or ? is a bash glob matched against each tag ("configs/main/finetune/*"); every other term is an
+#   exact set lookup, so lists of thousands of config paths cost nothing. Filters are parsed once when
+#   this file is sourced. Commands without -m flags are always executed (untagged = unconditional).
+#   Requires bash >= 4.3.
 #
 # Error email throttling (set via AE_ERROR_THROTTLE env var or run_notify.sh --throttle):
 #   When throttle > 0, per-error emails are buffered and sent in batches no more
@@ -18,7 +25,7 @@
 #   in print_summary.
 #
 # Max errors (set via AE_MAX_ERRORS env var or run_notify.sh --max-errors):
-#   When max_errors > 0, try_run calls print_summary and exits the entire script
+#   When max_errors > 0, job calls print_summary and exits the entire script
 #   after the Nth failure, aborting the batch.
 #
 # Verbosity (set via AE_VERBOSE env var or run_notify.sh -v / -q):
@@ -28,8 +35,10 @@
 #
 # Usage:
 #   source scripts/run/run_helper.sh
-#   try_run -m bert -m pretrain -m d64 "BERT pretrain d64" uv run python -m asset_embeddings.scripts.train.bert -c cfg.json
-#   try_run -m w2v  -m finetune -m d32 "W2V finetune d32"  uv run python -m asset_embeddings.scripts.train.w2v -c cfg2.json
+#   cfg="configs/main/pretrained/AssetBERT/AssetBERT_d64_pretrained.json"
+#   job -m bert -m pretrain -m d64 -m "$cfg" "BERT pretrain d64" uv run python -m asset_embeddings.scripts.train.bert --config "$cfg"
+#   cfg="configs/main/finetune/AssetW2V/d32/AssetW2V_d32_2023Q2.json"
+#   job -m w2v  -m finetune -m d32 -m "$cfg" "W2V finetune d32"  uv run python -m asset_embeddings.scripts.train.w2v --config "$cfg"
 #   print_summary
 
 # --- Internal state ---
@@ -52,77 +61,107 @@ _RH_LAST_SENT=$(date +%s)
 _RH_BUFFERED_COUNT=0
 _RH_ZIP_FILE=""
 
-# Read NOTIFY_EMAIL from .env once at source time
+# Recipient: NOTIFY_EMAIL from the environment, else from .env (read once at source time); no default,
+# and no failure mail is sent when neither is set
 if [ -f .env ]; then
     _RH_NOTIFY_EMAIL=$(grep -E '^NOTIFY_EMAIL=' .env | cut -d= -f2- | tr -d ' "'"'"'')
 fi
-_RH_NOTIFY_EMAIL="${_RH_NOTIFY_EMAIL:-ccarzit@gmail.com}"
+_RH_NOTIFY_EMAIL="${NOTIFY_EMAIL:-${_RH_NOTIFY_EMAIL:-}}"
 
 # ---------------------------------------------------------------------------
-# _rh_match_filter — check if markers match the current include/exclude rules.
-#
-# Args: marker1 marker2 ...  (all lowercase)
-# Returns: 0 = execute, 1 = skip
-#
-# Rules:
-#   - No markers on the command  → always execute (untagged)
-#   - No filter set (both empty) → always execute
-#   - Exclude check first: if ANY marker in AE_FILTER_EXCLUDE matches → skip
-#   - Include check: at least one OR group must fully match (all AND terms present)
+# Filters (parsed ONCE at source time; see the header for the four inputs and the file format).
 # ---------------------------------------------------------------------------
+if (( BASH_VERSINFO[0] < 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] < 3) )); then
+    echo "run_helper.sh: bash >= 4.3 required (associative arrays, [[ -v ]]); found ${BASH_VERSION}" >&2
+    exit 1
+fi
+declare -A _RH_EX_EXACT=()     # exact exclude terms → 1
+_RH_EX_GLOB=()                 # exclude terms containing * or ?
+_RH_IN_GROUPS=()               # include AND-groups, each a comma-joined string
+_RH_FILTER_ACTIVE=0            # 1 once any term was loaded
+
+_rh_trim() {  # sets _RH_T to $1 without leading/trailing whitespace (no subshell: forks are slow on Windows)
+    _RH_T="$1"
+    _RH_T="${_RH_T#"${_RH_T%%[![:space:]]*}"}"
+    _RH_T="${_RH_T%"${_RH_T##*[![:space:]]}"}"
+}
+_rh_is_glob() { [[ "$1" == *[\*\?]* ]]; }
+
+_rh_add_exclude() {  # _rh_add_exclude <term>
+    _rh_trim "${1,,}"; local t="$_RH_T"
+    [ -z "$t" ] && return 0
+    if _rh_is_glob "$t"; then _RH_EX_GLOB+=("$t"); else _RH_EX_EXACT["$t"]=1; fi
+    _RH_FILTER_ACTIVE=1
+}
+_rh_add_include_group() {  # _rh_add_include_group "a,b"
+    _rh_trim "${1,,}"; local g="$_RH_T"
+    [ -z "$g" ] && return 0
+    _RH_IN_GROUPS+=("$g")
+    _RH_FILTER_ACTIVE=1
+}
+_rh_read_filter_file() {  # _rh_read_filter_file <path> <adder>; skips blank and # lines
+    local path="$1" adder="$2" line
+    if [ ! -r "$path" ]; then
+        echo "run_helper.sh: cannot read filter file '$path' (AE_FILTER_INCLUDE_FILE / AE_FILTER_EXCLUDE_FILE)" >&2
+        exit 1
+    fi
+    while IFS= read -r line || [ -n "$line" ]; do
+        _rh_trim "$line"; line="$_RH_T"
+        [ -z "$line" ] && continue
+        [[ "$line" == \#* ]] && continue
+        "$adder" "$line"
+    done < "$path"
+}
+_rh_load_filters() {
+    local item
+    if [ -n "${AE_FILTER_EXCLUDE:-}" ]; then
+        IFS=',' read -ra _rh_items <<< "$AE_FILTER_EXCLUDE"
+        for item in "${_rh_items[@]}"; do _rh_add_exclude "$item"; done
+    fi
+    [ -n "${AE_FILTER_EXCLUDE_FILE:-}" ] && _rh_read_filter_file "$AE_FILTER_EXCLUDE_FILE" _rh_add_exclude
+    if [ -n "${AE_FILTER_INCLUDE:-}" ]; then
+        IFS='|' read -ra _rh_items <<< "$AE_FILTER_INCLUDE"
+        for item in "${_rh_items[@]}"; do _rh_add_include_group "$item"; done
+    fi
+    [ -n "${AE_FILTER_INCLUDE_FILE:-}" ] && _rh_read_filter_file "$AE_FILTER_INCLUDE_FILE" _rh_add_include_group
+    return 0
+}
+_rh_load_filters
+
+# _rh_match_filter tag...  → 0 = execute, 1 = skip
+#   untagged command → execute; no term loaded → execute; exclude checked before include;
+#   include: some OR-group has all its terms present (exact: set lookup; glob: pattern over the tags).
 _rh_match_filter() {
     local markers=("$@")
-
-    # Untagged commands are always executed
-    if [ ${#markers[@]} -eq 0 ]; then
-        return 0
-    fi
-
-    # No filter configured → execute all
-    if [ -z "${AE_FILTER_INCLUDE:-}" ] && [ -z "${AE_FILTER_EXCLUDE:-}" ]; then
-        return 0
-    fi
-
-    # --- Exclude check (global deny-list) ---
-    if [ -n "${AE_FILTER_EXCLUDE:-}" ]; then
-        IFS=',' read -ra _excludes <<< "$AE_FILTER_EXCLUDE"
-        for _ex in "${_excludes[@]}"; do
-            for _m in "${markers[@]}"; do
-                if [[ "$_m" == "$_ex" ]]; then
-                    return 1
-                fi
-            done
-        done
-    fi
-
-    # --- Include check ---
-    if [ -z "${AE_FILTER_INCLUDE:-}" ]; then
-        return 0
-    fi
-
-    # Parse OR groups (|-separated), each group is AND terms (,-separated)
-    IFS='|' read -ra _or_groups <<< "$AE_FILTER_INCLUDE"
-    for _group in "${_or_groups[@]}"; do
-        IFS=',' read -ra _required <<< "$_group"
-        local _all_match=true
-        for _req in "${_required[@]}"; do
-            local _found=false
-            for _m in "${markers[@]}"; do
-                if [[ "$_m" == "$_req" ]]; then
-                    _found=true
-                    break
-                fi
-            done
-            if ! $_found; then
-                _all_match=false
-                break
+    [ ${#markers[@]} -eq 0 ] && return 0
+    [ "$_RH_FILTER_ACTIVE" -eq 0 ] && return 0
+    local m p
+    local -A have=()
+    for m in "${markers[@]}"; do have["$m"]=1; done
+    for m in "${markers[@]}"; do
+        [[ -v _RH_EX_EXACT["$m"] ]] && return 1
+    done
+    for p in "${_RH_EX_GLOB[@]+"${_RH_EX_GLOB[@]}"}"; do
+        for m in "${markers[@]}"; do [[ "$m" == $p ]] && return 1; done
+    done
+    [ ${#_RH_IN_GROUPS[@]} -eq 0 ] && return 0
+    local group term ok found
+    for group in "${_RH_IN_GROUPS[@]}"; do
+        ok=1
+        IFS=',' read -ra _rh_terms <<< "$group"
+        for term in "${_rh_terms[@]}"; do
+            _rh_trim "$term"; term="$_RH_T"
+            [ -z "$term" ] && continue
+            if _rh_is_glob "$term"; then
+                found=0
+                for m in "${markers[@]}"; do [[ "$m" == $term ]] && { found=1; break; }; done
+                [ $found -eq 1 ] || { ok=0; break; }
+            else
+                [[ -v have["$term"] ]] || { ok=0; break; }
             fi
         done
-        if $_all_match; then
-            return 0
-        fi
+        [ $ok -eq 1 ] && return 0
     done
-
     return 1
 }
 
@@ -174,12 +213,14 @@ Fail so far: ${_RH_FAIL_COUNT}"
         fi
     fi
 
-    uv run python -m scripts.tools.smtp \
-        -t "$_RH_NOTIFY_EMAIL" \
-        -s "$subject" \
-        -b "$body" \
-        "${attach_args[@]+"${attach_args[@]}"}" 2>/dev/null || \
-        echo ">>> [Warning] Buffered error email failed (SMTP error)"
+    if [ -n "$_RH_NOTIFY_EMAIL" ]; then
+        uv run python -m scripts.tools.smtp \
+            -t "$_RH_NOTIFY_EMAIL" \
+            -s "$subject" \
+            -b "$body" \
+            "${attach_args[@]+"${attach_args[@]}"}" 2>/dev/null || \
+            echo ">>> [Warning] Buffered error email failed (SMTP error)"
+    fi
 
     # Clean up zip temp file
     if [ -n "$_RH_ZIP_FILE" ]; then
@@ -201,7 +242,7 @@ _rh_cleanup() {
 }
 trap _rh_cleanup EXIT
 
-# try_run [-m tag]... "description" command args...
+# job [-m tag]... "description" command args...
 #
 # Runs the command. On success, increments pass count.
 # On failure, increments fail count, collects error logs, and either sends
@@ -210,12 +251,12 @@ trap _rh_cleanup EXIT
 # Returns 0 normally (so calling script continues).
 # Exits the script (exit 2) when max-errors is reached.
 # Exit codes: 0=success, 1=ran to completion with failures, 2=aborted by max-errors.
-try_run() {
+job() {
     # --- Parse -m flags ---
     local markers=()
     while [[ "${1:-}" == "-m" ]]; do
         if [[ -z "${2:-}" || "${2}" == -* ]]; then
-            echo "try_run: -m flag requires a non-empty tag argument" >&2
+            echo "job: -m flag requires a non-empty tag argument" >&2
             return 1
         fi
         markers+=("${2,,}")  # lowercase
@@ -237,11 +278,11 @@ try_run() {
     # --- Print header (verbosity-dependent) ---
     if [ "$_RH_VERBOSE" -ge 2 ]; then
         echo ""
-        echo ">>> [try_run] ${desc}"
+        echo ">>> [job] ${desc}"
         echo ">>> Command: $*"
     elif [ "$_RH_VERBOSE" -ge 1 ]; then
         echo ""
-        echo ">>> [try_run] ${desc}"
+        echo ">>> [job] ${desc}"
     fi
 
     # Create a temp file to identify error logs from this command
@@ -287,12 +328,14 @@ Description: ${desc}
 Pass so far: ${_RH_PASS_COUNT}
 Fail so far: ${_RH_FAIL_COUNT}"
 
-        uv run python -m scripts.tools.smtp \
-            -t "$_RH_NOTIFY_EMAIL" \
-            -s "$subject" \
-            -b "$body" \
-            "${attach_args[@]+"${attach_args[@]}"}" 2>/dev/null || \
-            echo ">>> [Warning] Per-error email failed (SMTP error)"
+        if [ -n "$_RH_NOTIFY_EMAIL" ]; then
+            uv run python -m scripts.tools.smtp \
+                -t "$_RH_NOTIFY_EMAIL" \
+                -s "$subject" \
+                -b "$body" \
+                "${attach_args[@]+"${attach_args[@]}"}" 2>/dev/null || \
+                echo ">>> [Warning] Per-error email failed (SMTP error)"
+        fi
     else
         # --- Throttled: buffer the error ---
         _RH_BUFFERED_COUNT=$((_RH_BUFFERED_COUNT + 1))

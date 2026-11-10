@@ -1,0 +1,550 @@
+[
+    {
+        "name": "MP Mask Position Sensitivity - AssetBERT via BERT head",
+        "description": "AssetBERT embeddings evaluated with full BERT architecture. 5 mask positions × 7 dims × 6 quarters = 210 configs.",
+        "template": {
+            "run": {
+                "period": "{quarter}"
+            },
+            "model": {
+                "model_type": "BERT",
+                "model_checkpoint": "checkpoints/finetune/AssetBERT/d{dim}/{quarter}/AssetBERT_d{dim}_{quarter}_best/model.safetensors",
+                "embedding_file": "checkpoints/finetune/AssetBERT/d{dim}/{quarter}/AssetBERT_d{dim}_{quarter}_best_embedding.csv",
+                "vocab_size": 5093,
+                "hidden_size": "{dim}",
+                "num_hidden_layers": 4,
+                "num_attention_heads": 2,
+                "intermediate_size": 512,
+                "max_position_embeddings": 256,
+                "type_vocab_size": 1,
+                "freeze_embedding": true,
+                "freeze_encoder": false,
+                "embedding_model": "AssetBERT"
+            },
+            "tokenizer": {
+                "w2v_model": null,
+                "embedding_file": "checkpoints/finetune/AssetBERT/d{dim}/{quarter}/AssetBERT_d{dim}_{quarter}_best_embedding.csv",
+                "vocab_file": null,
+                "pretrained_tokenizer_file": null,
+                "alias_file": null
+            },
+            "dataset": {
+                "data_path": "data/processed/MutualFundShareHoldings/finetune/{quarter}.csv",
+                "data_format": "csv",
+                "id_key": "InvestorID",
+                "portfolio_key": "Portfolio",
+                "proportion1_key": "Proportion1",
+                "proportion2_key": "Proportion2",
+                "include_proportion": true,
+                "max_length": 256,
+                "mask_prob": null,
+                "mask_indices": [
+                    "{mask_pos}"
+                ]
+            },
+            "dataloader": {
+                "batch_size": 32,
+                "shuffle": true,
+                "num_workers": 4,
+                "persistent_workers": true,
+                "pin_memory": true,
+                "drop_last": false
+            },
+            "optimizer": {
+                "optimizer_type": "PagedAdam8bit",
+                "optimizer_kwargs": null,
+                "learning_rate": 0.001,
+                "lr_scheduler_type": "cosine",
+                "lr_scheduler_warmup_steps": 100,
+                "lr_scheduler_train_steps": null,
+                "lr_scheduler_num_cycles": 0.5,
+                "lr_scheduler_power": 0
+            },
+            "accelerator": {
+                "mixed_precision": "auto",
+                "gradient_accumulation_steps": 1,
+                "accelerator_checkpoint": null,
+                "use_compile": true,
+                "compile_backend": "inductor",
+                "compile_mode": "default",
+                "compile_fullgraph": false,
+                "compile_dynamic": false,
+                "compile_cache_dir": null,
+                "allow_tf32": true
+            },
+            "train": {
+                "max_epochs": 30,
+                "validation_split": 0.2,
+                "test_split": 0.1,
+                "split_method": "random",
+                "best_metric": "val_loss",
+                "clip_grad_norm": 1.0,
+                "clip_grad_value": null,
+                "detect_anomaly": false,
+                "log_every_steps": 200,
+                "report_every_epochs": 1,
+                "save_every_epochs": 1,
+                "save_folder": "checkpoints/refine_mask{mask_pos}/BERT/AssetBERT/d{dim}/{quarter}",
+                "save_name": "AssetBERT_d{dim}_{quarter}_mask{mask_pos}",
+                "save_format": ".safetensors",
+                "seed": 42
+            }
+        },
+        "output_dir": "configs/mask_position/eval/MP_mask{mask_pos}/BERT/AssetBERT/d{dim}",
+        "filename": "AssetBERT_d{dim}_{quarter}.json",
+        "variable_params": {
+            "mask_pos": [
+                1,
+                2,
+                3,
+                5,
+                10
+            ],
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "quarter": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ]
+        },
+        "variable_bindings": null
+    },
+    {
+        "name": "MP Mask Position Sensitivity - RS/W2V via BERT head (allbert)",
+        "description": "RS and W2V embeddings evaluated with full BERT architecture. 5 mask positions × 5 models × 7 dims × 6 quarters = 1050 configs.",
+        "template": {
+            "run": {
+                "period": "{quarter}"
+            },
+            "model": {
+                "model_type": "BERT",
+                "model_checkpoint": null,
+                "embedding_file": "checkpoints/finetune/{model_path}/d{dim}/{quarter}/{model_type}_d{dim}_{quarter}_embedding.csv",
+                "vocab_size": 5093,
+                "hidden_size": "{dim}",
+                "num_hidden_layers": 4,
+                "num_attention_heads": 2,
+                "intermediate_size": 512,
+                "max_position_embeddings": 256,
+                "type_vocab_size": 1,
+                "freeze_embedding": true,
+                "freeze_encoder": false,
+                "embedding_model": "{model_type}"
+            },
+            "tokenizer": {
+                "w2v_model": null,
+                "embedding_file": "checkpoints/finetune/{model_path}/d{dim}/{quarter}/{model_type}_d{dim}_{quarter}_embedding.csv",
+                "vocab_file": null,
+                "pretrained_tokenizer_file": null,
+                "alias_file": null
+            },
+            "dataset": {
+                "data_path": "data/processed/MutualFundShareHoldings/finetune/{quarter}.csv",
+                "data_format": "csv",
+                "id_key": "InvestorID",
+                "portfolio_key": "Portfolio",
+                "proportion1_key": "Proportion1",
+                "proportion2_key": "Proportion2",
+                "include_proportion": true,
+                "max_length": 256,
+                "mask_prob": null,
+                "mask_indices": [
+                    "{mask_pos}"
+                ]
+            },
+            "dataloader": {
+                "batch_size": 32,
+                "shuffle": true,
+                "num_workers": 4,
+                "persistent_workers": true,
+                "pin_memory": true,
+                "drop_last": false
+            },
+            "optimizer": {
+                "optimizer_type": "PagedAdam8bit",
+                "optimizer_kwargs": null,
+                "learning_rate": 0.001,
+                "lr_scheduler_type": "cosine",
+                "lr_scheduler_warmup_steps": 100,
+                "lr_scheduler_train_steps": null,
+                "lr_scheduler_num_cycles": 0.5,
+                "lr_scheduler_power": 0
+            },
+            "accelerator": {
+                "mixed_precision": "auto",
+                "gradient_accumulation_steps": 1,
+                "accelerator_checkpoint": null,
+                "use_compile": true,
+                "compile_backend": "inductor",
+                "compile_mode": "default",
+                "compile_fullgraph": false,
+                "compile_dynamic": false,
+                "compile_cache_dir": null,
+                "allow_tf32": true
+            },
+            "train": {
+                "max_epochs": 30,
+                "validation_split": 0.2,
+                "test_split": 0.1,
+                "split_method": "random",
+                "best_metric": "val_loss",
+                "clip_grad_norm": 1.0,
+                "clip_grad_value": null,
+                "detect_anomaly": false,
+                "log_every_steps": 200,
+                "report_every_epochs": 1,
+                "save_every_epochs": 1,
+                "save_folder": "checkpoints/refine_mask{mask_pos}/BERT/{model_path}/d{dim}/{quarter}",
+                "save_name": "BERT_{model_type}_d{dim}_{quarter}_mask{mask_pos}",
+                "save_format": ".safetensors",
+                "seed": 42
+            }
+        },
+        "output_dir": "configs/mask_position/eval/MP_mask{mask_pos}/BERT/{model_path}/d{dim}",
+        "filename": "BERT_{model_type}_d{dim}_{quarter}.json",
+        "variable_params": {
+            "mask_pos": [
+                1,
+                2,
+                3,
+                5,
+                10
+            ],
+            "model_type": [
+                "AssetRS_Binary",
+                "AssetRS_Ranks",
+                "AssetRS_Level0",
+                "AssetRS_LevelMin",
+                "AssetW2V"
+            ],
+            "model_path": [
+                "AssetRS/RS_Binary",
+                "AssetRS/RS_Ranks",
+                "AssetRS/RS_Level0",
+                "AssetRS/RS_LevelMin",
+                "AssetW2V"
+            ],
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "quarter": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ]
+        },
+        "variable_bindings": [
+            {
+                "model_type": "AssetRS_Binary",
+                "model_path": "AssetRS/RS_Binary"
+            },
+            {
+                "model_type": "AssetRS_Ranks",
+                "model_path": "AssetRS/RS_Ranks"
+            },
+            {
+                "model_type": "AssetRS_Level0",
+                "model_path": "AssetRS/RS_Level0"
+            },
+            {
+                "model_type": "AssetRS_LevelMin",
+                "model_path": "AssetRS/RS_LevelMin"
+            },
+            {
+                "model_type": "AssetW2V",
+                "model_path": "AssetW2V"
+            }
+        ]
+    },
+    {
+        "name": "MP Mask Position Sensitivity - RS/W2V via SMLM head",
+        "description": "RS and W2V embeddings evaluated with SMLM. 5 mask positions × 5 models × 7 dims × 6 quarters = 1050 configs.",
+        "template": {
+            "run": {
+                "period": "{quarter}"
+            },
+            "model": {
+                "model_type": "SimplifiedMLM",
+                "model_checkpoint": null,
+                "embedding_file": "checkpoints/finetune/{model_path}/d{dim}/{quarter}/{model_type}_d{dim}_{quarter}_embedding.csv",
+                "vocab_size": 4940,
+                "hidden_size": "{dim}",
+                "max_position_embeddings": 256,
+                "type_vocab_size": 1,
+                "freeze_embedding": true,
+                "freeze_head": false,
+                "embedding_model": "{model_type}"
+            },
+            "tokenizer": {
+                "w2v_model": null,
+                "embedding_file": "checkpoints/finetune/{model_path}/d{dim}/{quarter}/{model_type}_d{dim}_{quarter}_embedding.csv",
+                "vocab_file": null,
+                "pretrained_tokenizer_file": null,
+                "alias_file": null
+            },
+            "dataset": {
+                "data_path": "data/processed/MutualFundShareHoldings/finetune/{quarter}.csv",
+                "data_format": "csv",
+                "id_key": "InvestorID",
+                "portfolio_key": "Portfolio",
+                "proportion1_key": "Proportion1",
+                "proportion2_key": "Proportion2",
+                "include_proportion": true,
+                "max_length": 256,
+                "mask_prob": null,
+                "mask_indices": [
+                    "{mask_pos}"
+                ]
+            },
+            "dataloader": {
+                "batch_size": 32,
+                "shuffle": true,
+                "num_workers": 4,
+                "persistent_workers": true,
+                "pin_memory": true,
+                "drop_last": false
+            },
+            "optimizer": {
+                "optimizer_type": "PagedAdam8bit",
+                "optimizer_kwargs": null,
+                "learning_rate": 0.001,
+                "lr_scheduler_type": "cosine",
+                "lr_scheduler_warmup_steps": 100,
+                "lr_scheduler_train_steps": null,
+                "lr_scheduler_num_cycles": 0.5,
+                "lr_scheduler_power": 0
+            },
+            "accelerator": {
+                "mixed_precision": "auto",
+                "gradient_accumulation_steps": 1,
+                "accelerator_checkpoint": null,
+                "use_compile": true,
+                "compile_backend": "inductor",
+                "compile_mode": "default",
+                "compile_fullgraph": false,
+                "compile_dynamic": false,
+                "compile_cache_dir": null,
+                "allow_tf32": true
+            },
+            "train": {
+                "max_epochs": 30,
+                "validation_split": 0.2,
+                "test_split": 0.1,
+                "split_method": "random",
+                "best_metric": "val_loss",
+                "clip_grad_norm": 1.0,
+                "clip_grad_value": null,
+                "detect_anomaly": false,
+                "log_every_steps": 200,
+                "report_every_epochs": 1,
+                "save_every_epochs": 1,
+                "save_folder": "checkpoints/refine_mask{mask_pos}/SMLM/{model_path}/d{dim}/{quarter}",
+                "save_name": "SMLM_{model_type}_d{dim}_{quarter}_mask{mask_pos}",
+                "save_format": ".safetensors",
+                "seed": 42
+            }
+        },
+        "output_dir": "configs/mask_position/eval/MP_mask{mask_pos}/SMLM/{model_path}/d{dim}",
+        "filename": "SMLM_{model_type}_d{dim}_{quarter}.json",
+        "variable_params": {
+            "mask_pos": [
+                1,
+                2,
+                3,
+                5,
+                10
+            ],
+            "model_type": [
+                "AssetRS_Binary",
+                "AssetRS_Ranks",
+                "AssetRS_Level0",
+                "AssetRS_LevelMin",
+                "AssetW2V"
+            ],
+            "model_path": [
+                "AssetRS/RS_Binary",
+                "AssetRS/RS_Ranks",
+                "AssetRS/RS_Level0",
+                "AssetRS/RS_LevelMin",
+                "AssetW2V"
+            ],
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "quarter": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ]
+        },
+        "variable_bindings": [
+            {
+                "model_type": "AssetRS_Binary",
+                "model_path": "AssetRS/RS_Binary"
+            },
+            {
+                "model_type": "AssetRS_Ranks",
+                "model_path": "AssetRS/RS_Ranks"
+            },
+            {
+                "model_type": "AssetRS_Level0",
+                "model_path": "AssetRS/RS_Level0"
+            },
+            {
+                "model_type": "AssetRS_LevelMin",
+                "model_path": "AssetRS/RS_LevelMin"
+            },
+            {
+                "model_type": "AssetW2V",
+                "model_path": "AssetW2V"
+            }
+        ]
+    },
+    {
+        "name": "MP Mask Position Sensitivity - AssetBERT via SMLM head",
+        "description": "AssetBERT embeddings evaluated with SMLM (embedding frozen). 5 mask positions × 7 dims × 6 quarters = 210 configs.",
+        "template": {
+            "run": {
+                "period": "{quarter}"
+            },
+            "model": {
+                "model_type": "SimplifiedMLM",
+                "model_checkpoint": null,
+                "embedding_file": "checkpoints/finetune/AssetBERT/d{dim}/{quarter}/AssetBERT_d{dim}_{quarter}_best_embedding.csv",
+                "vocab_size": 4940,
+                "hidden_size": "{dim}",
+                "max_position_embeddings": 256,
+                "type_vocab_size": 1,
+                "freeze_embedding": true,
+                "freeze_head": false,
+                "embedding_model": "AssetBERT"
+            },
+            "tokenizer": {
+                "w2v_model": null,
+                "embedding_file": "checkpoints/finetune/AssetBERT/d{dim}/{quarter}/AssetBERT_d{dim}_{quarter}_best_embedding.csv",
+                "vocab_file": null,
+                "pretrained_tokenizer_file": null,
+                "alias_file": null
+            },
+            "dataset": {
+                "data_path": "data/processed/MutualFundShareHoldings/finetune/{quarter}.csv",
+                "data_format": "csv",
+                "id_key": "InvestorID",
+                "portfolio_key": "Portfolio",
+                "proportion1_key": "Proportion1",
+                "proportion2_key": "Proportion2",
+                "include_proportion": true,
+                "max_length": 256,
+                "mask_prob": null,
+                "mask_indices": [
+                    "{mask_pos}"
+                ]
+            },
+            "dataloader": {
+                "batch_size": 32,
+                "shuffle": true,
+                "num_workers": 4,
+                "persistent_workers": true,
+                "pin_memory": true,
+                "drop_last": false
+            },
+            "optimizer": {
+                "optimizer_type": "PagedAdam8bit",
+                "optimizer_kwargs": null,
+                "learning_rate": 0.001,
+                "lr_scheduler_type": "cosine",
+                "lr_scheduler_warmup_steps": 100,
+                "lr_scheduler_train_steps": null,
+                "lr_scheduler_num_cycles": 0.5,
+                "lr_scheduler_power": 0
+            },
+            "accelerator": {
+                "mixed_precision": "auto",
+                "gradient_accumulation_steps": 1,
+                "accelerator_checkpoint": null,
+                "use_compile": true,
+                "compile_backend": "inductor",
+                "compile_mode": "default",
+                "compile_fullgraph": false,
+                "compile_dynamic": false,
+                "compile_cache_dir": null,
+                "allow_tf32": true
+            },
+            "train": {
+                "max_epochs": 30,
+                "validation_split": 0.2,
+                "test_split": 0.1,
+                "split_method": "random",
+                "best_metric": "val_loss",
+                "clip_grad_norm": 1.0,
+                "clip_grad_value": null,
+                "detect_anomaly": false,
+                "log_every_steps": 200,
+                "report_every_epochs": 1,
+                "save_every_epochs": 1,
+                "save_folder": "checkpoints/refine_mask{mask_pos}/SMLM/AssetBERT/d{dim}/{quarter}",
+                "save_name": "SMLM_AssetBERT_d{dim}_{quarter}_mask{mask_pos}",
+                "save_format": ".safetensors",
+                "seed": 42
+            }
+        },
+        "output_dir": "configs/mask_position/eval/MP_mask{mask_pos}/SMLM/AssetBERT/d{dim}",
+        "filename": "SMLM_AssetBERT_d{dim}_{quarter}.json",
+        "variable_params": {
+            "mask_pos": [
+                1,
+                2,
+                3,
+                5,
+                10
+            ],
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "quarter": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ]
+        },
+        "variable_bindings": null
+    }
+]

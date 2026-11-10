@@ -1,42 +1,42 @@
-"""Runtime utilities for the asset_embeddings package.
+"""Runtime helpers re-exported for `from asset_embeddings import utils`.
 
-This package collects helpers used by training, evaluation and data
-processing code paths. Developer-facing CLIs (``fast_generator``, ``smtp``)
-live under the repo-only ``scripts/tools/`` directory instead.
+Memory probes, seeding, CLI string parsers, streaming statistics trackers, small pandas helpers and the quarter-label range.
 """
 
 __all__ = [
-    "log_utils",
     "memory_utils",
     "misc_utils",
     "parse_utils",
     "seeding",
     "stats_utils",
-    "log_exceptions_inclass",
     "check_vram",
     "get_memory_usage",
+    "ResourceProbe",
     "calculate_chunk_size",
     "seed_basic",
     "seed_hf_global",
     "seed_accelerate",
     "expand_list_columns",
+    "prepare_output_dir",
+    "quarters",
     "str2bool",
     "str2dict",
     "str2device",
     "str2dtype",
     "str2dtype_np",
+    "add_run_args",
     "parse_overrides",
     "MeanVarianceTracker",
     "MinMaxTracker",
     "EarlyStopTracker",
 ]
 
-from . import log_utils, memory_utils, misc_utils, parse_utils, seeding, stats_utils
-from .log_utils import log_exceptions_inclass
-from .memory_utils import calculate_chunk_size, check_vram, get_memory_usage
-from .misc_utils import expand_list_columns
+from . import memory_utils, misc_utils, parse_utils, seeding, stats_utils
+from .memory_utils import ResourceProbe, calculate_chunk_size, check_vram, get_memory_usage
+from .misc_utils import expand_list_columns, prepare_output_dir, quarters
 from .seeding import seed_accelerate, seed_basic, seed_hf_global
 from .parse_utils import (
+    add_run_args,
     parse_overrides,
     str2bool,
     str2device,

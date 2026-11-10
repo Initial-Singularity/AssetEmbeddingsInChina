@@ -1,18 +1,10 @@
-"""Advanced configuration management framework with type safety and validation.
+"""Configuration package of AssetEmbeddingsInChina.
 
-This module provides a comprehensive configuration management system built on top of the constraint validation framework. It supports declarative field definitions, explicit constraint validation, flexible data loading from multiple sources, and hierarchical configuration organization through containers.
-
-Key features:
-- Declarative configuration field definitions with automatic validation
-- Type-safe configuration access with IDE support
-- Chainable configuration loading from files, environment variables, and command line
-- Hierarchical configuration containers with nested path access
-- Immutable configuration support with freezing capabilities
-- Multiple config file format support (JSON, YAML, TOML)
-- Integration with argparse for command-line configuration
+Re-exports `Config`, `ConfigField`, `ConfigContainer`, the constraint classes and the object, training and
+evaluation configs so callers import them from `asset_embeddings.configs` directly.
 """
 
-from . import constraints, base, container, object_configs, runtime_configs
+from . import constraints, base, container, object_configs, train_configs, eval_configs
 from .constraints import (
     BaseConstraint,
     Constraint,
@@ -46,11 +38,29 @@ from .object_configs import (
     DataLoaderConfig,
     AcceleratorConfig,
     AssetBERTModelConfig,
+    SimplifiedMLMModelConfig,
 )
-from .runtime_configs import (
+from .train_configs import (
+    RunMetadataConfig,
     AssetRSTrainConfig,
     AssetW2VTrainConfig,
+    MLMLoopConfig,
     AssetBERTTrainConfig,
+    MPTrainConfig,
+)
+from .eval_configs import (
+    EvalDataConfig,
+    FeatureConfig,
+    RidgeConfig,
+    GroupingConfig,
+    LabelConfig,
+    LabelProbeEvalConfig,
+    PairwiseSimilarityEvalConfig,
+    RVEvalConfig,
+    RCEvalConfig,
+    TemporalRCEvalConfig,
+    GroupedRVEvalConfig,
+    GroupedRCEvalConfig,
 )
 
 __all__ = [
@@ -89,8 +99,25 @@ __all__ = [
     "DataLoaderConfig",
     "AcceleratorConfig",
     "AssetBERTModelConfig",
-    "runtime_configs",
+    "SimplifiedMLMModelConfig",
+    "train_configs",
+    "RunMetadataConfig",
     "AssetRSTrainConfig",
     "AssetW2VTrainConfig",
+    "MLMLoopConfig",
     "AssetBERTTrainConfig",
+    "MPTrainConfig",
+    "eval_configs",
+    "EvalDataConfig",
+    "FeatureConfig",
+    "RidgeConfig",
+    "GroupingConfig",
+    "LabelConfig",
+    "LabelProbeEvalConfig",
+    "PairwiseSimilarityEvalConfig",
+    "RVEvalConfig",
+    "RCEvalConfig",
+    "TemporalRCEvalConfig",
+    "GroupedRVEvalConfig",
+    "GroupedRCEvalConfig",
 ]

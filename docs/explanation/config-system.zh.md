@@ -1,6 +1,6 @@
 # 配置系统
 
-本文档介绍 AssetEmbeddings 的配置系统：`Config` 基类、`ConfigField` 描述符以及约束验证框架。
+本文档介绍 AssetEmbeddingsInChina 的配置系统：`Config` 基类、`ConfigField` 描述符以及约束验证框架。
 
 ## 目录
 
@@ -34,8 +34,9 @@ asset_embeddings/configs/
 ├── base.py            # Config 基类与 ConfigField 描述符
 ├── constraints.py     # 约束验证框架
 ├── container.py       # ConfigContainer 层级配置容器
-├── object_configs.py  # 模型 / 日志 / 分词器配置类
-├── runtime_configs.py # 训练运行时配置类
+├── object_configs.py  # 模型 / 日志 / 分词器 / 数据集 / 优化器 / 加速器配置类
+├── train_configs.py   # RS 与 W2V 训练、MLMLoopConfig、AssetBERTTrainConfig、MPTrainConfig、RunMetadataConfig
+├── eval_configs.py    # EvalDataConfig、FeatureConfig、RidgeConfig、GroupingConfig 与四个评估配置
 └── __init__.py        # 模块导出
 ```
 
@@ -112,6 +113,9 @@ config = TrainingConfig(learning_rate=0.01, batch_size=64)
 
 # 方式 3：链式加载
 config = TrainingConfig().from_file("config.yaml").from_args(parser)
+
+# 方式 4：从 dict 加载（不对应任何字段的键会引发 KeyError）
+config = TrainingConfig().from_dict({"learning_rate": 0.01, "batch_size": 64})
 ```
 
 ### 访问取值
@@ -190,7 +194,7 @@ str_or_int = TypeConstraint(str) | TypeConstraint(int)
 # 嵌套组合
 complex_constraint = (
     (TypeConstraint(int) & RangeConstraint(0, 100)) |
-    (TypeConstraint(str) & LengthConstraint(10))
+    (TypeConstraint(str) & LengthConstraint(10, None))
 )
 ```
 
@@ -353,9 +357,17 @@ container.remove_cross_constraint("constraint_name") # 按名称移除；返回 
 |-----------|--------|------|
 | `DataLoaderConfig` | `persistent_workers_guard` | 当 `num_workers=0` 时 `persistent_workers` 必须为 False |
 | `DatasetConfig` | `mask_mode_exclusion` | `mask_prob` / `mask_indices` 至多设置一个 |
-| `AssetBERTTrainConfig` | `best_metric_requires_val_split` | 当 `best_metric` 是 val/eval loss 时需要 `validation_split` |
-| `AssetBERTTrainConfig` | `early_stop_metric_requires_val_split` | 同上，针对 `early_stop_metric` |
+| `MLMLoopConfig` | `best_metric_split_exists` | `best_metric="val_loss"` 需要 `validation_split > 0`，`"test_loss"` 需要 `test_split > 0`（只有 `MPTrainConfig` 有该字段） |
+| `MLMLoopConfig` | `early_stop_metric_split_exists` | 同上，针对 `early_stop_metric` |
+| `AssetBERTTrainConfig` / `MPTrainConfig` | （同上两条） | 继承自 MLMLoopConfig |
 | `OptimizerConfig` | `adafactor_scheduler_requires_optimizer` | `lr_scheduler_type="adafactor"` 需要 `optimizer_type="Adafactor"` |
+| `EvalDataConfig` | `embedding_path_per_period`, `benchmark_path_per_period` | 路径是一个列表，`periods` 的每一项对应一个文件；只有一期时也可以是单个文件 |
+| `FeatureConfig` | `embedding_path_matches_features` | 当且仅当 `features` 含 `"embedding"` 时设置 `embedding_path` |
+| `FeatureConfig` | `char_benchmark_path_per_period` | 逐期规则，针对 `char_benchmark_path` |
+| `GroupingConfig` | `group_path_per_period` | 逐期规则，针对 `group_path` |
+| `GroupingConfig` | `fixed_requires_bins`, `bin_labels_match_bins` | 在 `grouping="fixed"` 下，`bins` 是非空、严格递增的内部切点列表；若设置了 `bin_labels`，其长度为 `len(bins) + 1` |
+| `GroupingConfig` | `grouped_no_char_benchmark_path` | 分组评估拒绝已设置的 `char_benchmark_path` |
+| `RVEvalConfig`、`RCEvalConfig`、`GroupedRVEvalConfig`、… | （继承） | 每个评估配置组合上述字段组，并继承其约束 |
 
 ---
 
@@ -381,8 +393,8 @@ from asset_embeddings.configs.constraints import TypeConstraint, ChoiceConstrain
 class MyConfig(Config):
     count: int = ConfigField(default=0, constraint=TypeConstraint(int))
     name: Optional[str] = ConfigField(default=None, constraint=OptionalConstraint(TypeConstraint(str)))
-    mode: Literal["train", "val", "test"] = ConfigField(
-        default="train", constraint=ChoiceConstraint(["train", "val", "test"])
+    mode: Literal["train", "eval", "test"] = ConfigField(
+        default="train", constraint=ChoiceConstraint(["train", "eval", "test"])
     )
     layers: List[int] = ConfigField(default=[64, 128, 256], constraint=TypeConstraint(list))
 ```
@@ -567,7 +579,33 @@ class BERTTrainConfig(BaseTrainConfig):
 
 ### 嵌套配置
 
-对于复杂配置，使用 `ConfigContainer`（见 `asset_embeddings/configs/container.py`）或手动嵌套：
+对于复杂配置，使用 `ConfigContainer`（见 `asset_embeddings/configs/container.py`）。容器持有若干具名的子配置（或嵌套容器），可按属性、按项、按点分路径访问；子类以类型注解声明其子配置，除非显式传入，否则每个子配置在构造时自动创建。各加载方法都转发给每个子配置：`from_file` 读取文件中该子配置自己的顶层段，`from_args` 把 `<child>_<field>` 参数路由给 `<child>`，`from_env` 读取 `<PREFIX>_<CHILD>_<FIELD>`。
+
+```python
+from asset_embeddings.configs import Config, ConfigField, ConfigContainer
+from asset_embeddings.configs.constraints import TypeConstraint
+
+class DatasetConfig(Config):
+    path: str = ConfigField(required=True, constraint=TypeConstraint(str))
+    batch_size: int = ConfigField(default=32, constraint=TypeConstraint(int))
+
+class ModelConfig(Config):
+    hidden_size: int = ConfigField(default=256, constraint=TypeConstraint(int))
+
+class TrainContainer(ConfigContainer):
+    dataset: DatasetConfig                                    # 构造时创建为 DatasetConfig()
+    model: ModelConfig = lambda: ModelConfig(hidden_size=64)  # 或由工厂创建
+
+container = TrainContainer().from_file("train.json")   # {"dataset": {...}, "model": {...}}
+container.model.hidden_size                             # 属性访问
+container["dataset"].batch_size                         # 项访问
+container.get_nested("model.hidden_size")               # 点分路径
+container.set_nested("dataset.batch_size", 64)          # 可链式调用
+container.to_dict(flatten=True)                         # {"dataset.path": ..., "model.hidden_size": ...}
+container.validate().freeze()                           # 先验证子配置，再验证容器自身的跨字段约束
+```
+
+不用容器时，通过 `dict` 类型字段手动嵌套：
 
 ```python
 class DatasetConfig(Config):
@@ -594,7 +632,7 @@ class FullConfig(Config):
 
 ### 配置上未定义的字段如何处理？
 
-`from_file()` 与 `from_dict()` 只加载配置类上定义的字段。未知键被忽略，但会发出 `UserWarning`，以便暴露拼写错误而非悄无声息地吞掉。
+`from_file()` 与 `from_dict()` 拒绝它们：不对应任何字段的键会在应用任何值之前抛出 `KeyError`，`ConfigContainer` 中不对应任何子配置的段也一样。否则拼写错误或已废弃的键会让它本想设置的字段停留在默认值。给不是字段的属性赋值同样会抛出 `AttributeError`。
 
 ### 能否在运行时动态添加字段？
 
@@ -602,7 +640,7 @@ class FullConfig(Config):
 
 ### 约束验证失败会怎样？
 
-抛出 `ConstraintError`，并附带详细错误信息。
+字段约束或跨字段约束失败时抛出 `ConstraintError`，并附带详细错误信息。必填字段为 `None` 时抛出 `ValueError`；`ConfigContainer.validate()` 会把任一子配置的失败包装成 `ValueError("Validation failed for config '<name>': ...")` 再抛出。
 
 ### 如何调试配置加载问题？
 

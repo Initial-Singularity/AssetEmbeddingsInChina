@@ -1,9 +1,31 @@
+"""The embedding block of BERT: token, position and segment tables summed, then LayerNorm and dropout.
+
+A standalone copy of the `transformers` `BertEmbeddings` layer with the same parameter names, so a BERT
+checkpoint loads into it key for key; `SimplifiedMLM` uses it as its only layer before the output head.
+"""
+
 from typing import Optional
 import torch
 import torch.nn as nn
 
 
 class BertEmbeddings(nn.Module):
+    """Token + position + segment embeddings with LayerNorm and dropout, as in BERT.
+
+    Input ids are `(batch, seq_len)`; the output is `(batch, seq_len, hidden)`. Sized from the constructor
+    arguments: the vocabulary, the hidden width, the longest sequence and the number of segment types. The
+    dropout rate is fixed at 0.1.
+
+    Args:
+        vocab_size: Number of token ids.
+        hidden_size: Width of every embedding table and of the output.
+        max_position_embeddings: Longest sequence the position table covers.
+        type_vocab_size: Number of segment (token type) ids.
+        layer_norm_eps: Epsilon of the LayerNorm.
+        pad_token_id: Token id whose embedding row stays zero and receives no gradient.
+        position_embedding_type: Position embeddings are added only when this is `"absolute"`.
+    """
+
     def __init__(
         self,
         vocab_size: int = 5093,
@@ -20,19 +42,17 @@ class BertEmbeddings(nn.Module):
         self.pad_token_id = pad_token_id
         self.position_embedding_type = position_embedding_type
 
-        # 自定义Embedding层
         self.word_embeddings: nn.Embedding = nn.Embedding(vocab_size, hidden_size, padding_idx=pad_token_id)
         self.position_embeddings: nn.Embedding = nn.Embedding(max_position_embeddings, hidden_size)
         self.token_type_embeddings: nn.Embedding = nn.Embedding(type_vocab_size, hidden_size)
 
-        # self.LayerNorm is not snake-cased to stick with TensorFlow model variable name and be able to load
-        # any TensorFlow checkpoint file
-        # position_ids (1, len position emb) is contiguous in memory and exported when serialized
-
-        # LayerNorm和Dropout
+        # `LayerNorm` keeps the capitalised name of the transformers layer so that state-dict keys match a
+        # BERT checkpoint.
         self.LayerNorm = nn.LayerNorm(hidden_size, eps=layer_norm_eps)
         self.dropout = nn.Dropout(0.1)
 
+        # Non-persistent buffers: they follow the module to its device but are derived from the constructor
+        # sizes, so they are not part of a checkpoint.
         self.register_buffer("position_ids", torch.arange(max_position_embeddings).expand((1, -1)), persistent=False)
         self.register_buffer(
             "token_type_ids", torch.zeros(self.position_ids.size(), dtype=torch.long), persistent=False
@@ -46,6 +66,20 @@ class BertEmbeddings(nn.Module):
         inputs_embeds: Optional[torch.FloatTensor] = None,
         past_key_values_length: int = 0,
     ) -> torch.Tensor:
+        """Embed a batch of token ids (or precomputed token embeddings).
+
+        Args:
+            input_ids: Token ids, `(batch, seq_len)`; may be omitted when `inputs_embeds` is given.
+            token_type_ids: Segment ids, `(batch, seq_len)`; all zeros when omitted.
+            position_ids: Positions, `(1, seq_len)` or `(batch, seq_len)`; `0..seq_len-1` shifted by
+                `past_key_values_length` when omitted.
+            inputs_embeds: Token embeddings already looked up, `(batch, seq_len, hidden)`; replaces the
+                `word_embeddings` lookup of `input_ids`.
+            past_key_values_length: Offset of the first position, for a continued sequence.
+
+        Returns:
+            The summed, normalized and dropout-applied embeddings, `(batch, seq_len, hidden)`.
+        """
         if input_ids is not None:
             input_shape = input_ids.size()
         else:
@@ -56,9 +90,8 @@ class BertEmbeddings(nn.Module):
         if position_ids is None:
             position_ids = self.position_ids[:, past_key_values_length : seq_length + past_key_values_length]
 
-        # Setting the token_type_ids to the registered buffer in constructor where it is all zeros, which usually occurs
-        # when its auto-generated, registered buffer helps users when tracing the model without passing token_type_ids, solves
-        # issue #5664
+        # The zero buffer, sliced and expanded, stands in for absent segment ids: it already sits on the
+        # module's device and keeps the module traceable without that argument.
         if token_type_ids is None:
             if hasattr(self, "token_type_ids"):
                 buffered_token_type_ids = self.token_type_ids[:, :seq_length]

@@ -23,6 +23,7 @@ source scripts/run/run_helper.sh
 DIMS="4 8 10 16 32 64 128"
 QUARTERS="2023Q2 2023Q3 2023Q4 2024Q1 2024Q2 2024Q3"
 DB="results/db/expansion.db"
+EXP="expansion"  # runs.experiment; the --experiment flag of every script below
 CFG="configs/pt_strategy_ablation/expansion"
 
 # ========== W2V Pretrain (skip Q2023Q2 — reuses base) ==========
@@ -30,13 +31,14 @@ echo "=== Expansion: W2V pretrain ==="
 for dim in $DIMS; do
     for quarter in $QUARTERS; do
         [ "$quarter" = "2023Q2" ] && continue
-        try_run -m w2v -m pretrain -m expansion -m pt_strategy_ablation -m "d${dim}" -m "${quarter,,}" \
+        cfg="${CFG}/pretrained/AssetW2V/d${dim}/AssetW2V_expansion_d${dim}_${quarter}.json"
+        job -m w2v -m pretrain -m expansion -m pt_strategy_ablation -m "d${dim}" -m "${quarter,,}" -m "$cfg" \
             "W2V expansion pretrain d${dim} ${quarter}" \
             uv run python -m asset_embeddings.scripts.train.w2v \
-                --config "${CFG}/pretrained/AssetW2V/d${dim}/AssetW2V_expansion_d${dim}_${quarter}.json" \
+                --config "$cfg" \
                 --log "checkpoints/pt_strategy_ablation/expansion/pretrained/AssetW2V/d${dim}/${quarter}/train.log" \
                       "logs/pt_strategy_ablation/expansion/pretrain/AssetW2V/d${dim}/${quarter}.log" \
-                -r "$DB"
+                -r "$DB" -e "$EXP"
     done
 done
 
@@ -45,13 +47,14 @@ echo "=== Expansion: BERT pretrain ==="
 for dim in $DIMS; do
     for quarter in $QUARTERS; do
         [ "$quarter" = "2023Q2" ] && continue
-        try_run -m bert -m pretrain -m expansion -m pt_strategy_ablation -m "d${dim}" -m "${quarter,,}" \
+        cfg="${CFG}/pretrained/AssetBERT/d${dim}/AssetBERT_expansion_d${dim}_${quarter}_pretrained.json"
+        job -m bert -m pretrain -m expansion -m pt_strategy_ablation -m "d${dim}" -m "${quarter,,}" -m "$cfg" \
             "BERT expansion pretrain d${dim} ${quarter}" \
             uv run python -m asset_embeddings.scripts.train.bert \
-                --config "${CFG}/pretrained/AssetBERT/d${dim}/AssetBERT_expansion_d${dim}_${quarter}_pretrained.json" \
+                --config "$cfg" \
                 --log "checkpoints/pt_strategy_ablation/expansion/pretrained/AssetBERT/d${dim}/${quarter}/train.log" \
                       "logs/pt_strategy_ablation/expansion/pretrain/AssetBERT/d${dim}/${quarter}.log" \
-                -r "$DB"
+                -r "$DB" -e "$EXP"
     done
 done
 
@@ -59,13 +62,14 @@ done
 echo "=== Expansion: BERT finetune ==="
 for dim in $DIMS; do
     for quarter in $QUARTERS; do
-        try_run -m bert -m finetune -m expansion -m pt_strategy_ablation -m "d${dim}" -m "${quarter,,}" \
+        cfg="${CFG}/finetune/AssetBERT/d${dim}/AssetBERT_expansion_d${dim}_${quarter}.json"
+        job -m bert -m finetune -m expansion -m pt_strategy_ablation -m "d${dim}" -m "${quarter,,}" -m "$cfg" \
             "BERT expansion finetune d${dim} ${quarter}" \
             uv run python -m asset_embeddings.scripts.train.bert \
-                --config "${CFG}/finetune/AssetBERT/d${dim}/AssetBERT_expansion_d${dim}_${quarter}.json" \
+                --config "$cfg" \
                 --log "checkpoints/pt_strategy_ablation/expansion/finetune/AssetBERT/d${dim}/${quarter}/train.log" \
                       "logs/pt_strategy_ablation/expansion/finetune/AssetBERT/d${dim}/${quarter}.log" \
-                -r "$DB"
+                -r "$DB" -e "$EXP"
     done
 done
 

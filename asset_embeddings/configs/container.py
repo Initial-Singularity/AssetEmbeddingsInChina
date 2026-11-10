@@ -1,3 +1,11 @@
+"""`ConfigContainer`, a mapping of named `Config` objects (nestable), and `ConfigBuilder`.
+
+A container holds child configs by name, reachable as items or attributes and through dotted
+paths; a typed subclass declares its children as annotations and the metaclass turns each into a
+descriptor with an auto-instantiation factory. Loading, freezing, copying and validation forward to
+every child, and container-level cross-field constraints run after the children validate.
+"""
+
 import argparse
 from abc import ABCMeta
 from collections.abc import MutableMapping
@@ -10,291 +18,168 @@ from .constraints import CrossConstraint, collect_cross_constraints
 T = TypeVar("T", bound="Config")
 
 
-# ============================================================================
-# 容器字段描述器 Container Field Descriptor
-# ============================================================================
-
-
 class ContainerFieldDescriptor:
-    """Descriptor for typed container fields with auto-instantiation.
+    """Descriptor the metaclass installs for each annotated child of a `ConfigContainer` subclass.
 
-    This descriptor manages configuration fields in ConfigContainer subclasses,
-    providing type checking, auto-instantiation, and factory function support.
+    Reads come from the instance's `_configs` dict, so the descriptor and the mapping interface
+    always agree.
 
     Attributes:
-        name: Name of the field.
-        field_type: Expected type of the field (Config or ConfigContainer subclass).
-        default_factory: Optional callable to create default instances.
+        name: The child's name.
+        field_type: The annotated type.
+        default_factory: Callable that builds the child when none is supplied, or None.
     """
 
     def __init__(self, name: str, field_type: Type, default_factory: Optional[Callable] = None):
-        """Initialize the field descriptor.
-
-        Args:
-            name: Name of the field.
-            field_type: Expected type for type checking.
-            default_factory: Optional factory function for default values.
-        """
         self.name = name
         self.field_type = field_type
         self.default_factory = default_factory
         self.private_name = f"_container_field_{name}"
 
     def __get__(self, obj, objtype=None):
-        """Get the field value from the instance's _configs dict."""
         if obj is None:
             return self
         return obj._configs.get(self.name)
 
     def __set__(self, obj, value):
-        """Set the field value with type checking."""
         if value is not None and not isinstance(value, (self.field_type, ConfigContainer, Config)):
             raise TypeError(f"Field '{self.name}' expects {self.field_type.__name__}, " f"got {type(value).__name__}")
         obj._configs[self.name] = value
 
     def __set_name__(self, owner, name):
-        """Called when the descriptor is assigned to a class attribute."""
         self.name = name
         self.private_name = f"_container_field_{name}"
 
 
-# ============================================================================
-# 容器元类 Container Metaclass
-# ============================================================================
-
-
 class ConfigContainerMeta(ABCMeta):
-    """Metaclass for ConfigContainer enabling type-annotated field declarations.
+    """Metaclass that turns the annotations of a `ConfigContainer` subclass into child fields.
 
-    This metaclass automatically processes type annotations in ConfigContainer
-    subclasses, creating field descriptors for Config and ConfigContainer types.
-    It enables IDE auto-completion and type checking while maintaining backward
-    compatibility with dict-based initialization.
-
-    Features:
-    - Automatic field extraction from type annotations
-    - Support for factory functions (callables as default values)
-    - Type checking on field assignment
-    - Inheritance support (merges parent and child annotations)
-    - IDE auto-completion for typed fields
-
-    Examples:
-        >>> class MyContainer(ConfigContainer):
-        ...     database: DatabaseConfig
-        ...     api: ApiConfig = lambda: ApiConfig(port=8080)
-        ...
-        >>> container = MyContainer()
-        >>> container.database  # ← IDE knows this is DatabaseConfig
+    Each public annotation becomes a `ContainerFieldDescriptor`; a callable class attribute is
+    its factory, a `Config`/`ConfigContainer` instance is copied per container, and an annotated
+    class with no default is instantiated as-is. The class gets `_container_fields` (name to
+    type and factory) and `_all_cross_constraints`.
     """
 
     def __new__(mcs, name, bases, namespace, **kwargs):
-        """Create a new ConfigContainer class with field descriptors.
+        """Create the class with its child descriptors installed.
 
         Args:
             name: Name of the class being created.
-            bases: Base classes.
-            namespace: Class namespace dictionary.
-            **kwargs: Additional keyword arguments.
+            bases: Its base classes.
+            namespace: Its class body.
+            **kwargs: Passed through to `ABCMeta.__new__`.
 
         Returns:
-            New class with field descriptors installed.
+            The new class.
         """
-        # Collect annotations from base classes
+        # Immediate bases first, so the class's own annotations override inherited ones.
         all_annotations = {}
         for base in reversed(bases):
             if hasattr(base, "__annotations__"):
                 all_annotations.update(base.__annotations__)
 
-        # Add current class annotations
         if "__annotations__" in namespace:
             all_annotations.update(namespace["__annotations__"])
 
-        # Store field definitions
         container_fields = {}
 
-        # Process each annotated field
         for field_name, field_type in all_annotations.items():
-            # Skip private fields
+            # Underscore names are the container's own state (_configs, _frozen, ...), not children.
             if field_name.startswith("_"):
                 continue
 
-            # Get default value or factory
             default_value = namespace.get(field_name, None)
 
-            # Determine if it's a Config/ConfigContainer type
             origin = get_origin(field_type)
             actual_type = origin if origin is not None else field_type
 
-            # Check if it's a forward reference (string)
+            # A string annotation (forward reference) stays a string; nothing resolves it later, so
+            # such a field gets no auto-instantiation factory.
             if isinstance(field_type, str):
-                # Forward reference - will be resolved later
                 actual_type = field_type
 
-            # Determine if default is a factory function
             default_factory = None
             if default_value is not None:
-                # Check if it's a callable (factory) but not a class
                 if callable(default_value) and not isinstance(default_value, type):
                     default_factory = default_value
-                    # Remove from namespace to avoid issues
                     namespace.pop(field_name, None)
                 elif isinstance(default_value, (Config, ConfigContainer)):
-                    # It's an instance - we'll use a factory that returns a copy
+                    # Copy per container, so instances never share one default child.
                     def default_factory(v=default_value):
                         return v.copy() if hasattr(v, "copy") else v
 
                     namespace.pop(field_name, None)
             else:
-                # No default - create auto-instantiation factory if it's a type
                 if isinstance(actual_type, type) and issubclass(actual_type, (Config, ConfigContainer)):
                     default_factory = actual_type
 
-            # Create field descriptor
+            # Installed in the namespace before the class is built so type.__new__ calls __set_name__.
             descriptor = ContainerFieldDescriptor(field_name, actual_type, default_factory)
             namespace[field_name] = descriptor
 
-            # Store field metadata
             container_fields[field_name] = {"type": actual_type, "factory": default_factory}
 
-        # Store field metadata in class
         namespace["_container_fields"] = container_fields
 
-        # Create the class
         cls = super().__new__(mcs, name, bases, namespace, **kwargs)
 
-        # Collect cross-constraints from reversed MRO (__dict__ only)
         cls._all_cross_constraints = collect_cross_constraints(cls)
 
         return cls
 
 
 class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
-    """Advanced configuration container supporting nesting, composition, and type safety.
+    """A mutable mapping of named `Config` objects and nested containers.
 
-    This container provides hierarchical organization of configuration objects with support for arbitrary nesting levels, type-safe access, and dynamic composition.
-    It implements the MutableMapping protocol for dictionary-like operations while providing additional features for configuration management.
-
-    Features:
-    - Support for arbitrary levels of configuration nesting
-    - Type-safe configuration access with generic type hints
-    - Chainable operations for fluent API design
-    - Dynamic configuration composition and merging
-    - Namespace isolation for large applications
-    - Nested path access with dot notation
-    - Comprehensive validation across all contained configurations
-    - Type-annotated field declarations with IDE auto-completion
-    - Auto-instantiation of Config fields from type annotations
-
-    Attributes:
-        _configs: Internal dictionary storing configuration objects.
-        _frozen: Boolean indicating whether the container is frozen.
-        _namespace: Optional namespace string for organization.
-        _container_fields: Metadata about type-annotated fields (class attribute).
-
-    Examples:
-        >>> # Traditional dict-based initialization (backward compatible)
-        >>> container = ConfigContainer({
-        ...     "database": DatabaseConfig(),
-        ...     "api": ApiConfig()
-        ... })
-
-        >>> # New type-annotated subclass (IDE auto-completion)
-        >>> class MyAppContainer(ConfigContainer):
-        ...     database: DatabaseConfig
-        ...     api: ApiConfig = lambda: ApiConfig(port=8080)
-        ...
-        >>> container = MyAppContainer()
-        >>> container.database  # ← IDE knows type and provides auto-completion
-
-        >>> # Load from file and access nested configurations
-        >>> container.from_file("config.yaml")
-        >>> db_config = container.get_config("database", DatabaseConfig)
-        >>> learning_rate = container.get_nested("ml.training.learning_rate")
+    Children are reachable as items, as attributes and through dotted paths (`get_nested`). A
+    subclass can declare its children as type annotations, which are created on construction
+    unless supplied. Loading methods forward to each child and return `self`; `validate()` checks
+    the children first and then the container's own cross-field constraints, class-level and
+    instance-level.
     """
 
-    # Class attribute to store field metadata (populated by metaclass)
     _container_fields: Dict[str, Dict[str, Any]] = {}
 
     def __init__(self, configs: Optional[Dict[str, Union[Config, "ConfigContainer"]]] = None):
-        """Initializes a configuration container with optional initial configurations.
-
-        Supports both dict-based initialization (backward compatible) and auto-instantiation
-        of type-annotated fields from the class definition.
+        """Create a container from a dict of children plus the annotated children not in it.
 
         Args:
-            configs: Optional dictionary mapping names to Config or ConfigContainer
-                    objects. If None, auto-instantiates fields from type annotations.
+            configs: Children by name; entries here take precedence over the annotated
+                defaults.
 
-        Examples:
-            >>> # Dict-based (backward compatible)
-            >>> container = ConfigContainer({"db": DatabaseConfig()})
-
-            >>> # Auto-instantiation from annotations
-            >>> class MyContainer(ConfigContainer):
-            ...     database: DatabaseConfig
-            >>> container = MyContainer()  # database auto-created
+        Raises:
+            RuntimeError: If an annotated child's factory fails.
         """
-        # Initialize internal state
         self._configs: Dict[str, Union[Config, "ConfigContainer"]] = {}
         self._frozen: bool = False
         self._namespace: str = ""
         self._instance_cross_constraints: list = []
 
-        # Handle dict-based initialization (backward compatible)
         if configs is not None:
             self._configs.update(configs)
 
-        # Auto-instantiate type-annotated fields not provided in configs
         if hasattr(self.__class__, "_container_fields"):
             for field_name, field_info in self.__class__._container_fields.items():
-                # Only instantiate if not already provided
                 if field_name not in self._configs:
                     factory = field_info.get("factory")
                     if factory is not None:
                         try:
-                            # Call factory to create instance
                             instance = factory()
                         except Exception as e:
-                            # Surface the real cause immediately. Silently leaving the
-                            # field unset only resurfaces later as a cryptic
-                            # "Config '<field>' not found" on first access (C-L5).
+                            # Leaving the child unset would only resurface later as a cryptic
+                            # "Config '<field>' not found" on first access.
                             raise RuntimeError(
                                 f"Failed to auto-instantiate container field "
                                 f"'{field_name}' (type {field_info.get('type')!r}): {e}"
                             ) from e
                         self._configs[field_name] = instance
 
-    # ========================================================================
-    # 基础容器协议实现 Basic Container Protocol Implementation
-    # ========================================================================
-
     def __getitem__(self, key: str) -> Union[Config, "ConfigContainer"]:
-        """Gets a configuration object by name.
-
-        Args:
-            key: Name of the configuration to retrieve.
-
-        Returns:
-            The configuration object associated with the key.
-
-        Raises:
-            KeyError: If the key is not found in the container.
-        """
         if key not in self._configs:
             raise KeyError(f"Config '{key}' not found")
         return self._configs[key]
 
     def __setitem__(self, key: str, value: Union[Config, "ConfigContainer"]):
-        """Sets a configuration object in the container.
-
-        Args:
-            key: Name to associate with the configuration.
-            value: Configuration object to store.
-
-        Raises:
-            ValueError: If attempting to modify a frozen container.
-            TypeError: If the value is not a Config or ConfigContainer instance.
-        """
         if self._frozen:
             raise ValueError("Cannot modify frozen ConfigContainer")
         if not isinstance(value, (Config, ConfigContainer)):
@@ -302,47 +187,22 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
         self._configs[key] = value
 
     def __delitem__(self, key: str):
-        """Removes a configuration object from the container.
-
-        Args:
-            key: Name of the configuration to remove.
-
-        Raises:
-            ValueError: If attempting to modify a frozen container.
-            KeyError: If the key is not found in the container.
-        """
         if self._frozen:
             raise ValueError("Cannot modify frozen ConfigContainer")
         del self._configs[key]
 
     def __iter__(self):
-        """Returns an iterator over configuration names."""
         return iter(self._configs)
 
     def __len__(self):
-        """Returns the number of configurations in the container."""
         return len(self._configs)
 
     def __contains__(self, key):
-        """Checks if a configuration name exists in the container."""
         return key in self._configs
 
-    # ========================================================================
-    # 属性访问支持 Attribute Access Support
-    # ========================================================================
-
     def __getattr__(self, name: str) -> Union[Config, "ConfigContainer"]:
-        """Provides attribute-style access to configurations.
-
-        Args:
-            name: Name of the configuration to access.
-
-        Returns:
-            The configuration object associated with the name.
-
-        Raises:
-            AttributeError: If the configuration name is not found.
-        """
+        # Private names take normal lookup so a missing one raises a plain AttributeError; that
+        # also keeps _configs itself from being looked up inside _configs before __init__ sets it.
         if name.startswith("_") or name in ["_configs", "_frozen", "_namespace"]:
             return super().__getattribute__(name)
 
@@ -351,29 +211,17 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
         raise AttributeError(f"Config '{name}' not found")
 
     def __setattr__(self, name: str, value: Union[Config, "ConfigContainer"]):
-        """Sets an attribute on the container.
-
-        Args:
-            name: Name of the attribute to set.
-            value: Configuration object to assign.
-        """
+        # Public names route through __setitem__ so attribute assignment gets the same freeze
+        # and type checks as item assignment.
         if name.startswith("_") or name in ["_configs", "_frozen", "_namespace"]:
             super().__setattr__(name, value)
         else:
             self[name] = value
 
     def __repr__(self) -> str:
-        """Returns a string representation of the container.
-
-        Shows the number of configurations and their types for easy debugging.
-
-        Returns:
-            String representation showing container contents summary.
-        """
         items = []
         for key, config in self._configs.items():
             if isinstance(config, Config):
-                # Show count of non-default fields for Config objects
                 non_default_count = len(
                     [
                         name
@@ -387,26 +235,22 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
 
         return f"ConfigContainer({{{', '.join(items)}}})"
 
-    # ========================================================================
-    # 高级配置管理 Advanced Configuration Management
-    # ========================================================================
-
     def add_cross_constraint(self, constraint: CrossConstraint) -> None:
-        """Add a cross-constraint to this container instance.
+        """Attach a cross-field constraint to this instance only; `validate()` runs it after the class-level ones.
 
         Args:
-            constraint: CrossConstraint to add.
+            constraint: The constraint to attach.
         """
         self._instance_cross_constraints.append(constraint)
 
     def remove_cross_constraint(self, name: str) -> bool:
-        """Remove the first cross-constraint matching *name*.
+        """Detach the first instance-level cross-field constraint with the given name.
 
         Args:
-            name: Name of the constraint to remove.
+            name: The constraint's `name`.
 
         Returns:
-            True if a constraint was found and removed, False otherwise.
+            True if one was removed, False if none matched.
         """
         for i, cc in enumerate(self._instance_cross_constraints):
             if cc.name == name:
@@ -415,65 +259,64 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
         return False
 
     def add_config(self, name: str, config: Union[Config, "ConfigContainer"]) -> Self:
-        """Adds a configuration to the container (chainable).
+        """Add or replace one child (chainable).
 
         Args:
-            name: Name to associate with the configuration.
-            config: Configuration object to add.
+            name: The child's name.
+            config: The child.
 
         Returns:
-            Self for method chaining.
+            This container.
 
-        Examples:
-            >>> container.add_config("database", DatabaseConfig())
-            >>>          .add_config("api", ApiConfig())
+        Raises:
+            ValueError: If the container is frozen.
+            TypeError: If the child is neither a `Config` nor a `ConfigContainer`.
         """
         self[name] = config
         return self
 
     def add_configs(self, **configs: Union[Config, "ConfigContainer"]) -> Self:
-        """Adds multiple configurations at once (chainable).
+        """Add or replace several children (chainable).
 
         Args:
-            **configs: Configuration objects as keyword arguments.
+            **configs: Children by name.
 
         Returns:
-            Self for method chaining.
+            This container.
         """
         for name, config in configs.items():
             self[name] = config
         return self
 
     def remove_config(self, name: str) -> Self:
-        """Removes a configuration from the container (chainable).
+        """Remove one child (chainable).
 
         Args:
-            name: Name of the configuration to remove.
+            name: The child's name.
 
         Returns:
-            Self for method chaining.
+            This container.
 
         Raises:
-            KeyError: If the configuration name is not found.
+            ValueError: If the container is frozen.
+            KeyError: If no child has that name.
         """
         del self[name]
         return self
 
     def get_config(self, name: str, config_type: Type[T] = None) -> T:
-        """Retrieves a configuration with optional type checking.
-
-        Provides type-safe access to configurations with runtime type validation.
+        """Return one child, optionally asserting its type.
 
         Args:
-            name: Name of the configuration to retrieve.
-            config_type: Expected type of the configuration for type safety.
+            name: The child's name.
+            config_type: If given, the type the child must be an instance of.
 
         Returns:
-            The configuration object, cast to the specified type if provided.
+            The child.
 
         Raises:
-            KeyError: If the configuration name is not found.
-            TypeError: If config_type is specified and the configuration doesn't match.
+            KeyError: If no child has that name.
+            TypeError: If `config_type` is given and the child is not an instance of it.
         """
         config = self[name]
         if config_type and not isinstance(config, config_type):
@@ -481,14 +324,14 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
         return config
 
     def has_config(self, name: str, config_type: Type[T] = None) -> bool:
-        """Checks if a configuration exists and optionally matches a type.
+        """Return whether a child of that name exists, and is of the given type if one is given.
 
         Args:
-            name: Name of the configuration to check.
-            config_type: Optional type to check against.
+            name: The child's name.
+            config_type: If given, the type the child must be an instance of.
 
         Returns:
-            True if the configuration exists (and matches the type if specified).
+            True if the child exists and matches.
         """
         if name not in self:
             return False
@@ -496,26 +339,23 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
             return isinstance(self[name], config_type)
         return True
 
-    # ========================================================================
-    # 嵌套路径访问 Nested Path Access
-    # ========================================================================
-
     def get_nested(self, path: str, separator: str = ".") -> Union[Config, "ConfigContainer", Any]:
-        """Retrieves a value from nested configurations using dot notation.
-        Supports accessing deeply nested configuration values using a simple path string with configurable separator.
+        """Return the child or field value at a dotted path.
+
+        Every segment but the last must name a child container; the last names a child of that
+        container or a field of that config.
 
         Args:
-            path: Dot-separated path to the desired value (e.g., "ml.model.hidden_size").
-            separator: String used to separate path components.
+            path: Segments joined by the separator, such as `"ml.model.hidden_size"`.
+            separator: The string that splits the path into segments.
 
         Returns:
-            The value at the specified path, which could be a Config, ConfigContainer,
-            or any configuration field value.
+            The child or field value at the path.
 
         Raises:
-            ValueError: If the path contains invalid segments.
-            KeyError: If any segment in the path is not found.
-            AttributeError: If trying to access a field that doesn't exist.
+            ValueError: If an intermediate segment lands on something that is not a container.
+            KeyError: If a segment names no child.
+            AttributeError: If the last segment names no field of the config it lands on.
         """
         parts = path.split(separator)
         current = self
@@ -534,19 +374,19 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
             raise ValueError(f"Cannot access attribute on {type(current)}")
 
     def set_nested(self, path: str, value: Any, separator: str = ".") -> "ConfigContainer":
-        """Sets a value in nested configurations using dot notation (chainable).
+        """Assign the child or field value at a dotted path (chainable).
 
         Args:
-            path: Dot-separated path to the value to set.
-            value: Value to assign at the specified path.
-            separator: String used to separate path components.
+            path: Segments joined by the separator; resolved as in `get_nested`.
+            value: The child or field value to assign.
+            separator: The string that splits the path into segments.
 
         Returns:
-            Self for method chaining.
+            This container.
 
         Raises:
-            ValueError: If the path contains invalid segments.
-            KeyError: If any segment in the path is not found.
+            ValueError: If an intermediate segment lands on something that is not a container.
+            KeyError: If an intermediate segment names no child.
         """
         parts = path.split(separator)
         current = self
@@ -567,14 +407,14 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
         return self
 
     def has_nested(self, path: str, separator: str = ".") -> bool:
-        """Checks if a nested path exists in the configuration hierarchy.
+        """Return whether `get_nested` would resolve the path.
 
         Args:
-            path: Dot-separated path to check.
-            separator: String used to separate path components.
+            path: Segments joined by the separator.
+            separator: The string that splits the path into segments.
 
         Returns:
-            True if the path exists, False otherwise.
+            True if the path resolves.
         """
         try:
             self.get_nested(path, separator)
@@ -582,25 +422,23 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
         except (KeyError, AttributeError, ValueError):
             return False
 
-    # ========================================================================
-    # 配置加载和保存 Configuration Loading and Saving
-    # ========================================================================
-
     def from_file(self, config_file: str, namespace: str = "") -> Self:
-        """Loads configurations from a file with optional namespace support (chainable).
+        """Load each child from its section of a JSON, YAML or TOML file (chainable).
+
+        A child named `db` reads the top-level key `db`, or `<namespace>.db` first when a
+        namespace is given. Keys naming no child are ignored.
 
         Args:
-            config_file: Path to the configuration file.
-            namespace: Optional namespace prefix for configuration keys.
+            config_file: Path to the file.
+            namespace: Prefix that selects the namespaced keys.
 
         Returns:
-            Self for method chaining.
+            This container.
         """
         configs = read_configs(config_file)
 
         for name, config_obj in self._configs.items():
             config_key = f"{namespace}.{name}" if namespace else name
-            # Both Config and ConfigContainer expose from_dict; polymorphic dispatch handles either.
             if config_key in configs:
                 config_obj.from_dict(configs[config_key])
             elif name in configs:
@@ -609,30 +447,38 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
         return self
 
     def from_dict(self, config_dict: Dict[str, Any]) -> Self:
-        """Loads configurations from a dictionary (chainable).
+        """Load each child from the sub-dict under its name (chainable).
 
         Args:
-            config_dict: Dictionary containing configuration data.
+            config_dict: Child dicts by child name.
 
         Returns:
-            Self for method chaining.
+            This container.
+
+        Raises:
+            KeyError: When a key names no child (a child refuses its own unknown keys).
         """
+        unknown = [k for k in config_dict if k not in self._configs]
+        if unknown:
+            raise KeyError(f"{type(self).__name__} has no section(s) {unknown}")
         for name, config_obj in self._configs.items():
             if name in config_dict:
                 config_obj.from_dict(config_dict[name])
         return self
 
     def from_args(self, args: Union[argparse.Namespace, argparse.ArgumentParser], prefix: str = "") -> Self:
-        """Loads configurations from command line arguments (chainable).
+        """Route command-line arguments to the children by name prefix (chainable).
 
-        Uses prefixed argument names to route values to the appropriate configurations.
+        An argument `<prefix>_<child>_<field>` (or `<child>_<field>` with no prefix) reaches
+        `<child>` as `<field>`; with no prefix an argument named exactly like one of a child
+        config's fields reaches it too. A nested container recurses with its own prefix.
 
         Args:
-            args: ArgumentParser or Namespace containing command line arguments.
-            prefix: Prefix for filtering relevant arguments.
+            args: A parsed namespace, or a parser on which `parse_args()` is called.
+            prefix: Leading segment of the argument names.
 
         Returns:
-            Self for method chaining.
+            This container.
         """
         if isinstance(args, argparse.ArgumentParser):
             args = args.parse_args()
@@ -640,22 +486,18 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
         args_dict = vars(args)
 
         for name, config_obj in self._configs.items():
-            # Filter arguments by prefix
             filtered_args = {}
             config_prefix = f"{prefix}_{name}_" if prefix else f"{name}_"
 
             for arg_name, arg_value in args_dict.items():
                 if arg_name.startswith(config_prefix):
-                    # Remove prefix
                     clean_name = arg_name[len(config_prefix) :]
                     filtered_args[clean_name] = arg_value
                 elif not prefix and arg_name in config_obj._config_fields:
-                    # Direct matching when no prefix
                     filtered_args[arg_name] = arg_value
 
             if filtered_args:
                 if isinstance(config_obj, ConfigContainer):
-                    # Recursively handle nested containers
                     nested_namespace = argparse.Namespace(**filtered_args)
                     config_obj.from_args(nested_namespace, config_prefix.rstrip("_"))
                 else:
@@ -664,51 +506,37 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
         return self
 
     def from_env(self, prefix: str = "") -> "ConfigContainer":
-        """Loads configurations from environment variables (chainable).
+        """Load each child from environment variables under its own prefix (chainable).
+
+        A child named `db` loads with the prefix `<prefix>_db` (upper-cased, trailing underscores
+        stripped), which its `from_env` then completes with the field name.
 
         Args:
-            prefix: Prefix for environment variable names.
+            prefix: Leading segment of the variable names.
 
         Returns:
-            Self for method chaining.
-
-        Examples:
-            >>> # Environment: APP_DB_HOST=localhost, APP_API_PORT=8080
-            >>> container.from_env("APP_")
+            This container.
         """
         for name, config_obj in self._configs.items():
             env_prefix = f"{prefix}_{name}_".upper() if prefix else f"{name}_".upper()
-            # Both Config and ConfigContainer expose from_env; polymorphic dispatch handles either.
             config_obj.from_env(env_prefix.rstrip("_"))
 
         return self
 
-    # ========================================================================
-    # 配置组合和变换 Configuration Composition and Transformation
-    # ========================================================================
-
     def merge(self, other: "ConfigContainer", strategy: str = "override") -> "ConfigContainer":
-        """Merges another configuration container with conflict resolution strategies.
+        """Return a copy of this container with the other container's children added.
 
         Args:
-            other: Another ConfigContainer to merge.
-            strategy: Merge strategy - "override", "skip", or "error".
-                     - "override": Replace duplicate configurations
-                     - "skip": Keep existing configurations, ignore duplicates
-                     - "error": Raise error on duplicate configuration names
+            other: The container whose children are added.
+            strategy: What to do with a name present in both: `"override"` takes the other's
+                child, `"skip"` keeps this container's, `"error"` raises.
 
         Returns:
-            New ConfigContainer containing merged configurations.
+            The merged copy; neither input is modified.
 
         Raises:
-            TypeError: If other is not a ConfigContainer.
-            ValueError: If strategy is "error" and duplicate names are found,
-                       or if strategy is not recognized.
-
-        Examples:
-            >>> base_config = ConfigContainer({"db": DatabaseConfig()})
-            >>> override_config = ConfigContainer({"api": ApiConfig()})
-            >>> merged = base_config.merge(override_config, strategy="override")
+            TypeError: If `other` is not a `ConfigContainer`.
+            ValueError: If the strategy is `"error"` and a name clashes, or the strategy is unknown.
         """
         if not isinstance(other, ConfigContainer):
             raise TypeError("Can only merge with another ConfigContainer")
@@ -731,20 +559,16 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
         return result
 
     def subset(self, *config_names: str) -> "ConfigContainer":
-        """Creates a new container with only the specified configurations.
+        """Return a plain `ConfigContainer` holding copies of the named children.
 
         Args:
-            *config_names: Names of configurations to include in the subset.
+            *config_names: Names of the children to keep.
 
         Returns:
-            New ConfigContainer containing only the specified configurations.
+            The new container.
 
         Raises:
-            KeyError: If any specified configuration name is not found.
-
-        Examples:
-            >>> subset = container.subset("database", "api")
-            >>> # Contains only database and api configurations
+            KeyError: If a name matches no child.
         """
         subset_configs = {}
         for name in config_names:
@@ -757,34 +581,24 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
         return ConfigContainer(subset_configs)
 
     def filter_by_type(self, config_type: Type) -> "ConfigContainer":
-        """Creates a new container containing only configurations of the specified type.
+        """Return a plain `ConfigContainer` holding the children that are instances of a type.
+
+        The children are shared with this container, not copied.
 
         Args:
-            config_type: Type to filter by.
+            config_type: The type to keep.
 
         Returns:
-            New ConfigContainer containing only configurations of the specified type.
-
-        Examples:
-            >>> model_configs = container.filter_by_type(ModelConfig)
-            >>> # Contains only ModelConfig instances
+            The new container.
         """
         filtered_configs = {name: config for name, config in self._configs.items() if isinstance(config, config_type)}
         return ConfigContainer(filtered_configs)
 
-    # ========================================================================
-    # 状态管理 State Management
-    # ========================================================================
-
     def freeze(self) -> "ConfigContainer":
-        """Freezes the container and all contained configurations (chainable).
+        """Freeze this container and every child; adding or removing children then raises (chainable).
 
         Returns:
-            Self for method chaining.
-
-        Examples:
-            >>> container.from_file("config.yaml").freeze()
-            >>> # Container and all configs are now immutable
+            This container.
         """
         self._frozen = True
         for config in self._configs.values():
@@ -793,21 +607,15 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
         return self
 
     def copy(self, deep: bool = True) -> "ConfigContainer":
-        """Creates a copy of the configuration container.
+        """Return an unfrozen container of the same class with the same children.
+
+        Instance-level cross-field constraints are carried over.
 
         Args:
-            deep: If True, performs deep copying of all contained configurations.
-                 If False, performs shallow copying (references to same config objects).
+            deep: If True, each child is copied; if False, the children are shared.
 
         Returns:
-            New ConfigContainer with copied configurations.
-
-        Examples:
-            >>> # Deep copy for independent modifications
-            >>> independent_copy = container.copy(deep=True)
-            >>>
-            >>> # Shallow copy for shared configurations
-            >>> shared_copy = container.copy(deep=False)
+            The new container.
         """
         if deep:
             copied_configs = {}
@@ -815,7 +623,6 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
                 if hasattr(config, "copy"):
                     copied_configs[name] = config.copy()
                 else:
-                    # For objects without copy method, try deep copy
                     import copy as copy_module
 
                     copied_configs[name] = copy_module.deepcopy(config)
@@ -828,20 +635,16 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
         return new_container
 
     def validate(self) -> "ConfigContainer":
-        """Validates all configurations in the container (chainable).
+        """Validate every child, then the container's cross-field constraints (chainable).
 
-        Recursively validates child configs first. If all pass, runs
-        container-level cross-constraints (class + instance).
+        Class-level constraints run before instance-level ones; the first failure raises.
 
         Returns:
-            Self for method chaining.
+            This container.
 
         Raises:
-            ValueError: If any child configuration fails validation.
-            ConstraintError: If a container-level cross-constraint is violated.
-
-        Examples:
-            >>> container.from_file("config.yaml").validate().freeze()
+            ValueError: If a child fails validation; the message names the child.
+            ConstraintError: If a container-level cross-field invariant fails.
         """
         for name, config in self._configs.items():
             if hasattr(config, "validate"):
@@ -850,7 +653,6 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
                 except Exception as e:
                     raise ValueError(f"Validation failed for config '{name}': {e}")
 
-        # Container-level cross-constraints (class-level, then instance-level)
         for cc in self._all_cross_constraints:
             cc.check(self)
         for cc in self._instance_cross_constraints:
@@ -858,28 +660,18 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
 
         return self
 
-    # ========================================================================
-    # 信息导出 Information Export
-    # ========================================================================
-
     def to_dict(self, flatten: bool = False, separator: str = ".") -> Dict[str, Any]:
-        """Converts the container to a dictionary representation.
+        """Return the children's field values as nested dicts, or as one level of joined keys.
+
+        With `flatten`, each child's name and field name are joined into one key; a nested
+        container's own dict is not flattened further.
 
         Args:
-            flatten: If True, flattens nested structures using dot notation.
-            separator: Separator to use for flattened keys.
+            flatten: Whether to join child and field names.
+            separator: The string that joins them.
 
         Returns:
-            Dictionary representation of all configurations.
-
-        Examples:
-            >>> # Nested structure
-            >>> nested_dict = container.to_dict(flatten=False)
-            >>> print(nested_dict["ml"]["model"]["hidden_size"])
-
-            >>> # Flattened structure
-            >>> flat_dict = container.to_dict(flatten=True)
-            >>> print(flat_dict["ml.model.hidden_size"])
+            The values, by child name or by joined key.
         """
         result = {}
 
@@ -892,7 +684,6 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
                 config_dict = config
 
             if flatten and isinstance(config_dict, dict):
-                # Flatten nested dictionaries
                 for key, value in config_dict.items():
                     flattened_key = f"{name}{separator}{key}"
                     result[flattened_key] = value
@@ -902,16 +693,11 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
         return result
 
     def get_summary(self) -> Dict[str, Any]:
-        """Generates a comprehensive summary of the container contents.
+        """Count the children, their classes, the nested containers and the fields, recursively.
 
         Returns:
-            Dictionary containing statistics about configurations, types,
-            nesting levels, and total field counts.
-
-        Examples:
-            >>> summary = container.get_summary()
-            >>> print(f"Total configs: {summary['total_configs']}")
-            >>> print(f"Config types: {summary['config_types']}")
+            Keys `total_configs`, `config_types` (count by class name), `nested_containers` and
+            `total_fields`.
         """
         summary = {"total_configs": len(self._configs), "config_types": {}, "nested_containers": 0, "total_fields": 0}
 
@@ -930,117 +716,74 @@ class ConfigContainer(MutableMapping, metaclass=ConfigContainerMeta):
 
         return summary
 
-    def to_file(self, save_file: str):
-        """Saves all configurations to a file.
+    def to_file(self, save_file: str) -> None:
+        """Write the nested `to_dict()` to a JSON, YAML or TOML file, chosen by extension.
 
         Args:
-            save_file: Path where the configuration file should be saved.
-
-        Examples:
-            >>> container.to_file("full_config.yaml")
+            save_file: Destination path.
         """
         config_dict = self.to_dict()
         save_configs(save_file, config_dict)
 
-    # ========================================================================
-    # 特殊方法和工具 Special Methods and Utilities
-    # ========================================================================
-
     def keys(self):
-        """Returns an iterator over configuration names."""
+        """Return a view of the child names."""
         return self._configs.keys()
 
     def values(self):
-        """Returns an iterator over configuration objects."""
+        """Return a view of the children."""
         return self._configs.values()
 
     def items(self):
-        """Returns an iterator over (name, config) pairs."""
+        """Return a view of the (name, child) pairs."""
         return self._configs.items()
 
 
-# ============================================================================
-# 专门的配置工厂和构建器 (Specialized Configuration Factory and Builders)
-# ============================================================================
-
-
 class ConfigBuilder:
-    """Fluent configuration builder for complex configuration hierarchies.
+    """Fluent builder that assembles a `ConfigContainer`, nested containers included.
 
-    This builder provides a fluent API for constructing complex configuration
-    containers with nested structures. It supports method chaining and
-    functional composition patterns for readable configuration setup.
-
-    Attributes:
-        _container: The ConfigContainer being built.
-
-    Examples:
-        >>> builder = ConfigBuilder()
-        >>> container = (builder
-        ...     .add("database", DatabaseConfig())
-        ...     .add_from_class("api", ApiConfig, port=8080)
-        ...     .nest("ml", lambda b: b
-        ...         .add("model", ModelConfig())
-        ...         .add("training", TrainingConfig())
-        ...     )
-        ...     .build()
-        ... )
+    `build()` returns a copy, so the builder can go on being used afterwards.
     """
 
     def __init__(self):
-        """Initializes an empty configuration builder."""
         self._container = ConfigContainer()
 
     def add(self, name: str, config: Union[Config, ConfigContainer]) -> "ConfigBuilder":
-        """Adds a configuration object to the builder (chainable).
+        """Add a child (chainable).
 
         Args:
-            name: Name to associate with the configuration.
-            config: Configuration object to add.
+            name: The child's name.
+            config: The child.
 
         Returns:
-            Self for method chaining.
-
-        Examples:
-            >>> builder.add("database", DatabaseConfig())
+            This builder.
         """
         self._container[name] = config
         return self
 
     def add_from_class(self, name: str, config_class: Type[Config], **kwargs) -> "ConfigBuilder":
-        """Creates and adds a configuration from a class with initial values (chainable).
+        """Instantiate a config class and add it as a child (chainable).
 
         Args:
-            name: Name to associate with the configuration.
-            config_class: Configuration class to instantiate.
-            **kwargs: Initial values to pass to the configuration constructor.
+            name: The child's name.
+            config_class: The class to instantiate.
+            **kwargs: Field values passed to the class.
 
         Returns:
-            Self for method chaining.
-
-        Examples:
-            >>> builder.add_from_class("api", ApiConfig, port=8080, debug=True)
+            This builder.
         """
         config = config_class(**kwargs)
         self._container[name] = config
         return self
 
     def nest(self, name: str, builder_func: Callable[["ConfigBuilder"], "ConfigBuilder"]) -> "ConfigBuilder":
-        """Creates a nested configuration container using a builder function (chainable).
+        """Add a nested container assembled by a function on a fresh builder (chainable).
 
         Args:
-            name: Name to associate with the nested container.
-            builder_func: Function that takes a ConfigBuilder and returns a ConfigBuilder
-                         with the desired nested configuration structure.
+            name: The nested container's name.
+            builder_func: Receives a new builder and returns the builder to build from.
 
         Returns:
-            Self for method chaining.
-
-        Examples:
-            >>> builder.nest("ml", lambda b: (
-            ...     b.add("model", ModelConfig())
-            ...      .add("training", TrainingConfig())
-            ... ))
+            This builder.
         """
         nested_builder = ConfigBuilder()
         nested_builder = builder_func(nested_builder)
@@ -1048,12 +791,5 @@ class ConfigBuilder:
         return self
 
     def build(self) -> ConfigContainer:
-        """Builds and returns the final configuration container.
-
-        Returns:
-            A copy of the constructed ConfigContainer.
-
-        Examples:
-            >>> container = builder.build()
-        """
+        """Return a copy of the assembled container."""
         return self._container.copy()

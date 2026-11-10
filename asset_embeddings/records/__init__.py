@@ -1,33 +1,99 @@
-"""Record system for structured experiment results and diagnostics.
-
-Usage:
-    from asset_embeddings.records import BERTTrainRecording, RecordStore, generate_run_id
-"""
+"""Structured experiment records (schema v7): the record classes, the SQLite store, the ``Run`` object, the read API."""
 
 from .base import (
+    METRICS,
+    SCHEMA_VERSION,
     SQLITE_TYPE_AFFINITY,
-    RecordField,
+    Detail,
     Record,
+    RecordField,
+    RecordsSchemaError,
     Result,
-    Recording,
+    RunRecord,
+    config_hash,
     generate_run_id,
+    record_classes,
 )
-from .train import (
-    BERTTrainRecording,
-    W2VTrainRecording,
-    RSTrainRecording,
+from .eval import SAMPLE_STEPS, MPResult, RCResult, RidgeSplit, RVResult, SampleStep
+from .probe import ProbeFold, ProbeResult
+from .pairwise import PairwiseCoef, PairwiseFit, PairwiseResult
+from .grouped import (
+    GroupedRCResult,
+    GroupedRCTest,
+    GroupedResult,
+    GroupedRidgeSplit,
+    GroupedRVResult,
+    GroupedRVTest,
+    GroupedTest,
 )
+from .train import Epoch, RSComponent, RSFit, TrainingSummary, W2VTraining
+from .provenance import collect_provenance, derive_experiment
+from .run import Run, is_local_main_process, module_name
 from .store import RecordStore
+from .query import (
+    RESULT_TASKS,
+    load_config,
+    load_details,
+    load_epochs,
+    load_grouped_splits,
+    load_results,
+    load_runs,
+    load_sample,
+    load_splits,
+    load_summary,
+    result_class,
+)
 
 __all__ = [
+    "METRICS",
+    "SCHEMA_VERSION",
     "SQLITE_TYPE_AFFINITY",
-    "RecordField",
+    "SAMPLE_STEPS",
     "Record",
+    "RecordField",
+    "RunRecord",
+    "Detail",
     "Result",
-    "Recording",
+    "RecordsSchemaError",
+    "config_hash",
     "generate_run_id",
-    "BERTTrainRecording",
-    "W2VTrainRecording",
-    "RSTrainRecording",
+    "record_classes",
+    "RVResult",
+    "RCResult",
+    "MPResult",
+    "SampleStep",
+    "RidgeSplit",
+    "GroupedResult",
+    "GroupedRVResult",
+    "GroupedRCResult",
+    "GroupedRidgeSplit",
+    "GroupedTest",
+    "GroupedRVTest",
+    "GroupedRCTest",
+    "ProbeResult",
+    "ProbeFold",
+    "PairwiseFit",
+    "PairwiseCoef",
+    "PairwiseResult",
+    "Epoch",
+    "TrainingSummary",
+    "W2VTraining",
+    "RSFit",
+    "RSComponent",
+    "collect_provenance",
+    "derive_experiment",
+    "Run",
+    "is_local_main_process",
+    "module_name",
     "RecordStore",
+    "RESULT_TASKS",
+    "result_class",
+    "load_runs",
+    "load_results",
+    "load_summary",
+    "load_details",
+    "load_sample",
+    "load_splits",
+    "load_epochs",
+    "load_config",
 ]

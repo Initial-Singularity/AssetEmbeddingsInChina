@@ -89,11 +89,12 @@ configs/
 
 ```bash
 uv run python -m scripts.tools.fast_generator config \
-    -t config_template.json \
-    -v '{"quarter":"@generate_time_quarters(2020,1,2021,4)"}'
+    -t '{"quarter": "{quarter}"}' \
+    -v '{"quarter":"@generate_time_quarters(2020,1,2021,4)"}' \
+    -n 'config_{quarter}.json'
 ```
 
-这会生成 8 个配置文件，`quarter` 取值为 `2020Q1 … 2021Q4`。
+这会生成 8 个配置文件：`configs/config_2020Q1.json` … `configs/config_2021Q4.json`。若不给 `-n`，每个组合都会写到默认的 `configs/config.json`，后一个覆盖前一个。
 
 
 
@@ -129,7 +130,7 @@ python train.py --dim 256 --lr 0.001
 python train.py --dim 256 --lr 0.01
 ```
 
-这样即可直接批量提交训练任务。（空行只插在命令块*之间*，不插在同一块的各变体之间。）
+这样即可直接批量提交训练任务。（每个命令块之后都写一个空行，最后一块也不例外；同一块的各变体之间不空行。）
 
 
 
@@ -155,8 +156,8 @@ python train.py --dim 256 --lr 0.01
 
 模板中，参数位置可用**占位符**表示：
 
-- `{var}` → 替换为参数值
-- `{var:format}` → 按格式替换参数值（支持 Python 格式语法）
+- `{var}`: 替换为参数值
+- `{var:format}`: 按格式替换参数值（支持 Python 格式语法）
 
 示例模板：
 
@@ -168,13 +169,13 @@ python train.py --dim 256 --lr 0.01
 }
 ```
 
-若参数组合为 `{"dim":128, "lr":0.001}`，生成结果为：
+若参数组合为 `{"dim":128, "lr":0.001}`，生成结果如下。整个字符串恰好是一个占位符时，保留值本身的类型（`"{dim}"` 变为整数 `128`）；但带格式说明时结果总是字符串，所以 `"{lr:.4f}"` 变为 `"0.0010"`。格式说明适合用在路径、文件名和较长的字符串里。
 
 ```json
 {
   "model": "resnet",
   "dim": 128,
-  "lr": 0.0010
+  "lr": "0.0010"
 }
 ```
 
@@ -210,7 +211,7 @@ python train.py --dim 256 --lr 0.01
 
 有些参数不是“自由组合”，而是“必须绑定”的。例如：
 
-- **错误做法**：`size ∈ {tiny, base}, dim ∈ {64,128}` → 4 个组合，但 `tiny` 可能只应对应 `64`
+- **错误做法**：`size ∈ {tiny, base}, dim ∈ {64,128}` 会得到 4 个组合，但 `tiny` 可能只应对应 `64`
 - **解决办法**：用**变量绑定**显式约束关系：
 
 ```json
@@ -294,7 +295,7 @@ configs/base/config_128.json
 {"quarter": "@generate_time_quarters(2020,1,2021,4)"}
 ```
 
-→ 生成 `["2020Q1","2020Q2","2020Q3","2020Q4","2021Q1","2021Q2","2021Q3","2021Q4"]`
+生成 `["2020Q1","2020Q2","2020Q3","2020Q4","2021Q1","2021Q2","2021Q3","2021Q4"]`
 
 与绑定或其他参数组合时，会自动展开组合。
 
@@ -354,11 +355,11 @@ configs/base/config_128.json
 
 生成不同频率的日期范围：
 
-- `D` → 日
-- `W` → 周
-- `M` → 月
-- `Q` → 季
-- `Y` → 年
+- `D`: 日
+- `W`: 周
+- `M`: 月
+- `Q`: 季
+- `Y`: 年
 
 示例：
 
@@ -492,24 +493,25 @@ configs/base/config_128.json
 
 ### 4.4 自定义函数扩展
 
-开发者可通过 `FunctionRegistry.register(name, func)` 注册新函数。
+开发者可在生成器的注册表上注册新函数：`gen.function_registry.register(name, func)`。
 
 示例：
 
 ```python
-from scripts.tools.fast_generator import FunctionRegistry
+from scripts.tools.fast_generator import ConfigGenerator
 
 def square_numbers(n):
     return [i*i for i in range(1,n+1)]
 
-registry = FunctionRegistry()
-registry.register("squares", square_numbers)
-
-print(registry.call("squares", 5))
-# Output: [1,4,9,16,25]
+gen = ConfigGenerator()
+gen.function_registry.register("squares", square_numbers)
+gen.set_template({"value": "{value}"})
+gen.set_variable_params(value="@squares(5)")   # resolved here: [1, 4, 9, 16, 25]
+gen.set_filename("value_{value}.json")
+gen.generate()
 ```
 
-然后即可在模板参数中使用：
+每个生成器有自己的注册表（`gen.function_registry`），而 `set_variable_params` 在调用时就会解析 `@` 字符串，所以要先在该生成器上注册函数。单独创建的 `FunctionRegistry()` 不会被任何生成器看到，命令行也无法注册函数：自定义函数只能通过 Python API 使用。注册之后，就能像内置函数一样在变量参数中使用：
 
 ```json
 {"value": "@squares(5)"}
@@ -544,59 +546,65 @@ print(registry.call("squares", 5))
 uv run python -m scripts.tools.fast_generator config -f configs_preset.json
 ```
 
+`--set-variable NAME=VALUE`（`-V`，可重复）覆盖文件中每个预设的一个 `variable_params` 项；值按 Python 字面量解析，例如 `-f templates/train_disclosure_regime.json -V dim=128`。
+
 这里的 `configs_preset.json` 是一个任务列表，可包含一个或多个生成任务。例如：
 
 
 
 #### 示例 1：AssetW2V Finetune 任务
 
+这是 `templates/train_main.json` 中的 `Finetune - AssetW2V` 一项，写成只含一个元素的任务列表：
+
 ```json
-{
-  "name": "AssetW2V Finetune Config Generator",
-  "description": "This config generator is used to generate the configs for the AssetW2V finetune model, ranged by embedding dimensions and quarterly data.",
-  "template": {
-    "pretrained_model": "model/pretrained/AssetW2V/d{dim}/AssetW2V_d{dim}_pretrained.model",
-    "embedding_dim": "{dim}",
-    "epochs": 10,
-    "window": 5,
-    "min_count": 1,
-    "sg": 1,
-    "sample": 1e-3,
-    "negative_sample": 10,
-    "seed": 42,
-    "data_path": "data/processed/MutualFundShareHoldings/finetune/{quarter}.csv",
-    "data_format": "csv",
-    "id_key": "InvestorID",
-    "portfolio_key": "Portfolio",
-    "workers": 1,
-    "save_folder": "model/finetune/AssetW2V/d{dim}",
-    "save_name": "AssetW2V_d{dim}_{quarter}",
-    "save_format": ".model"
-  },
-  "output_dir": "configs/finetune/AssetW2V/d{dim}",
-  "filename": "AssetW2V_d{dim}_{quarter}.json",
-  "variable_params": {
-    "dim": [4, 8, 10, 16, 32, 64, 128],
-    "quarter": ["2023Q2","2023Q3","2023Q4","2024Q1","2024Q2","2024Q3"]
+[
+  {
+    "name": "Finetune - AssetW2V",
+    "description": "W2V fine-tuning on quarterly shareholding data. 7 dims × 6 quarters = 42 configs.",
+    "template": {
+      "pretrained_model": "checkpoints/pretrained/AssetW2V/d{dim}/AssetW2V_d{dim}_pretrained.model",
+      "embedding_dim": "{dim}",
+      "epochs": 10,
+      "window": 5,
+      "min_count": 1,
+      "sg": 1,
+      "sample": 0.001,
+      "negative_sample": 10,
+      "seed": 42,
+      "data_path": "data/processed/MutualFundShareHoldings/finetune/{quarter}.csv",
+      "data_format": "csv",
+      "id_key": "InvestorID",
+      "portfolio_key": "Portfolio",
+      "workers": 1,
+      "save_folder": "checkpoints/finetune/AssetW2V/d{dim}/{quarter}",
+      "save_name": "AssetW2V_d{dim}_{quarter}"
+    },
+    "output_dir": "configs/main/finetune/AssetW2V/d{dim}",
+    "filename": "AssetW2V_d{dim}_{quarter}.json",
+    "variable_params": {
+      "dim": [4, 8, 10, 16, 32, 64, 128],
+      "quarter": ["2023Q2","2023Q3","2023Q4","2024Q1","2024Q2","2024Q3"]
+    },
+    "variable_bindings": null
   }
-}
+]
 ```
 
-运行后将生成配置文件：
+运行后会生成配置文件：
 
 ```
-configs/finetune/AssetW2V/
+configs/main/finetune/AssetW2V/
  ├─ d4/AssetW2V_d4_2023Q2.json
  ├─ d4/AssetW2V_d4_2023Q3.json
  ...
  ├─ d128/AssetW2V_d128_2024Q3.json
 ```
 
-其中 `AssetW2V_d4_2023Q2.json` 内容类似于：
+其中 `AssetW2V_d4_2023Q2.json` 的内容类似：
 
 ```json
 {
-  "pretrained_model": "model/pretrained/AssetW2V/d4/AssetW2V_d4_pretrained.model",
+  "pretrained_model": "checkpoints/pretrained/AssetW2V/d4/AssetW2V_d4_pretrained.model",
   "embedding_dim": 4,
   "epochs": 10,
   "window": 5,
@@ -610,60 +618,52 @@ configs/finetune/AssetW2V/
   "id_key": "InvestorID",
   "portfolio_key": "Portfolio",
   "workers": 1,
-  "save_folder": "model/finetune/AssetW2V/d4",
-  "save_name": "AssetW2V_d4_2023Q2",
-  "save_format": ".model"
+  "save_folder": "checkpoints/finetune/AssetW2V/d4/2023Q2",
+  "save_name": "AssetW2V_d4_2023Q2"
 }
 ```
 
 
 
-#### 示例 2：AssetBERT Finetune 任务（带变量绑定）
+#### 示例 2：示意模型规模（带变量绑定）
 
-在 `AssetBERT` 配置中，`dim`、`intermediate_size`、`max_position_embeddings` 三个参数必须对应。这就需要用**变量绑定（variable_bindings）**。
+每个具名规模固定了自己的宽度与深度，所以 `size`、`hidden`、`layers` 必须一起变化，而学习率可与每个规模自由组合。这就需要用**变量绑定（variable_bindings）**：
 
 ```json
-{
-  "name": "AssetBERT finetune Config Generator",
-  "description": "This config generator is used to generate the configs for the AssetBERT finetune model, ranged by embedding dimensions and quarterly data.",
-  "template": {
-    "model": {
-      "model_type": "BERT",
-      "hidden_size": "{dim}",
-      "intermediate_size": "{intermediate_size}",
-      "max_position_embeddings": "{max_position_embeddings}"
+[
+  {
+    "name": "Toy model sizes",
+    "description": "Three named sizes, each at two learning rates.",
+    "template": {
+      "size": "{size}",
+      "hidden_size": "{hidden}",
+      "num_layers": "{layers}",
+      "lr": "{lr}"
     },
-    "train": {
-      "save_folder": "model/finetune/AssetBERT/d{dim}/{quarter}",
-      "save_name": "AssetBERT_d{dim}_{quarter}",
-      "save_format": ".safetensors"
-    }
-  },
-  "output_dir": "configs/finetune/AssetBERT/d{dim}",
-  "filename": "AssetBERT_d{dim}_{quarter}.json",
-  "variable_params": {
-    "dim": [4, 8, 10, 16, 32, 64, 128],
-    "quarter": ["2023Q2","2023Q3","2023Q4","2024Q1","2024Q2","2024Q3"],
-    "intermediate_size": [512,512,512,512,512,1024,1024],
-    "max_position_embeddings": [64,64,64,64,64,256,256]
-  },
-  "variable_bindings": [
-    {"dim": 4, "intermediate_size": 512, "max_position_embeddings": 64},
-    {"dim": 8, "intermediate_size": 512, "max_position_embeddings": 64},
-    {"dim": 10, "intermediate_size": 512, "max_position_embeddings": 64},
-    {"dim": 16, "intermediate_size": 512, "max_position_embeddings": 64},
-    {"dim": 32, "intermediate_size": 512, "max_position_embeddings": 64},
-    {"dim": 64, "intermediate_size": 1024, "max_position_embeddings": 256},
-    {"dim": 128, "intermediate_size": 1024, "max_position_embeddings": 256}
-  ]
-}
+    "output_dir": "configs/toy/{size}",
+    "filename": "toy_{size}_lr{lr}.json",
+    "variable_params": {
+      "size": ["small", "base", "large"],
+      "hidden": [64, 128, 256],
+      "layers": [2, 4, 8],
+      "lr": [0.001, 0.01]
+    },
+    "variable_bindings": [
+      {"size": "small", "hidden": 64, "layers": 2},
+      {"size": "base", "hidden": 128, "layers": 4},
+      {"size": "large", "hidden": 256, "layers": 8}
+    ]
+  }
+]
 ```
 
-这确保不同的 `dim` 值只与正确的 `intermediate_size` 与 `max_position_embeddings` 匹配，避免无效组合。
+结果是 3 × 2 = 6 个文件（`configs/toy/small/toy_small_lr0.001.json`，…）：每个规模只与自己的宽度和深度搭配，并分别使用两个学习率。
 
 
 
 ## 6. 脚本生成器（ScriptGenerator）
+
+`scripts/run/` 下的 runner 不是生成出来的：每个 `{data,train,eval}_<exp>.sh` 都是围绕 `run_helper.sh` 手写的，每个配置对应一次 `job` 调用，并带有 [运行实验](run-experiments.md) 中描述的标记过滤。`fast_generator script` 是把命令模板展开成扁平批处理脚本的通用设施；仓库自己的 runner 并不用它生成，本节余下部分只是对这一设施本身的说明。
 
 `ScriptGenerator` 用于生成批处理脚本（如 Shell 脚本），支持：
 
@@ -703,15 +703,20 @@ uv run python -m scripts.tools.fast_generator script -f script_preset.json
     {
       "template": "#!/bin/bash",
       "variable_params": {},
-      "variable_bindings": {}
+      "variable_bindings": []
     },
     {
-      "template": "uv run python -m asset_embeddings.scripts.train.w2v --config configs/pretrained/AssetW2V/AssetW2V_d{dim}_pretrained.json --log model/pretrained/AssetW2V/d{dim}/train.log logs/train/pretrained/AssetW2V/d{dim}.log",
+      "template": "DB=results/db/main.db; EXP=main",
+      "variable_params": {},
+      "variable_bindings": []
+    },
+    {
+      "template": "uv run python -m asset_embeddings.scripts.train.w2v --config configs/main/pretrained/AssetW2V/AssetW2V_d{dim}_pretrained.json --log checkpoints/pretrained/AssetW2V/d{dim}/train.log logs/main/train/pretrained/AssetW2V/d{dim}.log -r \"$DB\" -e \"$EXP\"",
       "variable_params": { "dim": [4,8,10,16,32,64,128] },
       "variable_bindings": []
     },
     {
-      "template": "uv run python -m asset_embeddings.scripts.train.rs --config configs/finetune/AssetRS/RS_{variant}/d{dim}/AssetRS_{variant}_d{dim}_{quarter}.json --log model/finetune/AssetRS/RS_{variant}/d{dim}/{quarter}/train.log logs/train/finetune/AssetRS/RS_{variant}/d{dim}/{quarter}.log",
+      "template": "uv run python -m asset_embeddings.scripts.train.rs --config configs/main/finetune/AssetRS/RS_{variant}/d{dim}/AssetRS_{variant}_d{dim}_{quarter}.json --log checkpoints/finetune/AssetRS/RS_{variant}/d{dim}/{quarter}/train.log logs/main/train/finetune/AssetRS/RS_{variant}/d{dim}/{quarter}.log -r \"$DB\" -e \"$EXP\"",
       "variable_params": {
         "variant":["Binary","Ranks","Level0","LevelMin"],
         "dim":[4,8,10,16,32,64,128],
@@ -720,13 +725,13 @@ uv run python -m scripts.tools.fast_generator script -f script_preset.json
       "variable_bindings": []
     },
     {
-      "template": "uv run python -m scripts.tools.smtp -t ccarzit@gmail.com -s 'Training Finished' -b 'All pretraining and finetuning model training has been completed.'",
+      "template": "uv run python -m scripts.tools.smtp -t you@example.com -s 'Training Finished' -b 'All pretraining and finetuning model training has been completed.'",
       "variable_params": {},
       "variable_bindings": []
     }
   ],
-  "output_dir": "scripts/run",
-  "filename": "train.sh"
+  "output_dir": "scripts/generated",
+  "filename": "train_batch.sh"
 }
 ```
 
@@ -734,20 +739,24 @@ uv run python -m scripts.tools.fast_generator script -f script_preset.json
 
 ### 6.3 生成结果
 
-程序会在 `scripts/run/train.sh`（预设的 `output_dir` + `filename`）生成一份完整脚本。
+程序会在 `scripts/generated/train_batch.sh`（预设的 `output_dir` + `filename`）生成一份完整脚本。
 
 部分展开的命令（示例）：
 
 ```bash
 #!/bin/bash
-uv run python -m asset_embeddings.scripts.train.w2v --config configs/pretrained/AssetW2V/AssetW2V_d4_pretrained.json --log model/pretrained/AssetW2V/d4/train.log logs/train/pretrained/AssetW2V/d4.log
-uv run python -m asset_embeddings.scripts.train.w2v --config configs/pretrained/AssetW2V/AssetW2V_d8_pretrained.json --log model/pretrained/AssetW2V/d8/train.log logs/train/pretrained/AssetW2V/d8.log
+
+DB=results/db/main.db; EXP=main
+
+uv run python -m asset_embeddings.scripts.train.w2v --config configs/main/pretrained/AssetW2V/AssetW2V_d4_pretrained.json --log checkpoints/pretrained/AssetW2V/d4/train.log logs/main/train/pretrained/AssetW2V/d4.log -r "$DB" -e "$EXP"
+uv run python -m asset_embeddings.scripts.train.w2v --config configs/main/pretrained/AssetW2V/AssetW2V_d8_pretrained.json --log checkpoints/pretrained/AssetW2V/d8/train.log logs/main/train/pretrained/AssetW2V/d8.log -r "$DB" -e "$EXP"
 ...
 
-uv run python -m asset_embeddings.scripts.train.rs --config configs/finetune/AssetRS/RS_Binary/d4/AssetRS_Binary_d4_2023Q2.json --log model/finetune/AssetRS/RS_Binary/d4/2023Q2/train.log logs/train/finetune/AssetRS/RS_Binary/d4/2023Q2.log
-uv run python -m asset_embeddings.scripts.train.rs --config configs/finetune/AssetRS/RS_Binary/d4/AssetRS_Binary_d4_2023Q3.json --log model/finetune/AssetRS/RS_Binary/d4/2023Q3/train.log logs/train/finetune/AssetRS/RS_Binary/d4/2023Q3.log
+uv run python -m asset_embeddings.scripts.train.rs --config configs/main/finetune/AssetRS/RS_Binary/d4/AssetRS_Binary_d4_2023Q2.json --log checkpoints/finetune/AssetRS/RS_Binary/d4/2023Q2/train.log logs/main/train/finetune/AssetRS/RS_Binary/d4/2023Q2.log -r "$DB" -e "$EXP"
+uv run python -m asset_embeddings.scripts.train.rs --config configs/main/finetune/AssetRS/RS_Binary/d4/AssetRS_Binary_d4_2023Q3.json --log checkpoints/finetune/AssetRS/RS_Binary/d4/2023Q3/train.log logs/main/train/finetune/AssetRS/RS_Binary/d4/2023Q3.log -r "$DB" -e "$EXP"
 ...
-uv run python -m scripts.tools.smtp -t ccarzit@gmail.com -s 'Training Finished' -b 'All pretraining and finetuning model training has been completed.'
+
+uv run python -m scripts.tools.smtp -t you@example.com -s 'Training Finished' -b 'All pretraining and finetuning model training has been completed.'
 ```
 
 
@@ -777,12 +786,9 @@ uv run python -m scripts.tools.smtp -t ccarzit@gmail.com -s 'Training Finished' 
 }
 ```
 
-这里有两个绑定组：
+三个绑定的键集合相同，都是 `{optimizer, lr}`，所以它们构成一个绑定组，组内有三个备选。键集合不同的绑定会构成第二个组，各组之间再相乘。
 
-- 组 1：`{"optimizer": "adam", "lr": ...}`
-- 组 2：`{"optimizer": "sgd", "lr": 0.1}`
-
-生成组合时，每个绑定组还会与**自由参数 `batch_size`** 做笛卡尔积。
+生成组合时，这个绑定组还会与**自由参数 `batch_size`** 做笛卡尔积，共 3 × 3 = 9 个组合。
 
 结果：
 
@@ -841,29 +847,20 @@ uv run python -m scripts.tools.smtp -t ccarzit@gmail.com -s 'Training Finished' 
 #### 示例：生成指数衰减学习率
 
 ```python
-from scripts.tools.fast_generator import FunctionRegistry
+from scripts.tools.fast_generator import ConfigGenerator
 
 def exp_decay_lr(start, decay, steps):
     return [start * (decay ** i) for i in range(steps)]
 
-registry = FunctionRegistry()
-registry.register("exp_decay_lr", exp_decay_lr)
-
-print(registry.call("exp_decay_lr", 0.1, 0.9, 5))
-# Output: [0.1, 0.09000000000000001, 0.08100000000000002, 0.07290000000000002, 0.06561000000000002]
+gen = ConfigGenerator()
+gen.function_registry.register("exp_decay_lr", exp_decay_lr)
+gen.set_template({"lr": "{lr}"})
+gen.set_variable_params(lr="@exp_decay_lr(0.1,0.9,5)")
+print(gen.variable_params["lr"])
+# Output: [0.1, 0.09000000000000001, 0.08100000000000002, 0.0729, 0.06561]
 ```
 
-然后即可在 JSON 模板中使用：
-
-```json
-{"lr": "@exp_decay_lr(0.1,0.9,5)"}
-```
-
-生成：
-
-```
-[0.1, 0.09, 0.081, 0.0729, 0.06561]
-```
+生成的 `lr` 取值就是这五个数（在浮点舍入意义下为 0.1、0.09、0.081、0.0729 与 0.06561），每个值对应一个配置。与 §4.4 一样，函数必须注册在生成器自己的注册表上；命令行无法加载它。
 
 
 
@@ -871,9 +868,9 @@ print(registry.call("exp_decay_lr", 0.1, 0.9, 5))
 
 占位符支持格式化语法，例如：
 
-- `{epoch:03d}` → 补足三位
-- `{lr:.4f}` → 格式化为四位小数
-- `{size:>5s}` → 右对齐，宽度 5
+- `{epoch:03d}`: 补足三位
+- `{lr:.4f}`: 格式化为四位小数
+- `{size:>5s}`: 右对齐，宽度 5
 
 示例：
 
@@ -1090,7 +1087,7 @@ print(registry.call("generate_quarters", 2023, 2024))
 # ['2023Q1', '2023Q2', '2023Q3', '2023Q4', '2024Q1', '2024Q2', '2024Q3', '2024Q4']
 ```
 
-在模板中使用：
+要在模板中使用，需按 §4.4 的方式把它注册到生成器自己的注册表（`gen.function_registry.register(...)`）；单独创建的 `FunctionRegistry` 不会被任何生成器看到：
 
 ```json
 {"quarter": "@generate_quarters(2023,2024)"}

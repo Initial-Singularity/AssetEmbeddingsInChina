@@ -29,6 +29,7 @@ source scripts/run/run_helper.sh
 DIMS="4 8 10 16 32 64 128"
 QUARTERS="2023Q2 2023Q3 2023Q4 2024Q1 2024Q2 2024Q3"
 DB="results/db/w2v_init_ablation.db"
+EXP="w2v_init_ablation"  # runs.experiment; the --experiment flag of every script below
 
 # 3 ablation models (AssetBERT baseline already exists)
 MODELS="AssetBERT_w2v_ft AssetBERT_no_w2v AssetBERT_w2v_pt"
@@ -37,13 +38,14 @@ MODELS="AssetBERT_w2v_ft AssetBERT_no_w2v AssetBERT_w2v_pt"
 # Shared checkpoint for w2v_ft and no_w2v
 echo "=== Phase 1: Pretrain w2v_ft (random init, shared by w2v_ft & no_w2v) ==="
 for dim in $DIMS; do
-    try_run -m bert -m pretrain -m w2v_init -m "d${dim}" \
+    cfg="configs/w2v_init_ablation/pretrained/AssetBERT_w2v_ft/AssetBERT_w2v_ft_d${dim}_pretrained.json"
+    job -m bert -m pretrain -m w2v_init -m "d${dim}" -m "$cfg" \
         "w2v_ft pretrain d${dim}" \
         uv run python -m asset_embeddings.scripts.train.bert \
-            --config "configs/w2v_init_ablation/pretrained/AssetBERT_w2v_ft/AssetBERT_w2v_ft_d${dim}_pretrained.json" \
+            --config "$cfg" \
             --log "checkpoints/pretrained/AssetBERT_w2v_ft/d${dim}/train.log" \
                   "logs/w2v_init_ablation/train/pretrained/AssetBERT_w2v_ft/d${dim}.log" \
-            -r "$DB"
+            -r "$DB" -e "$EXP"
 done
 
 # ========== Phase 2: Finetune all 3 conditions ==========
@@ -51,13 +53,14 @@ for model in $MODELS; do
     echo "=== Phase 2: Finetune ${model} ==="
     for dim in $DIMS; do
         for quarter in $QUARTERS; do
-            try_run -m bert -m finetune -m w2v_init -m "${model,,}" -m "d${dim}" -m "${quarter,,}" \
+            cfg="configs/w2v_init_ablation/finetune/${model}/d${dim}/${model}_d${dim}_${quarter}.json"
+            job -m bert -m finetune -m w2v_init -m "${model,,}" -m "d${dim}" -m "${quarter,,}" -m "$cfg" \
                 "${model} finetune d${dim} ${quarter}" \
                 uv run python -m asset_embeddings.scripts.train.bert \
-                    --config "configs/w2v_init_ablation/finetune/${model}/d${dim}/${model}_d${dim}_${quarter}.json" \
+                    --config "$cfg" \
                     --log "checkpoints/finetune/${model}/d${dim}/${quarter}/train.log" \
                           "logs/w2v_init_ablation/train/finetune/${model}/d${dim}/${quarter}.log" \
-                    -r "$DB"
+                    -r "$DB" -e "$EXP"
         done
     done
 done

@@ -1,0 +1,374 @@
+[
+    {
+        "name": "Coverage groups - AssetBERT (dynamic)",
+        "description": "§7.4 grouped eval, finetuned AssetBERT embeddings. 7 dims x {RV,RC}. Binning mode selected at run time via -o override.",
+        "template": {
+            "model_type": "AssetBERT",
+            "embedding_path": [
+                "checkpoints/finetune/AssetBERT/d{dim}/2023Q2/AssetBERT_d{dim}_2023Q2_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2023Q3/AssetBERT_d{dim}_2023Q3_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2023Q4/AssetBERT_d{dim}_2023Q4_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2024Q1/AssetBERT_d{dim}_2024Q1_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2024Q2/AssetBERT_d{dim}_2024Q2_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2024Q3/AssetBERT_d{dim}_2024Q3_best_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "group_path": [
+                "data/processed/ShareHoldingsIntermediate/2023Q2/stock_coverage.csv",
+                "data/processed/ShareHoldingsIntermediate/2023Q3/stock_coverage.csv",
+                "data/processed/ShareHoldingsIntermediate/2023Q4/stock_coverage.csv",
+                "data/processed/ShareHoldingsIntermediate/2024Q1/stock_coverage.csv",
+                "data/processed/ShareHoldingsIntermediate/2024Q2/stock_coverage.csv",
+                "data/processed/ShareHoldingsIntermediate/2024Q3/stock_coverage.csv"
+            ],
+            "group_col": "coverage_count",
+            "group_stock_col": "Symbol",
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "n_quantiles": 4,
+            "n_bootstrap": 0,
+            "n_permutation": 1000,
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": [
+                "embedding"
+            ],
+            "align_chars": false,
+            "ridge_alpha": null,
+            "winsor_pct": "{winsor_pct}",
+            "cv_alpha_min": "{cv_alpha_min}",
+            "alpha_scope": "cell",
+            "seed": 42
+        },
+        "output_dir": "configs/coverage/eval/{task}/d{dim}",
+        "filename": "AssetBERT_d{dim}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "task": [
+                "RV",
+                "RC"
+            ],
+            "winsor_pct": [
+                0.1,
+                null
+            ],
+            "cv_alpha_min": [
+                1000,
+                null
+            ]
+        },
+        "variable_bindings": [
+            {
+                "task": "RV",
+                "winsor_pct": 0.1,
+                "cv_alpha_min": 1000
+            },
+            {
+                "task": "RC",
+                "winsor_pct": null,
+                "cv_alpha_min": null
+            }
+        ]
+    },
+    {
+        "name": "Coverage groups - AssetW2V",
+        "description": "§7.4 grouped eval, AssetW2V embeddings. 7 dims x {RV,RC}.",
+        "template": {
+            "model_type": "AssetW2V",
+            "embedding_path": [
+                "checkpoints/finetune/AssetW2V/d{dim}/2023Q2/AssetW2V_d{dim}_2023Q2_embedding.csv",
+                "checkpoints/finetune/AssetW2V/d{dim}/2023Q3/AssetW2V_d{dim}_2023Q3_embedding.csv",
+                "checkpoints/finetune/AssetW2V/d{dim}/2023Q4/AssetW2V_d{dim}_2023Q4_embedding.csv",
+                "checkpoints/finetune/AssetW2V/d{dim}/2024Q1/AssetW2V_d{dim}_2024Q1_embedding.csv",
+                "checkpoints/finetune/AssetW2V/d{dim}/2024Q2/AssetW2V_d{dim}_2024Q2_embedding.csv",
+                "checkpoints/finetune/AssetW2V/d{dim}/2024Q3/AssetW2V_d{dim}_2024Q3_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "group_path": [
+                "data/processed/ShareHoldingsIntermediate/2023Q2/stock_coverage.csv",
+                "data/processed/ShareHoldingsIntermediate/2023Q3/stock_coverage.csv",
+                "data/processed/ShareHoldingsIntermediate/2023Q4/stock_coverage.csv",
+                "data/processed/ShareHoldingsIntermediate/2024Q1/stock_coverage.csv",
+                "data/processed/ShareHoldingsIntermediate/2024Q2/stock_coverage.csv",
+                "data/processed/ShareHoldingsIntermediate/2024Q3/stock_coverage.csv"
+            ],
+            "group_col": "coverage_count",
+            "group_stock_col": "Symbol",
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "n_quantiles": 4,
+            "n_bootstrap": 0,
+            "n_permutation": 1000,
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": [
+                "embedding"
+            ],
+            "align_chars": false,
+            "ridge_alpha": null,
+            "winsor_pct": "{winsor_pct}",
+            "cv_alpha_min": "{cv_alpha_min}",
+            "alpha_scope": "cell",
+            "seed": 42
+        },
+        "output_dir": "configs/coverage/eval/{task}/d{dim}",
+        "filename": "AssetW2V_d{dim}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "task": [
+                "RV",
+                "RC"
+            ],
+            "winsor_pct": [
+                0.1,
+                null
+            ],
+            "cv_alpha_min": [
+                1000,
+                null
+            ]
+        },
+        "variable_bindings": [
+            {
+                "task": "RV",
+                "winsor_pct": 0.1,
+                "cv_alpha_min": 1000
+            },
+            {
+                "task": "RC",
+                "winsor_pct": null,
+                "cv_alpha_min": null
+            }
+        ]
+    },
+    {
+        "name": "Coverage groups - AssetRS (4 variants)",
+        "description": "§7.4 grouped eval, AssetRS embeddings (Binary/Ranks/Level0/LevelMin). 7 dims x {RV,RC} x 4 variants.",
+        "template": {
+            "model_type": "AssetRS_{V}",
+            "embedding_path": [
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2023Q2/AssetRS_{V}_d{dim}_2023Q2_embedding.csv",
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2023Q3/AssetRS_{V}_d{dim}_2023Q3_embedding.csv",
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2023Q4/AssetRS_{V}_d{dim}_2023Q4_embedding.csv",
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2024Q1/AssetRS_{V}_d{dim}_2024Q1_embedding.csv",
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2024Q2/AssetRS_{V}_d{dim}_2024Q2_embedding.csv",
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2024Q3/AssetRS_{V}_d{dim}_2024Q3_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "group_path": [
+                "data/processed/ShareHoldingsIntermediate/2023Q2/stock_coverage.csv",
+                "data/processed/ShareHoldingsIntermediate/2023Q3/stock_coverage.csv",
+                "data/processed/ShareHoldingsIntermediate/2023Q4/stock_coverage.csv",
+                "data/processed/ShareHoldingsIntermediate/2024Q1/stock_coverage.csv",
+                "data/processed/ShareHoldingsIntermediate/2024Q2/stock_coverage.csv",
+                "data/processed/ShareHoldingsIntermediate/2024Q3/stock_coverage.csv"
+            ],
+            "group_col": "coverage_count",
+            "group_stock_col": "Symbol",
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "n_quantiles": 4,
+            "n_bootstrap": 0,
+            "n_permutation": 1000,
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": [
+                "embedding"
+            ],
+            "align_chars": false,
+            "ridge_alpha": null,
+            "winsor_pct": "{winsor_pct}",
+            "cv_alpha_min": "{cv_alpha_min}",
+            "alpha_scope": "cell",
+            "seed": 42
+        },
+        "output_dir": "configs/coverage/eval/{task}/d{dim}",
+        "filename": "AssetRS_{V}_d{dim}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "task": [
+                "RV",
+                "RC"
+            ],
+            "V": [
+                "Binary",
+                "Ranks",
+                "Level0",
+                "LevelMin"
+            ],
+            "winsor_pct": [
+                0.1,
+                null
+            ],
+            "cv_alpha_min": [
+                1000,
+                null
+            ]
+        },
+        "variable_bindings": [
+            {
+                "task": "RV",
+                "winsor_pct": 0.1,
+                "cv_alpha_min": 1000
+            },
+            {
+                "task": "RC",
+                "winsor_pct": null,
+                "cv_alpha_min": null
+            }
+        ]
+    },
+    {
+        "name": "Coverage groups - characteristics baseline",
+        "description": "§7.4 per-group four/six-characteristic baseline (features: chars only). Model- and dim-independent; groups come from group_path. One config per task. Own caliber (the char subsamples are far smaller than the embedding samples and the design matrix is 4-6 columns, not 128): RV fixes the ridge penalty at 700 and winsorizes the residual target at the conventional 1% (largest penalty-relaxation that keeps every embedding model above the char row in every group); RC winsorizes the heavy-tailed return target at 0.5% and selects the CV penalty once on the period's whole cross section (alpha_scope=cross_section).",
+        "template": {
+            "model_type": "Chars",
+            "embedding_path": null,
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "group_path": [
+                "data/processed/ShareHoldingsIntermediate/2023Q2/stock_coverage.csv",
+                "data/processed/ShareHoldingsIntermediate/2023Q3/stock_coverage.csv",
+                "data/processed/ShareHoldingsIntermediate/2023Q4/stock_coverage.csv",
+                "data/processed/ShareHoldingsIntermediate/2024Q1/stock_coverage.csv",
+                "data/processed/ShareHoldingsIntermediate/2024Q2/stock_coverage.csv",
+                "data/processed/ShareHoldingsIntermediate/2024Q3/stock_coverage.csv"
+            ],
+            "group_col": "coverage_count",
+            "group_stock_col": "Symbol",
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "n_quantiles": 4,
+            "n_bootstrap": 0,
+            "n_permutation": 1000,
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": [
+                "chars"
+            ],
+            "align_chars": false,
+            "ridge_alpha": "{ridge_alpha}",
+            "winsor_pct": "{winsor_pct}",
+            "cv_alpha_min": null,
+            "alpha_scope": "{alpha_scope}",
+            "seed": 42
+        },
+        "output_dir": "configs/coverage/eval/{task}/char",
+        "filename": "char_baseline.json",
+        "variable_params": {
+            "task": [
+                "RV",
+                "RC"
+            ],
+            "ridge_alpha": [
+                700,
+                null
+            ],
+            "winsor_pct": [
+                1.0,
+                0.5
+            ],
+            "alpha_scope": [
+                "cell",
+                "cross_section"
+            ]
+        },
+        "variable_bindings": [
+            {
+                "task": "RV",
+                "ridge_alpha": 700,
+                "winsor_pct": 1.0,
+                "alpha_scope": "cell"
+            },
+            {
+                "task": "RC",
+                "ridge_alpha": null,
+                "winsor_pct": 0.5,
+                "alpha_scope": "cross_section"
+            }
+        ]
+    }
+]

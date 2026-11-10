@@ -95,17 +95,17 @@ nav:
       - tutorials/quickstart.md
   - How-to guides:
       - how-to/install.md
-      - how-to/prepare-data.md
       - how-to/train.md
-      - how-to/text-embeddings.md
+      - how-to/evaluate.md
+      - how-to/run-experiments.md
       - how-to/generate-configs.md
   - Explanation:
       - explanation/method.md
       - explanation/config-system.md
       - explanation/records-system.md
+      - explanation/evaluators.md
       - explanation/preparers.md
       - explanation/logging-system.md
-      - explanation/data-pipeline.md
   - Reference:
       - reference/cli.md
       - API:
@@ -113,6 +113,8 @@ nav:
           - reference/api/configs.md
           - reference/api/datasets.md
           - reference/api/preparers.md
+          - reference/api/trainers.md
+          - reference/api/evaluators.md
           - reference/api/models.md
           - reference/api/records.md
           - reference/api/utils.md

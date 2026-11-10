@@ -1,0 +1,1507 @@
+[
+    {
+        "name": "Disclosure Regime - W2V pretrain",
+        "description": "W2V pretraining on the regime's pretrained/ quarters (2005Q1-2020Q3), d{dim}, time-split preset. 63 chains = 63 configs.",
+        "template": {
+            "pretrained_model": null,
+            "embedding_dim": "{dim}",
+            "epochs": 10,
+            "window": 5,
+            "min_count": 1,
+            "sg": 1,
+            "sample": 0.001,
+            "negative_sample": 10,
+            "seed": "{seed}",
+            "data_path": "data/processed/DisclosureRegime/{level}/pretrained",
+            "data_format": "csv",
+            "id_key": "InvestorID",
+            "portfolio_key": "Portfolio",
+            "workers": 1,
+            "save_folder": "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/AssetW2V/d{dim}",
+            "save_name": "AssetW2V_d{dim}_pretrained"
+        },
+        "output_dir": "configs/disclosure_regime/{level}/s{seed}/pretrained/AssetW2V",
+        "filename": "AssetW2V_d{dim}_pretrained.json",
+        "variable_params": {
+            "dim": 16,
+            "level": [
+                "full",
+                "top100",
+                "top50",
+                "top20",
+                "top10",
+                "top5",
+                "keep70_s1",
+                "keep70_s2",
+                "keep70_s3",
+                "keep50_s1",
+                "keep50_s2",
+                "keep50_s3",
+                "keep30_s1",
+                "keep30_s2",
+                "keep30_s3",
+                "keep10_s1",
+                "keep10_s2",
+                "keep10_s3",
+                "top3",
+                "top1",
+                "top0",
+                "keep05_s1",
+                "keep05_s2",
+                "keep05_s3",
+                "keep02_s1",
+                "keep02_s2",
+                "keep02_s3",
+                "rand70_s1",
+                "rand70_s2",
+                "rand70_s3",
+                "rand50_s1",
+                "rand50_s2",
+                "rand50_s3",
+                "rand30_s1",
+                "rand30_s2",
+                "rand30_s3",
+                "rand10_s1",
+                "rand10_s2",
+                "rand10_s3",
+                "rand05_s1",
+                "rand05_s2",
+                "rand05_s3",
+                "rand02_s1",
+                "rand02_s2",
+                "rand02_s3"
+            ],
+            "seed": [
+                42,
+                43,
+                44
+            ]
+        },
+        "variable_bindings": [
+            {
+                "level": "full",
+                "seed": 42
+            },
+            {
+                "level": "full",
+                "seed": 43
+            },
+            {
+                "level": "full",
+                "seed": 44
+            },
+            {
+                "level": "top100",
+                "seed": 42
+            },
+            {
+                "level": "top100",
+                "seed": 43
+            },
+            {
+                "level": "top100",
+                "seed": 44
+            },
+            {
+                "level": "top50",
+                "seed": 42
+            },
+            {
+                "level": "top50",
+                "seed": 43
+            },
+            {
+                "level": "top50",
+                "seed": 44
+            },
+            {
+                "level": "top20",
+                "seed": 42
+            },
+            {
+                "level": "top20",
+                "seed": 43
+            },
+            {
+                "level": "top20",
+                "seed": 44
+            },
+            {
+                "level": "top10",
+                "seed": 42
+            },
+            {
+                "level": "top10",
+                "seed": 43
+            },
+            {
+                "level": "top10",
+                "seed": 44
+            },
+            {
+                "level": "top5",
+                "seed": 42
+            },
+            {
+                "level": "top5",
+                "seed": 43
+            },
+            {
+                "level": "top5",
+                "seed": 44
+            },
+            {
+                "level": "keep70_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep70_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep70_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s3",
+                "seed": 42
+            },
+            {
+                "level": "top3",
+                "seed": 42
+            },
+            {
+                "level": "top3",
+                "seed": 43
+            },
+            {
+                "level": "top3",
+                "seed": 44
+            },
+            {
+                "level": "top1",
+                "seed": 42
+            },
+            {
+                "level": "top1",
+                "seed": 43
+            },
+            {
+                "level": "top1",
+                "seed": 44
+            },
+            {
+                "level": "top0",
+                "seed": 42
+            },
+            {
+                "level": "top0",
+                "seed": 43
+            },
+            {
+                "level": "top0",
+                "seed": 44
+            },
+            {
+                "level": "keep05_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep05_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep05_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s3",
+                "seed": 42
+            }
+        ]
+    },
+    {
+        "name": "Disclosure Regime - BERT pretrain",
+        "description": "BERT pretraining (validation-based selection, context 256 / FFN 512) on the regime's pretrained/ quarters, d{dim}, initialized from the chain's W2V. 63 configs.",
+        "template": {
+            "model": {
+                "model_type": "BERT",
+                "model_checkpoint": null,
+                "w2v_model": "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/AssetW2V/d{dim}/AssetW2V_d{dim}_pretrained.model",
+                "embedding_file": null,
+                "vocab_size": 5400,
+                "hidden_size": "{dim}",
+                "num_hidden_layers": 4,
+                "num_attention_heads": 2,
+                "intermediate_size": 512,
+                "max_position_embeddings": 256,
+                "type_vocab_size": 1,
+                "freeze_embedding": false,
+                "freeze_encoder": false
+            },
+            "tokenizer": {
+                "w2v_model": "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/AssetW2V/d{dim}/AssetW2V_d{dim}_pretrained.model",
+                "vocab_file": null,
+                "pretrained_tokenizer_file": null,
+                "alias_file": null
+            },
+            "dataset": {
+                "data_path": "data/processed/DisclosureRegime/{level}/pretrained",
+                "data_format": "csv",
+                "id_key": "InvestorID",
+                "portfolio_key": "Portfolio",
+                "proportion1_key": "Proportion1",
+                "proportion2_key": "Proportion2",
+                "include_proportion": false,
+                "max_length": 256,
+                "mask_prob": 0.15,
+                "mask_indices": null
+            },
+            "dataloader": {
+                "batch_size": 128,
+                "shuffle": true,
+                "num_workers": 4,
+                "persistent_workers": true,
+                "pin_memory": true,
+                "drop_last": false
+            },
+            "optimizer": {
+                "optimizer_type": "AdamW",
+                "optimizer_kwargs": null,
+                "learning_rate": 0.001,
+                "lr_scheduler_type": "cosine",
+                "lr_scheduler_warmup_steps": 500,
+                "lr_scheduler_train_steps": null,
+                "lr_scheduler_num_cycles": 0.5,
+                "lr_scheduler_power": 0
+            },
+            "accelerator": {
+                "mixed_precision": "auto",
+                "gradient_accumulation_steps": 1,
+                "accelerator_checkpoint": null,
+                "use_compile": true,
+                "compile_backend": "inductor",
+                "compile_mode": "default",
+                "compile_fullgraph": false,
+                "compile_dynamic": false,
+                "compile_cache_dir": null,
+                "allow_tf32": true
+            },
+            "train": {
+                "max_epochs": 40,
+                "validation_split": 0.1,
+                "split_method": "random",
+                "best_metric": "val_loss",
+                "clip_grad_norm": 1.0,
+                "clip_grad_value": null,
+                "detect_anomaly": false,
+                "log_every_steps": 200,
+                "report_every_epochs": 1,
+                "calculate_contextualized_embeddings": false,
+                "save_every_epochs": 1,
+                "save_folder": "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/AssetBERT/d{dim}",
+                "save_name": "AssetBERT_d{dim}_pretrained",
+                "save_format": ".safetensors",
+                "seed": "{seed}",
+                "keep_best_only": true,
+                "early_stop_enabled": true,
+                "early_stop_patience": 5,
+                "early_stop_min_delta": 0.001,
+                "early_stop_mode": "min",
+                "early_stop_relative": true,
+                "early_stop_metric": "val_loss"
+            }
+        },
+        "output_dir": "configs/disclosure_regime/{level}/s{seed}/pretrained/AssetBERT",
+        "filename": "AssetBERT_d{dim}_pretrained.json",
+        "variable_params": {
+            "dim": 16,
+            "level": [
+                "full",
+                "top100",
+                "top50",
+                "top20",
+                "top10",
+                "top5",
+                "keep70_s1",
+                "keep70_s2",
+                "keep70_s3",
+                "keep50_s1",
+                "keep50_s2",
+                "keep50_s3",
+                "keep30_s1",
+                "keep30_s2",
+                "keep30_s3",
+                "keep10_s1",
+                "keep10_s2",
+                "keep10_s3",
+                "top3",
+                "top1",
+                "top0",
+                "keep05_s1",
+                "keep05_s2",
+                "keep05_s3",
+                "keep02_s1",
+                "keep02_s2",
+                "keep02_s3",
+                "rand70_s1",
+                "rand70_s2",
+                "rand70_s3",
+                "rand50_s1",
+                "rand50_s2",
+                "rand50_s3",
+                "rand30_s1",
+                "rand30_s2",
+                "rand30_s3",
+                "rand10_s1",
+                "rand10_s2",
+                "rand10_s3",
+                "rand05_s1",
+                "rand05_s2",
+                "rand05_s3",
+                "rand02_s1",
+                "rand02_s2",
+                "rand02_s3"
+            ],
+            "seed": [
+                42,
+                43,
+                44
+            ]
+        },
+        "variable_bindings": [
+            {
+                "level": "full",
+                "seed": 42
+            },
+            {
+                "level": "full",
+                "seed": 43
+            },
+            {
+                "level": "full",
+                "seed": 44
+            },
+            {
+                "level": "top100",
+                "seed": 42
+            },
+            {
+                "level": "top100",
+                "seed": 43
+            },
+            {
+                "level": "top100",
+                "seed": 44
+            },
+            {
+                "level": "top50",
+                "seed": 42
+            },
+            {
+                "level": "top50",
+                "seed": 43
+            },
+            {
+                "level": "top50",
+                "seed": 44
+            },
+            {
+                "level": "top20",
+                "seed": 42
+            },
+            {
+                "level": "top20",
+                "seed": 43
+            },
+            {
+                "level": "top20",
+                "seed": 44
+            },
+            {
+                "level": "top10",
+                "seed": 42
+            },
+            {
+                "level": "top10",
+                "seed": 43
+            },
+            {
+                "level": "top10",
+                "seed": 44
+            },
+            {
+                "level": "top5",
+                "seed": 42
+            },
+            {
+                "level": "top5",
+                "seed": 43
+            },
+            {
+                "level": "top5",
+                "seed": 44
+            },
+            {
+                "level": "keep70_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep70_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep70_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s3",
+                "seed": 42
+            },
+            {
+                "level": "top3",
+                "seed": 42
+            },
+            {
+                "level": "top3",
+                "seed": 43
+            },
+            {
+                "level": "top3",
+                "seed": 44
+            },
+            {
+                "level": "top1",
+                "seed": 42
+            },
+            {
+                "level": "top1",
+                "seed": 43
+            },
+            {
+                "level": "top1",
+                "seed": 44
+            },
+            {
+                "level": "top0",
+                "seed": 42
+            },
+            {
+                "level": "top0",
+                "seed": 43
+            },
+            {
+                "level": "top0",
+                "seed": 44
+            },
+            {
+                "level": "keep05_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep05_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep05_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s3",
+                "seed": 42
+            }
+        ]
+    },
+    {
+        "name": "Disclosure Regime - W2V finetune",
+        "description": "W2V fine-tuning from the chain's pretrained W2V on each finetune quarter. 63 chains x 16 quarters = 1008 configs.",
+        "template": {
+            "pretrained_model": "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/AssetW2V/d{dim}/AssetW2V_d{dim}_pretrained.model",
+            "embedding_dim": "{dim}",
+            "epochs": 10,
+            "window": 5,
+            "min_count": 1,
+            "sg": 1,
+            "sample": 0.001,
+            "negative_sample": 10,
+            "seed": "{seed}",
+            "data_path": "data/processed/DisclosureRegime/{level}/finetune/{quarter}.csv",
+            "data_format": "csv",
+            "id_key": "InvestorID",
+            "portfolio_key": "Portfolio",
+            "workers": 1,
+            "save_folder": "checkpoints/disclosure_regime/{level}/s{seed}/finetune/AssetW2V/d{dim}/{quarter}",
+            "save_name": "AssetW2V_d{dim}_{quarter}"
+        },
+        "output_dir": "configs/disclosure_regime/{level}/s{seed}/finetune/AssetW2V",
+        "filename": "AssetW2V_d{dim}_{quarter}.json",
+        "variable_params": {
+            "dim": 16,
+            "level": [
+                "full",
+                "top100",
+                "top50",
+                "top20",
+                "top10",
+                "top5",
+                "keep70_s1",
+                "keep70_s2",
+                "keep70_s3",
+                "keep50_s1",
+                "keep50_s2",
+                "keep50_s3",
+                "keep30_s1",
+                "keep30_s2",
+                "keep30_s3",
+                "keep10_s1",
+                "keep10_s2",
+                "keep10_s3",
+                "top3",
+                "top1",
+                "top0",
+                "keep05_s1",
+                "keep05_s2",
+                "keep05_s3",
+                "keep02_s1",
+                "keep02_s2",
+                "keep02_s3",
+                "rand70_s1",
+                "rand70_s2",
+                "rand70_s3",
+                "rand50_s1",
+                "rand50_s2",
+                "rand50_s3",
+                "rand30_s1",
+                "rand30_s2",
+                "rand30_s3",
+                "rand10_s1",
+                "rand10_s2",
+                "rand10_s3",
+                "rand05_s1",
+                "rand05_s2",
+                "rand05_s3",
+                "rand02_s1",
+                "rand02_s2",
+                "rand02_s3"
+            ],
+            "seed": [
+                42,
+                43,
+                44
+            ],
+            "quarter": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ]
+        },
+        "variable_bindings": [
+            {
+                "level": "full",
+                "seed": 42
+            },
+            {
+                "level": "full",
+                "seed": 43
+            },
+            {
+                "level": "full",
+                "seed": 44
+            },
+            {
+                "level": "top100",
+                "seed": 42
+            },
+            {
+                "level": "top100",
+                "seed": 43
+            },
+            {
+                "level": "top100",
+                "seed": 44
+            },
+            {
+                "level": "top50",
+                "seed": 42
+            },
+            {
+                "level": "top50",
+                "seed": 43
+            },
+            {
+                "level": "top50",
+                "seed": 44
+            },
+            {
+                "level": "top20",
+                "seed": 42
+            },
+            {
+                "level": "top20",
+                "seed": 43
+            },
+            {
+                "level": "top20",
+                "seed": 44
+            },
+            {
+                "level": "top10",
+                "seed": 42
+            },
+            {
+                "level": "top10",
+                "seed": 43
+            },
+            {
+                "level": "top10",
+                "seed": 44
+            },
+            {
+                "level": "top5",
+                "seed": 42
+            },
+            {
+                "level": "top5",
+                "seed": 43
+            },
+            {
+                "level": "top5",
+                "seed": 44
+            },
+            {
+                "level": "keep70_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep70_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep70_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s3",
+                "seed": 42
+            },
+            {
+                "level": "top3",
+                "seed": 42
+            },
+            {
+                "level": "top3",
+                "seed": 43
+            },
+            {
+                "level": "top3",
+                "seed": 44
+            },
+            {
+                "level": "top1",
+                "seed": 42
+            },
+            {
+                "level": "top1",
+                "seed": 43
+            },
+            {
+                "level": "top1",
+                "seed": 44
+            },
+            {
+                "level": "top0",
+                "seed": 42
+            },
+            {
+                "level": "top0",
+                "seed": 43
+            },
+            {
+                "level": "top0",
+                "seed": 44
+            },
+            {
+                "level": "keep05_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep05_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep05_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s3",
+                "seed": 42
+            }
+        ]
+    },
+    {
+        "name": "Disclosure Regime - BERT finetune",
+        "description": "BERT fine-tuning (the main finetuning setup) from the chain's pretrained BERT with the quarter's W2V. 1008 configs.",
+        "template": {
+            "model": {
+                "model_type": "BERT",
+                "model_checkpoint": "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/AssetBERT/d{dim}/AssetBERT_d{dim}_pretrained_best/model.safetensors",
+                "w2v_model": "checkpoints/disclosure_regime/{level}/s{seed}/finetune/AssetW2V/d{dim}/{quarter}/AssetW2V_d{dim}_{quarter}.model",
+                "embedding_file": null,
+                "vocab_size": 5400,
+                "hidden_size": "{dim}",
+                "num_hidden_layers": 4,
+                "num_attention_heads": 2,
+                "intermediate_size": 512,
+                "max_position_embeddings": 256,
+                "type_vocab_size": 1,
+                "freeze_embedding": false,
+                "freeze_encoder": false
+            },
+            "tokenizer": {
+                "w2v_model": "checkpoints/disclosure_regime/{level}/s{seed}/finetune/AssetW2V/d{dim}/{quarter}/AssetW2V_d{dim}_{quarter}.model",
+                "vocab_file": null,
+                "pretrained_tokenizer_file": null,
+                "alias_file": null
+            },
+            "dataset": {
+                "data_path": "data/processed/DisclosureRegime/{level}/finetune/{quarter}.csv",
+                "data_format": "csv",
+                "id_key": "InvestorID",
+                "portfolio_key": "Portfolio",
+                "proportion1_key": "Proportion1",
+                "proportion2_key": "Proportion2",
+                "include_proportion": true,
+                "max_length": 256,
+                "num_repeats": 1,
+                "mask_prob": 0.15,
+                "mask_indices": null
+            },
+            "dataloader": {
+                "batch_size": 32,
+                "shuffle": true,
+                "num_workers": 4,
+                "persistent_workers": true,
+                "pin_memory": true,
+                "drop_last": false
+            },
+            "optimizer": {
+                "optimizer_type": "PagedAdam8bit",
+                "optimizer_kwargs": null,
+                "learning_rate": 0.001,
+                "lr_scheduler_type": "cosine",
+                "lr_scheduler_warmup_steps": 0,
+                "lr_scheduler_train_steps": null,
+                "lr_scheduler_num_cycles": 0.5,
+                "lr_scheduler_power": 0
+            },
+            "accelerator": {
+                "mixed_precision": "auto",
+                "gradient_accumulation_steps": 1,
+                "accelerator_checkpoint": null,
+                "use_compile": true,
+                "compile_backend": "inductor",
+                "compile_mode": "default",
+                "compile_fullgraph": false,
+                "compile_dynamic": false,
+                "compile_cache_dir": null,
+                "allow_tf32": true
+            },
+            "train": {
+                "max_epochs": 30,
+                "validation_split": null,
+                "split_method": "random",
+                "best_metric": "train_loss",
+                "clip_grad_norm": 1.0,
+                "clip_grad_value": null,
+                "detect_anomaly": false,
+                "log_every_steps": 200,
+                "report_every_epochs": 1,
+                "calculate_contextualized_embeddings": true,
+                "save_every_epochs": 1,
+                "save_folder": "checkpoints/disclosure_regime/{level}/s{seed}/finetune/AssetBERT/d{dim}/{quarter}",
+                "save_name": "AssetBERT_d{dim}_{quarter}",
+                "save_format": ".safetensors",
+                "seed": "{seed}",
+                "keep_best_only": true
+            }
+        },
+        "output_dir": "configs/disclosure_regime/{level}/s{seed}/finetune/AssetBERT",
+        "filename": "AssetBERT_d{dim}_{quarter}.json",
+        "variable_params": {
+            "dim": 16,
+            "level": [
+                "full",
+                "top100",
+                "top50",
+                "top20",
+                "top10",
+                "top5",
+                "keep70_s1",
+                "keep70_s2",
+                "keep70_s3",
+                "keep50_s1",
+                "keep50_s2",
+                "keep50_s3",
+                "keep30_s1",
+                "keep30_s2",
+                "keep30_s3",
+                "keep10_s1",
+                "keep10_s2",
+                "keep10_s3",
+                "top3",
+                "top1",
+                "top0",
+                "keep05_s1",
+                "keep05_s2",
+                "keep05_s3",
+                "keep02_s1",
+                "keep02_s2",
+                "keep02_s3",
+                "rand70_s1",
+                "rand70_s2",
+                "rand70_s3",
+                "rand50_s1",
+                "rand50_s2",
+                "rand50_s3",
+                "rand30_s1",
+                "rand30_s2",
+                "rand30_s3",
+                "rand10_s1",
+                "rand10_s2",
+                "rand10_s3",
+                "rand05_s1",
+                "rand05_s2",
+                "rand05_s3",
+                "rand02_s1",
+                "rand02_s2",
+                "rand02_s3"
+            ],
+            "seed": [
+                42,
+                43,
+                44
+            ],
+            "quarter": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ]
+        },
+        "variable_bindings": [
+            {
+                "level": "full",
+                "seed": 42
+            },
+            {
+                "level": "full",
+                "seed": 43
+            },
+            {
+                "level": "full",
+                "seed": 44
+            },
+            {
+                "level": "top100",
+                "seed": 42
+            },
+            {
+                "level": "top100",
+                "seed": 43
+            },
+            {
+                "level": "top100",
+                "seed": 44
+            },
+            {
+                "level": "top50",
+                "seed": 42
+            },
+            {
+                "level": "top50",
+                "seed": 43
+            },
+            {
+                "level": "top50",
+                "seed": 44
+            },
+            {
+                "level": "top20",
+                "seed": 42
+            },
+            {
+                "level": "top20",
+                "seed": 43
+            },
+            {
+                "level": "top20",
+                "seed": 44
+            },
+            {
+                "level": "top10",
+                "seed": 42
+            },
+            {
+                "level": "top10",
+                "seed": 43
+            },
+            {
+                "level": "top10",
+                "seed": 44
+            },
+            {
+                "level": "top5",
+                "seed": 42
+            },
+            {
+                "level": "top5",
+                "seed": 43
+            },
+            {
+                "level": "top5",
+                "seed": 44
+            },
+            {
+                "level": "keep70_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep70_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep70_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s3",
+                "seed": 42
+            },
+            {
+                "level": "top3",
+                "seed": 42
+            },
+            {
+                "level": "top3",
+                "seed": 43
+            },
+            {
+                "level": "top3",
+                "seed": 44
+            },
+            {
+                "level": "top1",
+                "seed": 42
+            },
+            {
+                "level": "top1",
+                "seed": 43
+            },
+            {
+                "level": "top1",
+                "seed": 44
+            },
+            {
+                "level": "top0",
+                "seed": 42
+            },
+            {
+                "level": "top0",
+                "seed": 43
+            },
+            {
+                "level": "top0",
+                "seed": 44
+            },
+            {
+                "level": "keep05_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep05_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep05_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s3",
+                "seed": 42
+            }
+        ]
+    }
+]

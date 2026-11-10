@@ -1,0 +1,434 @@
+[
+    {
+        "name": "RV Ridge Robust - Embedding models",
+        "description": "RV evaluation with varied ridge penalty (alpha=0/0.1/0.25/0.5/0.75/1/2/5/10/CV). 7 models × 7 dims × 2 variants × 10 alphas = 980 configs.",
+        "template": {
+            "model_type": "{model_type}",
+            "embedding_path": [
+                "checkpoints/finetune/{model_path}/d{dim}/2023Q2/{model_type}_d{dim}_2023Q2{_add_best}_embedding.csv",
+                "checkpoints/finetune/{model_path}/d{dim}/2023Q3/{model_type}_d{dim}_2023Q3{_add_best}_embedding.csv",
+                "checkpoints/finetune/{model_path}/d{dim}/2023Q4/{model_type}_d{dim}_2023Q4{_add_best}_embedding.csv",
+                "checkpoints/finetune/{model_path}/d{dim}/2024Q1/{model_type}_d{dim}_2024Q1{_add_best}_embedding.csv",
+                "checkpoints/finetune/{model_path}/d{dim}/2024Q2/{model_type}_d{dim}_2024Q2{_add_best}_embedding.csv",
+                "checkpoints/finetune/{model_path}/d{dim}/2024Q3/{model_type}_d{dim}_2024Q3{_add_best}_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": "{features}",
+            "align_chars": true,
+            "ridge_alpha": "{ridge_penalty}",
+            "seed": 42
+        },
+        "output_dir": "configs/ridge_robust/eval/ridge{ridge_penalty}/RV/d{dim}",
+        "filename": "{model_type}_d{dim}{_addChars}.json",
+        "variable_params": {
+            "ridge_penalty": [
+                0.0,
+                0.1,
+                0.25,
+                0.5,
+                0.75,
+                1.0,
+                2.0,
+                5.0,
+                10.0,
+                null
+            ],
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "model_type": [
+                "AssetRS_Binary",
+                "AssetRS_Ranks",
+                "AssetRS_Level0",
+                "AssetRS_LevelMin",
+                "AssetW2V",
+                "AssetBERT"
+            ],
+            "model_path": [
+                "AssetRS/RS_Binary",
+                "AssetRS/RS_Ranks",
+                "AssetRS/RS_Level0",
+                "AssetRS/RS_LevelMin",
+                "AssetW2V",
+                "AssetBERT"
+            ],
+            "_addChars": [
+                "",
+                "_addChars"
+            ],
+            "_add_best": [
+                "",
+                "_best"
+            ],
+            "features": [
+                [
+                    "embedding"
+                ],
+                [
+                    "embedding",
+                    "chars"
+                ]
+            ]
+        },
+        "variable_bindings": [
+            {
+                "model_type": "AssetRS_Binary",
+                "model_path": "AssetRS/RS_Binary",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetRS_Ranks",
+                "model_path": "AssetRS/RS_Ranks",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetRS_Level0",
+                "model_path": "AssetRS/RS_Level0",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetRS_LevelMin",
+                "model_path": "AssetRS/RS_LevelMin",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetW2V",
+                "model_path": "AssetW2V",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetBERT",
+                "model_path": "AssetBERT",
+                "_add_best": "_best"
+            },
+            {
+                "_addChars": "",
+                "features": [
+                    "embedding"
+                ]
+            },
+            {
+                "_addChars": "_addChars",
+                "features": [
+                    "embedding",
+                    "chars"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "RV Ridge Robust - Baselines (Placebo/Chars)",
+        "description": "RV evaluation for baselines with varied ridge penalty. 2 baselines × 10 alphas = 20 configs.",
+        "template": {
+            "model_type": "{model_type}",
+            "embedding_path": null,
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": "{features}",
+            "align_chars": false,
+            "ridge_alpha": "{ridge_penalty}",
+            "seed": 42
+        },
+        "output_dir": "configs/ridge_robust/eval/ridge{ridge_penalty}/RV",
+        "filename": "{model_type}.json",
+        "variable_params": {
+            "ridge_penalty": [
+                0.0,
+                0.1,
+                0.25,
+                0.5,
+                0.75,
+                1.0,
+                2.0,
+                5.0,
+                10.0,
+                null
+            ],
+            "model_type": [
+                "Placebo",
+                "Chars"
+            ],
+            "features": [
+                [
+                    "placebo"
+                ],
+                [
+                    "chars"
+                ]
+            ]
+        },
+        "variable_bindings": [
+            {
+                "features": [
+                    "placebo"
+                ],
+                "model_type": "Placebo"
+            },
+            {
+                "features": [
+                    "chars"
+                ],
+                "model_type": "Chars"
+            }
+        ]
+    },
+    {
+        "name": "RC Ridge Robust - Embedding models",
+        "description": "RC evaluation with varied ridge penalty (alpha=0/0.1/0.25/0.5/0.75/1/2/5/10/CV). 7 models × 7 dims × 2 variants × 10 alphas = 980 configs.",
+        "template": {
+            "model_type": "{model_type}",
+            "embedding_path": [
+                "checkpoints/finetune/{model_path}/d{dim}/2023Q2/{model_type}_d{dim}_2023Q2{_add_best}_embedding.csv",
+                "checkpoints/finetune/{model_path}/d{dim}/2023Q3/{model_type}_d{dim}_2023Q3{_add_best}_embedding.csv",
+                "checkpoints/finetune/{model_path}/d{dim}/2023Q4/{model_type}_d{dim}_2023Q4{_add_best}_embedding.csv",
+                "checkpoints/finetune/{model_path}/d{dim}/2024Q1/{model_type}_d{dim}_2024Q1{_add_best}_embedding.csv",
+                "checkpoints/finetune/{model_path}/d{dim}/2024Q2/{model_type}_d{dim}_2024Q2{_add_best}_embedding.csv",
+                "checkpoints/finetune/{model_path}/d{dim}/2024Q3/{model_type}_d{dim}_2024Q3{_add_best}_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": "{features}",
+            "align_chars": true,
+            "ridge_alpha": "{ridge_penalty}",
+            "seed": 42
+        },
+        "output_dir": "configs/ridge_robust/eval/ridge{ridge_penalty}/RC/d{dim}",
+        "filename": "{model_type}_d{dim}{_addChars}.json",
+        "variable_params": {
+            "ridge_penalty": [
+                0.0,
+                0.1,
+                0.25,
+                0.5,
+                0.75,
+                1.0,
+                2.0,
+                5.0,
+                10.0,
+                null
+            ],
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "model_type": [
+                "AssetRS_Binary",
+                "AssetRS_Ranks",
+                "AssetRS_Level0",
+                "AssetRS_LevelMin",
+                "AssetW2V",
+                "AssetBERT"
+            ],
+            "model_path": [
+                "AssetRS/RS_Binary",
+                "AssetRS/RS_Ranks",
+                "AssetRS/RS_Level0",
+                "AssetRS/RS_LevelMin",
+                "AssetW2V",
+                "AssetBERT"
+            ],
+            "_addChars": [
+                "",
+                "_addChars"
+            ],
+            "_add_best": [
+                "",
+                "_best"
+            ],
+            "features": [
+                [
+                    "embedding"
+                ],
+                [
+                    "embedding",
+                    "chars"
+                ]
+            ]
+        },
+        "variable_bindings": [
+            {
+                "model_type": "AssetRS_Binary",
+                "model_path": "AssetRS/RS_Binary",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetRS_Ranks",
+                "model_path": "AssetRS/RS_Ranks",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetRS_Level0",
+                "model_path": "AssetRS/RS_Level0",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetRS_LevelMin",
+                "model_path": "AssetRS/RS_LevelMin",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetW2V",
+                "model_path": "AssetW2V",
+                "_add_best": ""
+            },
+            {
+                "model_type": "AssetBERT",
+                "model_path": "AssetBERT",
+                "_add_best": "_best"
+            },
+            {
+                "_addChars": "",
+                "features": [
+                    "embedding"
+                ]
+            },
+            {
+                "_addChars": "_addChars",
+                "features": [
+                    "embedding",
+                    "chars"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "RC Ridge Robust - Baselines (Placebo/Chars)",
+        "description": "RC evaluation for baselines with varied ridge penalty. 2 baselines × 10 alphas = 20 configs.",
+        "template": {
+            "model_type": "{model_type}",
+            "embedding_path": null,
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": "{features}",
+            "align_chars": false,
+            "ridge_alpha": "{ridge_penalty}",
+            "seed": 42
+        },
+        "output_dir": "configs/ridge_robust/eval/ridge{ridge_penalty}/RC",
+        "filename": "{model_type}.json",
+        "variable_params": {
+            "ridge_penalty": [
+                0.0,
+                0.1,
+                0.25,
+                0.5,
+                0.75,
+                1.0,
+                2.0,
+                5.0,
+                10.0,
+                null
+            ],
+            "model_type": [
+                "Placebo",
+                "Chars"
+            ],
+            "features": [
+                [
+                    "placebo"
+                ],
+                [
+                    "chars"
+                ]
+            ]
+        },
+        "variable_bindings": [
+            {
+                "features": [
+                    "placebo"
+                ],
+                "model_type": "Placebo"
+            },
+            {
+                "features": [
+                    "chars"
+                ],
+                "model_type": "Chars"
+            }
+        ]
+    }
+]

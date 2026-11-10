@@ -1,67 +1,103 @@
+"""Streaming mean/variance and min/max trackers used by the trainers to summarize losses.
+
+Also the early-stop tracker that decides when a training loop ends.
+"""
+
 import math
 from typing import Optional, Self
 import numpy as np
 
 
 class MeanVarianceTracker:
-    """Welford's algorithm for iterative mean and variance calculation."""
+    """Running mean and variance of a stream of values by Welford's algorithm; NaN values are ignored.
+
+    Usable as a context manager: entering the `with` block resets the tracker.
+    """
 
     def __init__(self):
-        self._n: int = 0  # 计数器
-        self._mean: float = 0.0  # 均值
-        self._m2: float = 0.0  # 用于计算方差的中间量
+        self._n: int = 0
+        self._mean: float = 0.0
+        self._m2: float = 0.0  # sum of squared deviations from the running mean (Welford's M2)
 
     def update(self, x: float) -> None:
+        """Fold one value in; a NaN is skipped and leaves the statistics untouched.
+
+        Args:
+            x: The new value.
+        """
         if not np.isnan(x):
-            # 更新计数
             self._n += 1
 
-            # 计算新的均值
             delta = x - self._mean
             self._mean += delta / self._n
 
-            # 更新M2，用于方差计算
             delta2 = x - self._mean
             self._m2 += delta * delta2
 
     def clear(self) -> None:
+        """Forget every value seen so far."""
         self._n = 0
         self._mean = 0.0
-        self._m2 = 0.0  # 重置计数器和中间量
+        self._m2 = 0.0
 
     @property
     def count(self) -> int:
+        """Number of non-NaN values folded in."""
         return self._n
 
     @property
     def sum(self) -> float:
+        """Sum of the values folded in, recovered as mean times count."""
         return self._mean * self._n
 
     def var(self, ddof: int = 0) -> float:
+        """Variance of the values folded in.
+
+        Args:
+            ddof: Delta degrees of freedom: 0 for the population variance, 1 for the sample variance.
+
+        Returns:
+            The variance, or NaN with fewer than two values.
+        """
         if self._n < 2:
-            return float("nan")  # 当样本数小于2时，方差无定义
-        return self._m2 / (self._n - ddof)  # 使用无偏估计
+            return float("nan")
+        return self._m2 / (self._n - ddof)
 
     def std(self, ddof: int = 0) -> float:
+        """Standard deviation, the square root of `var(ddof)`.
+
+        Args:
+            ddof: Delta degrees of freedom, as for `var`.
+
+        Returns:
+            The standard deviation, or NaN with fewer than two values.
+        """
         return math.sqrt(self.var(ddof=ddof))
 
     @property
     def mean(self) -> float:
+        """Mean of the values folded in; 0.0 before the first."""
         return self._mean
 
     def __enter__(self) -> Self:
-        """进入上下文时，初始化/重置计算"""
+        """Reset the tracker on entering a `with` block."""
         self._n = 0
         self._mean = 0.0
         self._m2 = 0.0
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """离开上下文时存储最终的均值和方差"""
+        """Nothing to finalize; the statistics stay readable after the block."""
         pass
 
 
 class MinMaxTracker:
+    """Running minimum and maximum of a stream of values, with the index at which each was seen.
+
+    The trainers feed it one loss per epoch to find the best epoch. NaN values are ignored. Usable as a
+    context manager: entering the `with` block resets extremes and indices.
+    """
+
     def __init__(self):
         self._min: float = float("inf")
         self._max: float = float("-inf")
@@ -69,6 +105,12 @@ class MinMaxTracker:
         self._max_idx: Optional[int] = None
 
     def update(self, x: float, idx: Optional[int] = None) -> None:
+        """Fold one value in; a NaN is skipped.
+
+        Args:
+            x: The new value.
+            idx: Its position (an epoch, say); recorded as `min_idx` / `max_idx` when `x` sets a new extreme.
+        """
         if not np.isnan(x):
             if idx is not None:
                 if x < self._min:
@@ -84,27 +126,32 @@ class MinMaxTracker:
                     self._max = x
 
     def clear(self) -> None:
+        """Reset the two extremes; the recorded indices are left as they are (only `__enter__` resets them)."""
         self._min = float("inf")
         self._max = float("-inf")
 
     @property
     def min(self) -> float:
+        """Smallest value seen; `inf` before the first."""
         return self._min
 
     @property
     def max(self) -> float:
+        """Largest value seen; `-inf` before the first."""
         return self._max
 
     @property
     def min_idx(self) -> Optional[int]:
+        """Index passed with the smallest value, or `None` when no index was given."""
         return self._min_idx
 
     @property
     def max_idx(self) -> Optional[int]:
+        """Index passed with the largest value, or `None` when no index was given."""
         return self._max_idx
 
     def __enter__(self) -> Self:
-        """进入上下文时，初始化/重置计算"""
+        """Reset extremes and indices on entering a `with` block."""
         self._min = float("inf")
         self._max = float("-inf")
         self._min_idx = None
@@ -112,48 +159,28 @@ class MinMaxTracker:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """离开上下文时存储最终的均值和方差"""
+        """Nothing to finalize; the extremes stay readable after the block."""
         pass
 
 
 class EarlyStopTracker:
-    """Early stopping tracker for training loops.
+    """Early stopping for a training loop: stop once `patience` epochs pass without a large enough improvement.
 
-    Monitors metric improvements and triggers stopping when patience is exhausted.
-    Supports both absolute and relative improvement thresholds, and both minimization
-    and maximization objectives.
+    The loop calls `update(metric, epoch)` once per epoch and breaks when it returns `True`; `improved` says
+    whether the last epoch set a new best. Improvement is measured against the best value so far, relative to
+    it or absolute, for a metric to minimize (a loss) or maximize (an accuracy).
 
-    Usage:
-        tracker = EarlyStopTracker(patience=5, min_delta=0.001, mode='min', relative=True)
+    Args:
+        patience: Epochs without improvement before stopping.
+        min_delta: The improvement an epoch must exceed to count; relative when `relative`, absolute otherwise.
+        mode: `min` when lower is better, `max` when higher is better.
+        relative: Whether `min_delta` is a fraction of the best value rather than a difference.
 
-        for epoch in range(max_epochs):
-            loss = train_epoch()
-
-            should_stop = tracker.update(loss, epoch)
-
-            if tracker.improved:
-                logger.info(f"Metric improved to {loss:.6f}")
-
-            if should_stop:
-                logger.info(f"Early stopping at epoch {epoch}")
-                break
-
-    Attributes:
-        patience: Number of epochs without improvement before stopping.
-        min_delta: Minimum improvement threshold.
-        mode: 'min' for loss (lower is better) or 'max' for accuracy (higher is better).
-        relative: If True, use relative improvement; if False, use absolute improvement.
+    Raises:
+        ValueError: If `mode` is not `min` / `max`, `patience` is not positive or `min_delta` is negative.
     """
 
     def __init__(self, patience: int = 5, min_delta: float = 0.0, mode: str = "min", relative: bool = True):
-        """Initialize early stopping tracker.
-
-        Args:
-            patience: Number of epochs without improvement before stopping.
-            min_delta: Minimum improvement threshold (relative if relative=True, absolute otherwise).
-            mode: 'min' (lower is better, e.g., loss) or 'max' (higher is better, e.g., accuracy).
-            relative: If True, use relative improvement; if False, use absolute improvement.
-        """
         if mode not in ("min", "max"):
             raise ValueError(f"mode must be 'min' or 'max', got {mode}")
         if patience <= 0:
@@ -174,26 +201,22 @@ class EarlyStopTracker:
         self._stop = False
 
     def update(self, metric: float, epoch: int) -> bool:
-        """Update tracker with new metric value.
+        """Record this epoch's metric and say whether the loop should stop.
 
         Args:
-            metric: Current metric value.
-            epoch: Current epoch index.
+            metric: The metric of the epoch just finished.
+            epoch: Its index, remembered as `best_epoch` when the metric is a new best.
 
         Returns:
-            True if early stopping should be triggered (patience exhausted), False otherwise.
+            `True` when the patience is exhausted or the metric is NaN, else `False`.
         """
-
-        # Handle NaN metric values
+        # A NaN metric means training has diverged: stop at once rather than waiting out the patience.
         if np.isnan(metric):
-            # Skip NaN values
             self._improved = False
             self._stop = True
             return self.should_stop
 
-        # First metric observed
         if self._best_metric is None:
-            # First metric observed
             self._best_metric = metric
             self._best_epoch = epoch
             self._patience_counter = 0
@@ -201,7 +224,6 @@ class EarlyStopTracker:
             self._stop = False
             return self.should_stop
 
-        # Calculate improvement
         self._improvement = self._calculate_improvement(metric)
 
         if self._improvement > self.min_delta:
@@ -228,57 +250,57 @@ class EarlyStopTracker:
         """
         if self.mode == "min":
             raw_improvement = self._best_metric - current_metric
-        else:  # mode == 'max'
+        else:
             raw_improvement = current_metric - self._best_metric
 
         if self.relative:
-            # Use max(abs(best_metric), 1e-8) to avoid division by zero
+            # The floor keeps a best metric of exactly zero from dividing by zero.
             return raw_improvement / max(abs(self._best_metric), 1e-8)
         else:
             return raw_improvement
 
     @property
     def best_metric(self) -> float:
-        """Best metric value observed so far."""
+        """Best metric seen so far; `None` before the first update."""
         return self._best_metric
 
     @property
     def best_epoch(self) -> Optional[int]:
-        """Epoch index with best metric."""
+        """Epoch index of the best metric."""
         return self._best_epoch
 
     @property
     def patience_counter(self) -> int:
-        """Current patience counter (epochs without improvement)."""
+        """Epochs since the last improvement."""
         return self._patience_counter
 
     @property
     def improved(self) -> bool:
-        """Whether improvement was detected in last update."""
+        """Whether the last update set a new best."""
         return self._improved
 
     @property
     def improvement(self) -> float:
-        """Improvement value from last update."""
+        """Improvement measured by the last update, relative or absolute per `relative`."""
         return self._improvement
 
     @property
     def should_stop(self) -> bool:
-        """Whether early stopping should be triggered."""
+        """Whether the last update asked the loop to stop."""
         return self._stop
 
     def clear(self) -> None:
-        """Reset tracker to initial state."""
+        """Forget the best metric, its epoch and the patience count (`improvement` and `should_stop` are kept)."""
         self._best_metric = None
         self._best_epoch = None
         self._patience_counter = 0
         self._improved = False
 
     def __enter__(self) -> Self:
-        """Context manager entry: reset tracker."""
+        """Reset the tracker on entering a `with` block."""
         self.clear()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit."""
+        """Nothing to finalize; the state stays readable after the block."""
         pass

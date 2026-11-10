@@ -20,6 +20,7 @@
 source scripts/run/run_helper.sh
 
 DB="results/db/no_pt_init.db"
+EXP="pt_strategy_ablation/no_pt_init"  # runs.experiment (matches the derived label in no_pt_init.db)
 DIMS="4 8 10 16 32 64 128"
 QUARTERS="2020Q4 2021Q1 2021Q2 2021Q3 2021Q4 2022Q1 2022Q2 2022Q3 2022Q4 2023Q1 2023Q2 2023Q3 2023Q4 2024Q1 2024Q2 2024Q3"
 FT_PREFIX="configs/pt_strategy_ablation/no_pt_init/finetune"
@@ -27,12 +28,13 @@ FT_PREFIX="configs/pt_strategy_ablation/no_pt_init/finetune"
 echo "=== Finetune: BERT (no_pt_init) ==="
 for dim in $DIMS; do
     for quarter in $QUARTERS; do
-        try_run -m bert -m finetune -m no_pt_init -m pt_strategy_ablation -m "d${dim}" -m "${quarter,,}" "BERT no_pt_init d${dim} ${quarter}" \
+        cfg="${FT_PREFIX}/AssetBERT/d${dim}/AssetBERT_no_pt_init_d${dim}_${quarter}.json"
+        job -m bert -m finetune -m no_pt_init -m pt_strategy_ablation -m "d${dim}" -m "${quarter,,}" -m "$cfg" "BERT no_pt_init d${dim} ${quarter}" \
             uv run python -m asset_embeddings.scripts.train.bert \
-                --config "${FT_PREFIX}/AssetBERT/d${dim}/AssetBERT_no_pt_init_d${dim}_${quarter}.json" \
+                --config "$cfg" \
                 --log "checkpoints/pt_strategy_ablation/no_pt_init/finetune/AssetBERT/d${dim}/${quarter}/train.log" \
                       "logs/pt_strategy_ablation/no_pt_init/train/finetune/AssetBERT/d${dim}/${quarter}.log" \
-                -r "$DB"
+                -r "$DB" -e "$EXP"
     done
 done
 

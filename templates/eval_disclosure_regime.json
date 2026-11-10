@@ -1,0 +1,2498 @@
+[
+    {
+        "name": "Disclosure Regime - RV ft",
+        "description": "RV evaluation, finetuned quarter embeddings (BERT + W2V), chars-complete sample, embedding only. 63 chains x 2 models = 126 configs.",
+        "template": {
+            "model_type": "{model_type}",
+            "embedding_path": [
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2020Q4/{model_type}_d{dim}_2020Q4{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2021Q1/{model_type}_d{dim}_2021Q1{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2021Q2/{model_type}_d{dim}_2021Q2{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2021Q3/{model_type}_d{dim}_2021Q3{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2021Q4/{model_type}_d{dim}_2021Q4{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2022Q1/{model_type}_d{dim}_2022Q1{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2022Q2/{model_type}_d{dim}_2022Q2{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2022Q3/{model_type}_d{dim}_2022Q3{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2022Q4/{model_type}_d{dim}_2022Q4{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2023Q1/{model_type}_d{dim}_2023Q1{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2023Q2/{model_type}_d{dim}_2023Q2{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2023Q3/{model_type}_d{dim}_2023Q3{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2023Q4/{model_type}_d{dim}_2023Q4{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2024Q1/{model_type}_d{dim}_2024Q1{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2024Q2/{model_type}_d{dim}_2024Q2{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2024Q3/{model_type}_d{dim}_2024Q3{_add_best}_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2020Q4.csv",
+                "data/processed/Benchmark/2021Q1.csv",
+                "data/processed/Benchmark/2021Q2.csv",
+                "data/processed/Benchmark/2021Q3.csv",
+                "data/processed/Benchmark/2021Q4.csv",
+                "data/processed/Benchmark/2022Q1.csv",
+                "data/processed/Benchmark/2022Q2.csv",
+                "data/processed/Benchmark/2022Q3.csv",
+                "data/processed/Benchmark/2022Q4.csv",
+                "data/processed/Benchmark/2023Q1.csv",
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": [
+                "embedding"
+            ],
+            "align_chars": true,
+            "ridge_alpha": 0.5,
+            "seed": 42
+        },
+        "output_dir": "configs/disclosure_regime/{level}/s{seed}/eval/RV",
+        "filename": "{model_type}_d{dim}_ft.json",
+        "variable_params": {
+            "dim": 16,
+            "level": [
+                "full",
+                "top100",
+                "top50",
+                "top20",
+                "top10",
+                "top5",
+                "keep70_s1",
+                "keep70_s2",
+                "keep70_s3",
+                "keep50_s1",
+                "keep50_s2",
+                "keep50_s3",
+                "keep30_s1",
+                "keep30_s2",
+                "keep30_s3",
+                "keep10_s1",
+                "keep10_s2",
+                "keep10_s3",
+                "top3",
+                "top1",
+                "top0",
+                "keep05_s1",
+                "keep05_s2",
+                "keep05_s3",
+                "keep02_s1",
+                "keep02_s2",
+                "keep02_s3",
+                "rand70_s1",
+                "rand70_s2",
+                "rand70_s3",
+                "rand50_s1",
+                "rand50_s2",
+                "rand50_s3",
+                "rand30_s1",
+                "rand30_s2",
+                "rand30_s3",
+                "rand10_s1",
+                "rand10_s2",
+                "rand10_s3",
+                "rand05_s1",
+                "rand05_s2",
+                "rand05_s3",
+                "rand02_s1",
+                "rand02_s2",
+                "rand02_s3"
+            ],
+            "seed": [
+                42,
+                43,
+                44
+            ],
+            "model_type": [
+                "AssetBERT",
+                "AssetW2V"
+            ],
+            "_add_best": [
+                "_best",
+                ""
+            ]
+        },
+        "variable_bindings": [
+            {
+                "level": "full",
+                "seed": 42
+            },
+            {
+                "level": "full",
+                "seed": 43
+            },
+            {
+                "level": "full",
+                "seed": 44
+            },
+            {
+                "level": "top100",
+                "seed": 42
+            },
+            {
+                "level": "top100",
+                "seed": 43
+            },
+            {
+                "level": "top100",
+                "seed": 44
+            },
+            {
+                "level": "top50",
+                "seed": 42
+            },
+            {
+                "level": "top50",
+                "seed": 43
+            },
+            {
+                "level": "top50",
+                "seed": 44
+            },
+            {
+                "level": "top20",
+                "seed": 42
+            },
+            {
+                "level": "top20",
+                "seed": 43
+            },
+            {
+                "level": "top20",
+                "seed": 44
+            },
+            {
+                "level": "top10",
+                "seed": 42
+            },
+            {
+                "level": "top10",
+                "seed": 43
+            },
+            {
+                "level": "top10",
+                "seed": 44
+            },
+            {
+                "level": "top5",
+                "seed": 42
+            },
+            {
+                "level": "top5",
+                "seed": 43
+            },
+            {
+                "level": "top5",
+                "seed": 44
+            },
+            {
+                "level": "keep70_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep70_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep70_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s3",
+                "seed": 42
+            },
+            {
+                "level": "top3",
+                "seed": 42
+            },
+            {
+                "level": "top3",
+                "seed": 43
+            },
+            {
+                "level": "top3",
+                "seed": 44
+            },
+            {
+                "level": "top1",
+                "seed": 42
+            },
+            {
+                "level": "top1",
+                "seed": 43
+            },
+            {
+                "level": "top1",
+                "seed": 44
+            },
+            {
+                "level": "top0",
+                "seed": 42
+            },
+            {
+                "level": "top0",
+                "seed": 43
+            },
+            {
+                "level": "top0",
+                "seed": 44
+            },
+            {
+                "level": "keep05_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep05_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep05_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s3",
+                "seed": 42
+            },
+            {
+                "model_type": "AssetBERT",
+                "_add_best": "_best"
+            },
+            {
+                "model_type": "AssetW2V",
+                "_add_best": ""
+            },
+            {
+                "level": "rand05_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s3",
+                "seed": 42
+            }
+        ]
+    },
+    {
+        "name": "Disclosure Regime - RV static",
+        "description": "RV evaluation, the chain pretrained embedding repeated for the 16 quarters (BERT + W2V), chars-complete sample, embedding only. 63 chains x 2 models = 126 configs.",
+        "template": {
+            "model_type": "{model_type}_static",
+            "embedding_path": [
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2020Q4.csv",
+                "data/processed/Benchmark/2021Q1.csv",
+                "data/processed/Benchmark/2021Q2.csv",
+                "data/processed/Benchmark/2021Q3.csv",
+                "data/processed/Benchmark/2021Q4.csv",
+                "data/processed/Benchmark/2022Q1.csv",
+                "data/processed/Benchmark/2022Q2.csv",
+                "data/processed/Benchmark/2022Q3.csv",
+                "data/processed/Benchmark/2022Q4.csv",
+                "data/processed/Benchmark/2023Q1.csv",
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": [
+                "embedding"
+            ],
+            "align_chars": true,
+            "ridge_alpha": 0.5,
+            "seed": 42
+        },
+        "output_dir": "configs/disclosure_regime/{level}/s{seed}/eval/RV",
+        "filename": "{model_type}_d{dim}_static.json",
+        "variable_params": {
+            "dim": 16,
+            "level": [
+                "full",
+                "top100",
+                "top50",
+                "top20",
+                "top10",
+                "top5",
+                "keep70_s1",
+                "keep70_s2",
+                "keep70_s3",
+                "keep50_s1",
+                "keep50_s2",
+                "keep50_s3",
+                "keep30_s1",
+                "keep30_s2",
+                "keep30_s3",
+                "keep10_s1",
+                "keep10_s2",
+                "keep10_s3",
+                "top3",
+                "top1",
+                "top0",
+                "keep05_s1",
+                "keep05_s2",
+                "keep05_s3",
+                "keep02_s1",
+                "keep02_s2",
+                "keep02_s3",
+                "rand70_s1",
+                "rand70_s2",
+                "rand70_s3",
+                "rand50_s1",
+                "rand50_s2",
+                "rand50_s3",
+                "rand30_s1",
+                "rand30_s2",
+                "rand30_s3",
+                "rand10_s1",
+                "rand10_s2",
+                "rand10_s3",
+                "rand05_s1",
+                "rand05_s2",
+                "rand05_s3",
+                "rand02_s1",
+                "rand02_s2",
+                "rand02_s3"
+            ],
+            "seed": [
+                42,
+                43,
+                44
+            ],
+            "model_type": [
+                "AssetBERT",
+                "AssetW2V"
+            ],
+            "_add_best": [
+                "_best",
+                ""
+            ]
+        },
+        "variable_bindings": [
+            {
+                "level": "full",
+                "seed": 42
+            },
+            {
+                "level": "full",
+                "seed": 43
+            },
+            {
+                "level": "full",
+                "seed": 44
+            },
+            {
+                "level": "top100",
+                "seed": 42
+            },
+            {
+                "level": "top100",
+                "seed": 43
+            },
+            {
+                "level": "top100",
+                "seed": 44
+            },
+            {
+                "level": "top50",
+                "seed": 42
+            },
+            {
+                "level": "top50",
+                "seed": 43
+            },
+            {
+                "level": "top50",
+                "seed": 44
+            },
+            {
+                "level": "top20",
+                "seed": 42
+            },
+            {
+                "level": "top20",
+                "seed": 43
+            },
+            {
+                "level": "top20",
+                "seed": 44
+            },
+            {
+                "level": "top10",
+                "seed": 42
+            },
+            {
+                "level": "top10",
+                "seed": 43
+            },
+            {
+                "level": "top10",
+                "seed": 44
+            },
+            {
+                "level": "top5",
+                "seed": 42
+            },
+            {
+                "level": "top5",
+                "seed": 43
+            },
+            {
+                "level": "top5",
+                "seed": 44
+            },
+            {
+                "level": "keep70_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep70_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep70_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s3",
+                "seed": 42
+            },
+            {
+                "level": "top3",
+                "seed": 42
+            },
+            {
+                "level": "top3",
+                "seed": 43
+            },
+            {
+                "level": "top3",
+                "seed": 44
+            },
+            {
+                "level": "top1",
+                "seed": 42
+            },
+            {
+                "level": "top1",
+                "seed": 43
+            },
+            {
+                "level": "top1",
+                "seed": 44
+            },
+            {
+                "level": "top0",
+                "seed": 42
+            },
+            {
+                "level": "top0",
+                "seed": 43
+            },
+            {
+                "level": "top0",
+                "seed": 44
+            },
+            {
+                "level": "keep05_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep05_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep05_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s3",
+                "seed": 42
+            },
+            {
+                "model_type": "AssetBERT",
+                "_add_best": "_best"
+            },
+            {
+                "model_type": "AssetW2V",
+                "_add_best": ""
+            },
+            {
+                "level": "rand05_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s3",
+                "seed": 42
+            }
+        ]
+    },
+    {
+        "name": "Disclosure Regime - RC ft",
+        "description": "RC evaluation, finetuned quarter embeddings (BERT + W2V), chars-complete sample, embedding only. 63 chains x 2 models = 126 configs.",
+        "template": {
+            "model_type": "{model_type}",
+            "embedding_path": [
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2020Q4/{model_type}_d{dim}_2020Q4{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2021Q1/{model_type}_d{dim}_2021Q1{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2021Q2/{model_type}_d{dim}_2021Q2{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2021Q3/{model_type}_d{dim}_2021Q3{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2021Q4/{model_type}_d{dim}_2021Q4{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2022Q1/{model_type}_d{dim}_2022Q1{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2022Q2/{model_type}_d{dim}_2022Q2{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2022Q3/{model_type}_d{dim}_2022Q3{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2022Q4/{model_type}_d{dim}_2022Q4{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2023Q1/{model_type}_d{dim}_2023Q1{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2023Q2/{model_type}_d{dim}_2023Q2{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2023Q3/{model_type}_d{dim}_2023Q3{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2023Q4/{model_type}_d{dim}_2023Q4{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2024Q1/{model_type}_d{dim}_2024Q1{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2024Q2/{model_type}_d{dim}_2024Q2{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/finetune/{model_type}/d{dim}/2024Q3/{model_type}_d{dim}_2024Q3{_add_best}_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2020Q4.csv",
+                "data/processed/Benchmark/2021Q1.csv",
+                "data/processed/Benchmark/2021Q2.csv",
+                "data/processed/Benchmark/2021Q3.csv",
+                "data/processed/Benchmark/2021Q4.csv",
+                "data/processed/Benchmark/2022Q1.csv",
+                "data/processed/Benchmark/2022Q2.csv",
+                "data/processed/Benchmark/2022Q3.csv",
+                "data/processed/Benchmark/2022Q4.csv",
+                "data/processed/Benchmark/2023Q1.csv",
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": [
+                "embedding"
+            ],
+            "align_chars": true,
+            "ridge_alpha": 0.5,
+            "seed": 42
+        },
+        "output_dir": "configs/disclosure_regime/{level}/s{seed}/eval/RC",
+        "filename": "{model_type}_d{dim}_ft.json",
+        "variable_params": {
+            "dim": 16,
+            "level": [
+                "full",
+                "top100",
+                "top50",
+                "top20",
+                "top10",
+                "top5",
+                "keep70_s1",
+                "keep70_s2",
+                "keep70_s3",
+                "keep50_s1",
+                "keep50_s2",
+                "keep50_s3",
+                "keep30_s1",
+                "keep30_s2",
+                "keep30_s3",
+                "keep10_s1",
+                "keep10_s2",
+                "keep10_s3",
+                "top3",
+                "top1",
+                "top0",
+                "keep05_s1",
+                "keep05_s2",
+                "keep05_s3",
+                "keep02_s1",
+                "keep02_s2",
+                "keep02_s3",
+                "rand70_s1",
+                "rand70_s2",
+                "rand70_s3",
+                "rand50_s1",
+                "rand50_s2",
+                "rand50_s3",
+                "rand30_s1",
+                "rand30_s2",
+                "rand30_s3",
+                "rand10_s1",
+                "rand10_s2",
+                "rand10_s3",
+                "rand05_s1",
+                "rand05_s2",
+                "rand05_s3",
+                "rand02_s1",
+                "rand02_s2",
+                "rand02_s3"
+            ],
+            "seed": [
+                42,
+                43,
+                44
+            ],
+            "model_type": [
+                "AssetBERT",
+                "AssetW2V"
+            ],
+            "_add_best": [
+                "_best",
+                ""
+            ]
+        },
+        "variable_bindings": [
+            {
+                "level": "full",
+                "seed": 42
+            },
+            {
+                "level": "full",
+                "seed": 43
+            },
+            {
+                "level": "full",
+                "seed": 44
+            },
+            {
+                "level": "top100",
+                "seed": 42
+            },
+            {
+                "level": "top100",
+                "seed": 43
+            },
+            {
+                "level": "top100",
+                "seed": 44
+            },
+            {
+                "level": "top50",
+                "seed": 42
+            },
+            {
+                "level": "top50",
+                "seed": 43
+            },
+            {
+                "level": "top50",
+                "seed": 44
+            },
+            {
+                "level": "top20",
+                "seed": 42
+            },
+            {
+                "level": "top20",
+                "seed": 43
+            },
+            {
+                "level": "top20",
+                "seed": 44
+            },
+            {
+                "level": "top10",
+                "seed": 42
+            },
+            {
+                "level": "top10",
+                "seed": 43
+            },
+            {
+                "level": "top10",
+                "seed": 44
+            },
+            {
+                "level": "top5",
+                "seed": 42
+            },
+            {
+                "level": "top5",
+                "seed": 43
+            },
+            {
+                "level": "top5",
+                "seed": 44
+            },
+            {
+                "level": "keep70_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep70_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep70_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s3",
+                "seed": 42
+            },
+            {
+                "level": "top3",
+                "seed": 42
+            },
+            {
+                "level": "top3",
+                "seed": 43
+            },
+            {
+                "level": "top3",
+                "seed": 44
+            },
+            {
+                "level": "top1",
+                "seed": 42
+            },
+            {
+                "level": "top1",
+                "seed": 43
+            },
+            {
+                "level": "top1",
+                "seed": 44
+            },
+            {
+                "level": "top0",
+                "seed": 42
+            },
+            {
+                "level": "top0",
+                "seed": 43
+            },
+            {
+                "level": "top0",
+                "seed": 44
+            },
+            {
+                "level": "keep05_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep05_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep05_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s3",
+                "seed": 42
+            },
+            {
+                "model_type": "AssetBERT",
+                "_add_best": "_best"
+            },
+            {
+                "model_type": "AssetW2V",
+                "_add_best": ""
+            },
+            {
+                "level": "rand05_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s3",
+                "seed": 42
+            }
+        ]
+    },
+    {
+        "name": "Disclosure Regime - RC static",
+        "description": "RC evaluation, the chain pretrained embedding repeated for the 16 quarters (BERT + W2V), chars-complete sample, embedding only. 63 chains x 2 models = 126 configs.",
+        "template": {
+            "model_type": "{model_type}_static",
+            "embedding_path": [
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv",
+                "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/{model_type}/d{dim}/{model_type}_d{dim}_pretrained{_add_best}_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2020Q4.csv",
+                "data/processed/Benchmark/2021Q1.csv",
+                "data/processed/Benchmark/2021Q2.csv",
+                "data/processed/Benchmark/2021Q3.csv",
+                "data/processed/Benchmark/2021Q4.csv",
+                "data/processed/Benchmark/2022Q1.csv",
+                "data/processed/Benchmark/2022Q2.csv",
+                "data/processed/Benchmark/2022Q3.csv",
+                "data/processed/Benchmark/2022Q4.csv",
+                "data/processed/Benchmark/2023Q1.csv",
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": [
+                "embedding"
+            ],
+            "align_chars": true,
+            "ridge_alpha": 0.5,
+            "seed": 42
+        },
+        "output_dir": "configs/disclosure_regime/{level}/s{seed}/eval/RC",
+        "filename": "{model_type}_d{dim}_static.json",
+        "variable_params": {
+            "dim": 16,
+            "level": [
+                "full",
+                "top100",
+                "top50",
+                "top20",
+                "top10",
+                "top5",
+                "keep70_s1",
+                "keep70_s2",
+                "keep70_s3",
+                "keep50_s1",
+                "keep50_s2",
+                "keep50_s3",
+                "keep30_s1",
+                "keep30_s2",
+                "keep30_s3",
+                "keep10_s1",
+                "keep10_s2",
+                "keep10_s3",
+                "top3",
+                "top1",
+                "top0",
+                "keep05_s1",
+                "keep05_s2",
+                "keep05_s3",
+                "keep02_s1",
+                "keep02_s2",
+                "keep02_s3",
+                "rand70_s1",
+                "rand70_s2",
+                "rand70_s3",
+                "rand50_s1",
+                "rand50_s2",
+                "rand50_s3",
+                "rand30_s1",
+                "rand30_s2",
+                "rand30_s3",
+                "rand10_s1",
+                "rand10_s2",
+                "rand10_s3",
+                "rand05_s1",
+                "rand05_s2",
+                "rand05_s3",
+                "rand02_s1",
+                "rand02_s2",
+                "rand02_s3"
+            ],
+            "seed": [
+                42,
+                43,
+                44
+            ],
+            "model_type": [
+                "AssetBERT",
+                "AssetW2V"
+            ],
+            "_add_best": [
+                "_best",
+                ""
+            ]
+        },
+        "variable_bindings": [
+            {
+                "level": "full",
+                "seed": 42
+            },
+            {
+                "level": "full",
+                "seed": 43
+            },
+            {
+                "level": "full",
+                "seed": 44
+            },
+            {
+                "level": "top100",
+                "seed": 42
+            },
+            {
+                "level": "top100",
+                "seed": 43
+            },
+            {
+                "level": "top100",
+                "seed": 44
+            },
+            {
+                "level": "top50",
+                "seed": 42
+            },
+            {
+                "level": "top50",
+                "seed": 43
+            },
+            {
+                "level": "top50",
+                "seed": 44
+            },
+            {
+                "level": "top20",
+                "seed": 42
+            },
+            {
+                "level": "top20",
+                "seed": 43
+            },
+            {
+                "level": "top20",
+                "seed": 44
+            },
+            {
+                "level": "top10",
+                "seed": 42
+            },
+            {
+                "level": "top10",
+                "seed": 43
+            },
+            {
+                "level": "top10",
+                "seed": 44
+            },
+            {
+                "level": "top5",
+                "seed": 42
+            },
+            {
+                "level": "top5",
+                "seed": 43
+            },
+            {
+                "level": "top5",
+                "seed": 44
+            },
+            {
+                "level": "keep70_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep70_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep70_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s3",
+                "seed": 42
+            },
+            {
+                "level": "top3",
+                "seed": 42
+            },
+            {
+                "level": "top3",
+                "seed": 43
+            },
+            {
+                "level": "top3",
+                "seed": 44
+            },
+            {
+                "level": "top1",
+                "seed": 42
+            },
+            {
+                "level": "top1",
+                "seed": 43
+            },
+            {
+                "level": "top1",
+                "seed": 44
+            },
+            {
+                "level": "top0",
+                "seed": 42
+            },
+            {
+                "level": "top0",
+                "seed": 43
+            },
+            {
+                "level": "top0",
+                "seed": 44
+            },
+            {
+                "level": "keep05_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep05_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep05_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s3",
+                "seed": 42
+            },
+            {
+                "model_type": "AssetBERT",
+                "_add_best": "_best"
+            },
+            {
+                "model_type": "AssetW2V",
+                "_add_best": ""
+            },
+            {
+                "level": "rand05_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s3",
+                "seed": 42
+            }
+        ]
+    },
+    {
+        "name": "Disclosure Regime - Chars",
+        "description": "Characteristics-only baseline for RV and RC, panel-independent (run once). 2 configs.",
+        "template": {
+            "model_type": "Chars",
+            "embedding_path": null,
+            "benchmark_path": [
+                "data/processed/Benchmark/2020Q4.csv",
+                "data/processed/Benchmark/2021Q1.csv",
+                "data/processed/Benchmark/2021Q2.csv",
+                "data/processed/Benchmark/2021Q3.csv",
+                "data/processed/Benchmark/2021Q4.csv",
+                "data/processed/Benchmark/2022Q1.csv",
+                "data/processed/Benchmark/2022Q2.csv",
+                "data/processed/Benchmark/2022Q3.csv",
+                "data/processed/Benchmark/2022Q4.csv",
+                "data/processed/Benchmark/2023Q1.csv",
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "periods": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": [
+                "chars"
+            ],
+            "align_chars": false,
+            "ridge_alpha": 0.5,
+            "seed": 42
+        },
+        "output_dir": "configs/disclosure_regime/chars/eval/{task}",
+        "filename": "Chars.json",
+        "variable_params": {
+            "dim": 16,
+            "task": [
+                "RV",
+                "RC"
+            ]
+        },
+        "variable_bindings": null
+    },
+    {
+        "name": "Disclosure Regime - MP ft",
+        "description": "MP via BERT-head refine (70/20/10 split, best = val loss, mask_indices [2], warmup 100, frozen embedding) of the finetuned quarter checkpoint on the panel's finetune quarter. 1008 configs.",
+        "template": {
+            "run": {
+                "period": "{quarter}"
+            },
+            "model": {
+                "model_type": "BERT",
+                "model_checkpoint": "checkpoints/disclosure_regime/{level}/s{seed}/finetune/AssetBERT/d{dim}/{quarter}/AssetBERT_d{dim}_{quarter}_best/model.safetensors",
+                "embedding_file": "checkpoints/disclosure_regime/{level}/s{seed}/finetune/AssetBERT/d{dim}/{quarter}/AssetBERT_d{dim}_{quarter}_best_embedding.csv",
+                "vocab_size": 5400,
+                "hidden_size": "{dim}",
+                "num_hidden_layers": 4,
+                "num_attention_heads": 2,
+                "intermediate_size": 512,
+                "max_position_embeddings": 256,
+                "type_vocab_size": 1,
+                "freeze_embedding": true,
+                "freeze_encoder": false,
+                "embedding_model": "AssetBERT"
+            },
+            "tokenizer": {
+                "w2v_model": null,
+                "embedding_file": "checkpoints/disclosure_regime/{level}/s{seed}/finetune/AssetBERT/d{dim}/{quarter}/AssetBERT_d{dim}_{quarter}_best_embedding.csv",
+                "vocab_file": null,
+                "pretrained_tokenizer_file": null,
+                "alias_file": null
+            },
+            "dataset": {
+                "data_path": "data/processed/DisclosureRegime/{level}/finetune/{quarter}.csv",
+                "data_format": "csv",
+                "id_key": "InvestorID",
+                "portfolio_key": "Portfolio",
+                "proportion1_key": "Proportion1",
+                "proportion2_key": "Proportion2",
+                "include_proportion": true,
+                "max_length": 256,
+                "mask_prob": null,
+                "mask_indices": [
+                    2
+                ]
+            },
+            "dataloader": {
+                "batch_size": 32,
+                "shuffle": true,
+                "num_workers": 4,
+                "pin_memory": true,
+                "drop_last": false
+            },
+            "optimizer": {
+                "optimizer_type": "PagedAdam8bit",
+                "optimizer_kwargs": null,
+                "learning_rate": 0.001,
+                "lr_scheduler_type": "cosine",
+                "lr_scheduler_warmup_steps": 100,
+                "lr_scheduler_train_steps": null,
+                "lr_scheduler_num_cycles": 0.5,
+                "lr_scheduler_power": 0
+            },
+            "accelerator": {
+                "mixed_precision": "auto",
+                "gradient_accumulation_steps": 1,
+                "accelerator_checkpoint": null,
+                "use_compile": true,
+                "compile_backend": "inductor",
+                "compile_mode": "default",
+                "compile_fullgraph": false,
+                "compile_dynamic": false,
+                "compile_cache_dir": null,
+                "allow_tf32": true
+            },
+            "train": {
+                "max_epochs": 30,
+                "validation_split": 0.2,
+                "test_split": 0.1,
+                "split_method": "random",
+                "best_metric": "val_loss",
+                "clip_grad_norm": 1.0,
+                "clip_grad_value": null,
+                "detect_anomaly": false,
+                "log_every_steps": 200,
+                "report_every_epochs": 1,
+                "save_every_epochs": 1,
+                "save_folder": "checkpoints/disclosure_regime/{level}/s{seed}/refine/BERT/AssetBERT/d{dim}/{quarter}",
+                "save_name": "AssetBERT_d{dim}_{quarter}",
+                "save_format": ".safetensors",
+                "seed": 42
+            }
+        },
+        "output_dir": "configs/disclosure_regime/{level}/s{seed}/eval/MP/AssetBERT",
+        "filename": "AssetBERT_d{dim}_{quarter}.json",
+        "variable_params": {
+            "dim": 16,
+            "level": [
+                "full",
+                "top100",
+                "top50",
+                "top20",
+                "top10",
+                "top5",
+                "keep70_s1",
+                "keep70_s2",
+                "keep70_s3",
+                "keep50_s1",
+                "keep50_s2",
+                "keep50_s3",
+                "keep30_s1",
+                "keep30_s2",
+                "keep30_s3",
+                "keep10_s1",
+                "keep10_s2",
+                "keep10_s3",
+                "top3",
+                "top1",
+                "top0",
+                "keep05_s1",
+                "keep05_s2",
+                "keep05_s3",
+                "keep02_s1",
+                "keep02_s2",
+                "keep02_s3",
+                "rand70_s1",
+                "rand70_s2",
+                "rand70_s3",
+                "rand50_s1",
+                "rand50_s2",
+                "rand50_s3",
+                "rand30_s1",
+                "rand30_s2",
+                "rand30_s3",
+                "rand10_s1",
+                "rand10_s2",
+                "rand10_s3",
+                "rand05_s1",
+                "rand05_s2",
+                "rand05_s3",
+                "rand02_s1",
+                "rand02_s2",
+                "rand02_s3"
+            ],
+            "seed": [
+                42,
+                43,
+                44
+            ],
+            "quarter": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ]
+        },
+        "variable_bindings": [
+            {
+                "level": "full",
+                "seed": 42
+            },
+            {
+                "level": "full",
+                "seed": 43
+            },
+            {
+                "level": "full",
+                "seed": 44
+            },
+            {
+                "level": "top100",
+                "seed": 42
+            },
+            {
+                "level": "top100",
+                "seed": 43
+            },
+            {
+                "level": "top100",
+                "seed": 44
+            },
+            {
+                "level": "top50",
+                "seed": 42
+            },
+            {
+                "level": "top50",
+                "seed": 43
+            },
+            {
+                "level": "top50",
+                "seed": 44
+            },
+            {
+                "level": "top20",
+                "seed": 42
+            },
+            {
+                "level": "top20",
+                "seed": 43
+            },
+            {
+                "level": "top20",
+                "seed": 44
+            },
+            {
+                "level": "top10",
+                "seed": 42
+            },
+            {
+                "level": "top10",
+                "seed": 43
+            },
+            {
+                "level": "top10",
+                "seed": 44
+            },
+            {
+                "level": "top5",
+                "seed": 42
+            },
+            {
+                "level": "top5",
+                "seed": 43
+            },
+            {
+                "level": "top5",
+                "seed": 44
+            },
+            {
+                "level": "keep70_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep70_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep70_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s3",
+                "seed": 42
+            },
+            {
+                "level": "top3",
+                "seed": 42
+            },
+            {
+                "level": "top3",
+                "seed": 43
+            },
+            {
+                "level": "top3",
+                "seed": 44
+            },
+            {
+                "level": "top1",
+                "seed": 42
+            },
+            {
+                "level": "top1",
+                "seed": 43
+            },
+            {
+                "level": "top1",
+                "seed": 44
+            },
+            {
+                "level": "top0",
+                "seed": 42
+            },
+            {
+                "level": "top0",
+                "seed": 43
+            },
+            {
+                "level": "top0",
+                "seed": 44
+            },
+            {
+                "level": "keep05_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep05_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep05_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s3",
+                "seed": 42
+            }
+        ]
+    },
+    {
+        "name": "Disclosure Regime - MP static",
+        "description": "MP via BERT-head refine (70/20/10 split, best = val loss, mask_indices [2], warmup 100, frozen embedding) of the chain pretrained checkpoint (static) on the panel's finetune quarter. 1008 configs.",
+        "template": {
+            "run": {
+                "period": "{quarter}"
+            },
+            "model": {
+                "model_type": "BERT",
+                "model_checkpoint": "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/AssetBERT/d{dim}/AssetBERT_d{dim}_pretrained_best/model.safetensors",
+                "embedding_file": "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/AssetBERT/d{dim}/AssetBERT_d{dim}_pretrained_best_embedding.csv",
+                "vocab_size": 5400,
+                "hidden_size": "{dim}",
+                "num_hidden_layers": 4,
+                "num_attention_heads": 2,
+                "intermediate_size": 512,
+                "max_position_embeddings": 256,
+                "type_vocab_size": 1,
+                "freeze_embedding": true,
+                "freeze_encoder": false,
+                "embedding_model": "AssetBERT_static"
+            },
+            "tokenizer": {
+                "w2v_model": null,
+                "embedding_file": "checkpoints/disclosure_regime/{level}/s{seed}/pretrained/AssetBERT/d{dim}/AssetBERT_d{dim}_pretrained_best_embedding.csv",
+                "vocab_file": null,
+                "pretrained_tokenizer_file": null,
+                "alias_file": null
+            },
+            "dataset": {
+                "data_path": "data/processed/DisclosureRegime/{level}/finetune/{quarter}.csv",
+                "data_format": "csv",
+                "id_key": "InvestorID",
+                "portfolio_key": "Portfolio",
+                "proportion1_key": "Proportion1",
+                "proportion2_key": "Proportion2",
+                "include_proportion": true,
+                "max_length": 256,
+                "mask_prob": null,
+                "mask_indices": [
+                    2
+                ]
+            },
+            "dataloader": {
+                "batch_size": 32,
+                "shuffle": true,
+                "num_workers": 4,
+                "pin_memory": true,
+                "drop_last": false
+            },
+            "optimizer": {
+                "optimizer_type": "PagedAdam8bit",
+                "optimizer_kwargs": null,
+                "learning_rate": 0.001,
+                "lr_scheduler_type": "cosine",
+                "lr_scheduler_warmup_steps": 100,
+                "lr_scheduler_train_steps": null,
+                "lr_scheduler_num_cycles": 0.5,
+                "lr_scheduler_power": 0
+            },
+            "accelerator": {
+                "mixed_precision": "auto",
+                "gradient_accumulation_steps": 1,
+                "accelerator_checkpoint": null,
+                "use_compile": true,
+                "compile_backend": "inductor",
+                "compile_mode": "default",
+                "compile_fullgraph": false,
+                "compile_dynamic": false,
+                "compile_cache_dir": null,
+                "allow_tf32": true
+            },
+            "train": {
+                "max_epochs": 30,
+                "validation_split": 0.2,
+                "test_split": 0.1,
+                "split_method": "random",
+                "best_metric": "val_loss",
+                "clip_grad_norm": 1.0,
+                "clip_grad_value": null,
+                "detect_anomaly": false,
+                "log_every_steps": 200,
+                "report_every_epochs": 1,
+                "save_every_epochs": 1,
+                "save_folder": "checkpoints/disclosure_regime/{level}/s{seed}/refine/BERT/AssetBERT_static/d{dim}/{quarter}",
+                "save_name": "AssetBERT_d{dim}_{quarter}",
+                "save_format": ".safetensors",
+                "seed": 42
+            }
+        },
+        "output_dir": "configs/disclosure_regime/{level}/s{seed}/eval/MP/AssetBERT_static",
+        "filename": "AssetBERT_d{dim}_{quarter}.json",
+        "variable_params": {
+            "dim": 16,
+            "level": [
+                "full",
+                "top100",
+                "top50",
+                "top20",
+                "top10",
+                "top5",
+                "keep70_s1",
+                "keep70_s2",
+                "keep70_s3",
+                "keep50_s1",
+                "keep50_s2",
+                "keep50_s3",
+                "keep30_s1",
+                "keep30_s2",
+                "keep30_s3",
+                "keep10_s1",
+                "keep10_s2",
+                "keep10_s3",
+                "top3",
+                "top1",
+                "top0",
+                "keep05_s1",
+                "keep05_s2",
+                "keep05_s3",
+                "keep02_s1",
+                "keep02_s2",
+                "keep02_s3",
+                "rand70_s1",
+                "rand70_s2",
+                "rand70_s3",
+                "rand50_s1",
+                "rand50_s2",
+                "rand50_s3",
+                "rand30_s1",
+                "rand30_s2",
+                "rand30_s3",
+                "rand10_s1",
+                "rand10_s2",
+                "rand10_s3",
+                "rand05_s1",
+                "rand05_s2",
+                "rand05_s3",
+                "rand02_s1",
+                "rand02_s2",
+                "rand02_s3"
+            ],
+            "seed": [
+                42,
+                43,
+                44
+            ],
+            "quarter": [
+                "2020Q4",
+                "2021Q1",
+                "2021Q2",
+                "2021Q3",
+                "2021Q4",
+                "2022Q1",
+                "2022Q2",
+                "2022Q3",
+                "2022Q4",
+                "2023Q1",
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ]
+        },
+        "variable_bindings": [
+            {
+                "level": "full",
+                "seed": 42
+            },
+            {
+                "level": "full",
+                "seed": 43
+            },
+            {
+                "level": "full",
+                "seed": 44
+            },
+            {
+                "level": "top100",
+                "seed": 42
+            },
+            {
+                "level": "top100",
+                "seed": 43
+            },
+            {
+                "level": "top100",
+                "seed": 44
+            },
+            {
+                "level": "top50",
+                "seed": 42
+            },
+            {
+                "level": "top50",
+                "seed": 43
+            },
+            {
+                "level": "top50",
+                "seed": 44
+            },
+            {
+                "level": "top20",
+                "seed": 42
+            },
+            {
+                "level": "top20",
+                "seed": 43
+            },
+            {
+                "level": "top20",
+                "seed": 44
+            },
+            {
+                "level": "top10",
+                "seed": 42
+            },
+            {
+                "level": "top10",
+                "seed": 43
+            },
+            {
+                "level": "top10",
+                "seed": 44
+            },
+            {
+                "level": "top5",
+                "seed": 42
+            },
+            {
+                "level": "top5",
+                "seed": 43
+            },
+            {
+                "level": "top5",
+                "seed": 44
+            },
+            {
+                "level": "keep70_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep70_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep70_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep50_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep30_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep10_s3",
+                "seed": 42
+            },
+            {
+                "level": "top3",
+                "seed": 42
+            },
+            {
+                "level": "top3",
+                "seed": 43
+            },
+            {
+                "level": "top3",
+                "seed": 44
+            },
+            {
+                "level": "top1",
+                "seed": 42
+            },
+            {
+                "level": "top1",
+                "seed": 43
+            },
+            {
+                "level": "top1",
+                "seed": 44
+            },
+            {
+                "level": "top0",
+                "seed": 42
+            },
+            {
+                "level": "top0",
+                "seed": 43
+            },
+            {
+                "level": "top0",
+                "seed": 44
+            },
+            {
+                "level": "keep05_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep05_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep05_s3",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s1",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s2",
+                "seed": 42
+            },
+            {
+                "level": "keep02_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand70_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand50_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand30_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand10_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand05_s3",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s1",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s2",
+                "seed": 42
+            },
+            {
+                "level": "rand02_s3",
+                "seed": 42
+            }
+        ]
+    }
+]

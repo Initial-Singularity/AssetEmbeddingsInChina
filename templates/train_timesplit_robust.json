@@ -18,8 +18,7 @@
             "portfolio_key": "Portfolio",
             "workers": 1,
             "save_folder": "checkpoints/timesplit_robust/pretrained/AssetW2V/d{dim}",
-            "save_name": "AssetW2V_d{dim}_pretrained",
-            "save_format": ".model"
+            "save_name": "AssetW2V_d{dim}_pretrained"
         },
         "output_dir": "configs/timesplit_robust/pretrained/AssetW2V",
         "filename": "AssetW2V_d{dim}_pretrained.json",
@@ -38,7 +37,7 @@
     },
     {
         "name": "Pretrain TimeSplit Robust - AssetBERT",
-        "description": "BERT pretraining for 50/50 time-split robustness test (2005Q1-2014Q4). 7 dims = 7 configs.",
+        "description": "BERT pretraining for 50/50 time-split robustness test (2005Q1-2014Q4), validation-based selection (val 0.1, best=val_loss, early stop patience 5, warmup 500, clip 1.0, AdamW), unified architecture (context 256, FFN 512). 7 dims = 7 configs.",
         "template": {
             "model": {
                 "model_type": "BERT",
@@ -49,8 +48,8 @@
                 "hidden_size": "{dim}",
                 "num_hidden_layers": 4,
                 "num_attention_heads": 2,
-                "intermediate_size": "{intermediate_size}",
-                "max_position_embeddings": "{max_position_embeddings}",
+                "intermediate_size": 512,
+                "max_position_embeddings": 256,
                 "type_vocab_size": 1,
                 "freeze_embedding": false,
                 "freeze_encoder": false
@@ -69,10 +68,10 @@
                 "proportion1_key": "Proportion1",
                 "proportion2_key": "Proportion2",
                 "include_proportion": false,
-                "max_length": "{max_position_embeddings}",
+                "max_length": 256,
                 "mask_prob": 0.15,
                 "mask_indices": null,
-                "cache_size": 400
+                "num_repeats": 1
             },
             "dataloader": {
                 "batch_size": 128,
@@ -83,11 +82,11 @@
                 "drop_last": false
             },
             "optimizer": {
-                "optimizer_type": "PagedAdam8bit",
+                "optimizer_type": "AdamW",
                 "optimizer_kwargs": null,
                 "learning_rate": 0.001,
                 "lr_scheduler_type": "cosine",
-                "lr_scheduler_warmup_steps": 0,
+                "lr_scheduler_warmup_steps": 500,
                 "lr_scheduler_train_steps": null,
                 "lr_scheduler_num_cycles": 0.5,
                 "lr_scheduler_power": 0
@@ -105,22 +104,28 @@
                 "allow_tf32": true
             },
             "train": {
-                "max_epoches": 30,
-                "validation_split": null,
+                "max_epochs": 40,
+                "validation_split": 0.1,
                 "split_method": "random",
-                "best_metric": "train_loss",
-                "clip_grad_norm": null,
+                "best_metric": "val_loss",
+                "clip_grad_norm": 1.0,
                 "clip_grad_value": null,
-                "detect_anomaly": true,
-                "check_per_step": 200,
-                "report_per_epoch": 1,
+                "detect_anomaly": false,
+                "log_every_steps": 200,
+                "report_every_epochs": 1,
                 "calculate_contextualized_embeddings": false,
-                "save_per_epoch": 1,
+                "save_every_epochs": 1,
                 "save_folder": "checkpoints/timesplit_robust/pretrained/AssetBERT/d{dim}",
                 "save_name": "AssetBERT_d{dim}_pretrained",
                 "save_format": ".safetensors",
                 "seed": 42,
-                "keep_best_only": true
+                "keep_best_only": true,
+                "early_stop_enabled": true,
+                "early_stop_patience": 5,
+                "early_stop_min_delta": 0.001,
+                "early_stop_mode": "min",
+                "early_stop_relative": true,
+                "early_stop_metric": "val_loss"
             }
         },
         "output_dir": "configs/timesplit_robust/pretrained/AssetBERT",
@@ -134,63 +139,9 @@
                 32,
                 64,
                 128
-            ],
-            "intermediate_size": [
-                512,
-                512,
-                512,
-                512,
-                512,
-                1024,
-                1024
-            ],
-            "max_position_embeddings": [
-                64,
-                64,
-                64,
-                64,
-                64,
-                256,
-                256
             ]
         },
-        "variable_bindings": [
-            {
-                "dim": 4,
-                "intermediate_size": 512,
-                "max_position_embeddings": 64
-            },
-            {
-                "dim": 8,
-                "intermediate_size": 512,
-                "max_position_embeddings": 64
-            },
-            {
-                "dim": 10,
-                "intermediate_size": 512,
-                "max_position_embeddings": 64
-            },
-            {
-                "dim": 16,
-                "intermediate_size": 512,
-                "max_position_embeddings": 64
-            },
-            {
-                "dim": 32,
-                "intermediate_size": 512,
-                "max_position_embeddings": 64
-            },
-            {
-                "dim": 64,
-                "intermediate_size": 1024,
-                "max_position_embeddings": 256
-            },
-            {
-                "dim": 128,
-                "intermediate_size": 1024,
-                "max_position_embeddings": 256
-            }
-        ]
+        "variable_bindings": null
     },
     {
         "name": "Finetune TimeSplit Robust - AssetW2V",
@@ -211,8 +162,7 @@
             "portfolio_key": "Portfolio",
             "workers": 1,
             "save_folder": "checkpoints/timesplit_robust/finetune/AssetW2V/d{dim}/{quarter}",
-            "save_name": "AssetW2V_d{dim}_{quarter}",
-            "save_format": ".model"
+            "save_name": "AssetW2V_d{dim}_{quarter}"
         },
         "output_dir": "configs/timesplit_robust/finetune/AssetW2V/d{dim}",
         "filename": "AssetW2V_d{dim}_{quarter}.json",
@@ -302,7 +252,7 @@
     },
     {
         "name": "Finetune TimeSplit Robust - AssetBERT",
-        "description": "BERT fine-tuning for 50/50 time-split robustness test. 7 dims x 6 quarters = 42 configs.",
+        "description": "BERT fine-tuning for 50/50 time-split robustness test. 7 dims x 6 quarters = 42 configs. The main-results fine-tuning setting (30 epochs, best=train_loss, no validation split); unified architecture (context 256, FFN 512).",
         "template": {
             "model": {
                 "model_type": "BERT",
@@ -313,8 +263,8 @@
                 "hidden_size": "{dim}",
                 "num_hidden_layers": 4,
                 "num_attention_heads": 2,
-                "intermediate_size": "{intermediate_size}",
-                "max_position_embeddings": "{max_position_embeddings}",
+                "intermediate_size": 512,
+                "max_position_embeddings": 256,
                 "type_vocab_size": 1,
                 "freeze_embedding": false,
                 "freeze_encoder": false
@@ -322,7 +272,7 @@
             "tokenizer": {
                 "w2v_model": "checkpoints/timesplit_robust/finetune/AssetW2V/d{dim}/{quarter}/AssetW2V_d{dim}_{quarter}.model",
                 "vocab_file": null,
-                "finetune_tokenizer_file": null,
+                "pretrained_tokenizer_file": null,
                 "alias_file": null
             },
             "dataset": {
@@ -333,11 +283,10 @@
                 "proportion1_key": "Proportion1",
                 "proportion2_key": "Proportion2",
                 "include_proportion": true,
-                "max_length": "{max_position_embeddings}",
+                "max_length": 256,
                 "num_repeats": 1,
                 "mask_prob": 0.15,
-                "mask_indices": null,
-                "cache_size": 80
+                "mask_indices": null
             },
             "dataloader": {
                 "batch_size": 32,
@@ -370,17 +319,17 @@
                 "allow_tf32": true
             },
             "train": {
-                "max_epoches": 30,
+                "max_epochs": 30,
                 "validation_split": null,
                 "split_method": "random",
                 "best_metric": "train_loss",
                 "clip_grad_norm": 1.0,
                 "clip_grad_value": null,
-                "detect_anomaly": true,
-                "check_per_step": 200,
-                "report_per_epoch": 1,
+                "detect_anomaly": false,
+                "log_every_steps": 200,
+                "report_every_epochs": 1,
                 "calculate_contextualized_embeddings": true,
-                "save_per_epoch": 1,
+                "save_every_epochs": 1,
                 "save_folder": "checkpoints/timesplit_robust/finetune/AssetBERT/d{dim}/{quarter}",
                 "save_name": "AssetBERT_d{dim}_{quarter}",
                 "save_format": ".safetensors",
@@ -417,62 +366,8 @@
                 "2024Q1",
                 "2024Q2",
                 "2024Q3"
-            ],
-            "intermediate_size": [
-                512,
-                512,
-                512,
-                512,
-                512,
-                1024,
-                1024
-            ],
-            "max_position_embeddings": [
-                64,
-                64,
-                64,
-                64,
-                64,
-                256,
-                256
             ]
         },
-        "variable_bindings": [
-            {
-                "dim": 4,
-                "intermediate_size": 512,
-                "max_position_embeddings": 64
-            },
-            {
-                "dim": 8,
-                "intermediate_size": 512,
-                "max_position_embeddings": 64
-            },
-            {
-                "dim": 10,
-                "intermediate_size": 512,
-                "max_position_embeddings": 64
-            },
-            {
-                "dim": 16,
-                "intermediate_size": 512,
-                "max_position_embeddings": 64
-            },
-            {
-                "dim": 32,
-                "intermediate_size": 512,
-                "max_position_embeddings": 64
-            },
-            {
-                "dim": 64,
-                "intermediate_size": 1024,
-                "max_position_embeddings": 256
-            },
-            {
-                "dim": 128,
-                "intermediate_size": 1024,
-                "max_position_embeddings": 256
-            }
-        ]
+        "variable_bindings": null
     }
 ]

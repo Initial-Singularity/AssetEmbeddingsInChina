@@ -1,0 +1,721 @@
+[
+    {
+        "name": "State ownership probe - AssetBERT",
+        "description": "§7.1 Table 1: cross-validated logit AUC of the SOE label on the finetuned AssetBERT embedding. 7 dims.",
+        "template": {
+            "model_type": "AssetBERT",
+            "embedding_path": [
+                "checkpoints/finetune/AssetBERT/d{dim}/2023Q2/AssetBERT_d{dim}_2023Q2_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2023Q3/AssetBERT_d{dim}_2023Q3_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2023Q4/AssetBERT_d{dim}_2023Q4_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2024Q1/AssetBERT_d{dim}_2024Q1_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2024Q2/AssetBERT_d{dim}_2024Q2_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2024Q3/AssetBERT_d{dim}_2024Q3_best_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "label_path": [
+                "data/processed/FirmLabels/SOE/2023Q2.csv",
+                "data/processed/FirmLabels/SOE/2023Q3.csv",
+                "data/processed/FirmLabels/SOE/2023Q4.csv",
+                "data/processed/FirmLabels/SOE/2024Q1.csv",
+                "data/processed/FirmLabels/SOE/2024Q2.csv",
+                "data/processed/FirmLabels/SOE/2024Q3.csv"
+            ],
+            "label_col": "SOE",
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "n_folds": 5,
+            "features": [
+                "embedding"
+            ],
+            "align_chars": false,
+            "seed": 42
+        },
+        "output_dir": "configs/state_ownership/eval/probe/d{dim}",
+        "filename": "AssetBERT_d{dim}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ]
+        }
+    },
+    {
+        "name": "State ownership probe - AssetW2V",
+        "description": "§7.1 Table 1: cross-validated logit AUC of the SOE label on the finetuned AssetW2V embedding. 7 dims.",
+        "template": {
+            "model_type": "AssetW2V",
+            "embedding_path": [
+                "checkpoints/finetune/AssetW2V/d{dim}/2023Q2/AssetW2V_d{dim}_2023Q2_embedding.csv",
+                "checkpoints/finetune/AssetW2V/d{dim}/2023Q3/AssetW2V_d{dim}_2023Q3_embedding.csv",
+                "checkpoints/finetune/AssetW2V/d{dim}/2023Q4/AssetW2V_d{dim}_2023Q4_embedding.csv",
+                "checkpoints/finetune/AssetW2V/d{dim}/2024Q1/AssetW2V_d{dim}_2024Q1_embedding.csv",
+                "checkpoints/finetune/AssetW2V/d{dim}/2024Q2/AssetW2V_d{dim}_2024Q2_embedding.csv",
+                "checkpoints/finetune/AssetW2V/d{dim}/2024Q3/AssetW2V_d{dim}_2024Q3_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "label_path": [
+                "data/processed/FirmLabels/SOE/2023Q2.csv",
+                "data/processed/FirmLabels/SOE/2023Q3.csv",
+                "data/processed/FirmLabels/SOE/2023Q4.csv",
+                "data/processed/FirmLabels/SOE/2024Q1.csv",
+                "data/processed/FirmLabels/SOE/2024Q2.csv",
+                "data/processed/FirmLabels/SOE/2024Q3.csv"
+            ],
+            "label_col": "SOE",
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "n_folds": 5,
+            "features": [
+                "embedding"
+            ],
+            "align_chars": false,
+            "seed": 42
+        },
+        "output_dir": "configs/state_ownership/eval/probe/d{dim}",
+        "filename": "AssetW2V_d{dim}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ]
+        }
+    },
+    {
+        "name": "State ownership probe - AssetRS (4 variants)",
+        "description": "§7.1 Table 1: cross-validated logit AUC of the SOE label on the finetuned AssetRS embeddings (Binary/Ranks/Level0/LevelMin). 7 dims.",
+        "template": {
+            "model_type": "AssetRS_{V}",
+            "embedding_path": [
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2023Q2/AssetRS_{V}_d{dim}_2023Q2_embedding.csv",
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2023Q3/AssetRS_{V}_d{dim}_2023Q3_embedding.csv",
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2023Q4/AssetRS_{V}_d{dim}_2023Q4_embedding.csv",
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2024Q1/AssetRS_{V}_d{dim}_2024Q1_embedding.csv",
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2024Q2/AssetRS_{V}_d{dim}_2024Q2_embedding.csv",
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2024Q3/AssetRS_{V}_d{dim}_2024Q3_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "label_path": [
+                "data/processed/FirmLabels/SOE/2023Q2.csv",
+                "data/processed/FirmLabels/SOE/2023Q3.csv",
+                "data/processed/FirmLabels/SOE/2023Q4.csv",
+                "data/processed/FirmLabels/SOE/2024Q1.csv",
+                "data/processed/FirmLabels/SOE/2024Q2.csv",
+                "data/processed/FirmLabels/SOE/2024Q3.csv"
+            ],
+            "label_col": "SOE",
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "n_folds": 5,
+            "features": [
+                "embedding"
+            ],
+            "align_chars": false,
+            "seed": 42
+        },
+        "output_dir": "configs/state_ownership/eval/probe/d{dim}",
+        "filename": "AssetRS_{V}_d{dim}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "V": [
+                "Binary",
+                "Ranks",
+                "Level0",
+                "LevelMin"
+            ]
+        }
+    },
+    {
+        "name": "State ownership probe - characteristics baseline",
+        "description": "§7.1 Table 1: the four RV characteristics (features [\"chars\"]) on the benchmark firms with a label and complete characteristics.",
+        "template": {
+            "model_type": "Chars",
+            "embedding_path": null,
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "label_path": [
+                "data/processed/FirmLabels/SOE/2023Q2.csv",
+                "data/processed/FirmLabels/SOE/2023Q3.csv",
+                "data/processed/FirmLabels/SOE/2023Q4.csv",
+                "data/processed/FirmLabels/SOE/2024Q1.csv",
+                "data/processed/FirmLabels/SOE/2024Q2.csv",
+                "data/processed/FirmLabels/SOE/2024Q3.csv"
+            ],
+            "label_col": "SOE",
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "n_folds": 5,
+            "features": [
+                "chars"
+            ],
+            "align_chars": false,
+            "seed": 42
+        },
+        "output_dir": "configs/state_ownership/eval/probe/char",
+        "filename": "char_baseline.json",
+        "variable_params": {}
+    },
+    {
+        "name": "State ownership grouped RV/RC - AssetBERT",
+        "description": "§7.1 Table 2: RV and RC within SOE and non-SOE firms (categorical grouping on SOE), per-cell CV penalty, firms with complete characteristics, finetuned AssetBERT embedding. 7 dims x {RV,RC}.",
+        "template": {
+            "model_type": "AssetBERT",
+            "embedding_path": [
+                "checkpoints/finetune/AssetBERT/d{dim}/2023Q2/AssetBERT_d{dim}_2023Q2_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2023Q3/AssetBERT_d{dim}_2023Q3_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2023Q4/AssetBERT_d{dim}_2023Q4_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2024Q1/AssetBERT_d{dim}_2024Q1_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2024Q2/AssetBERT_d{dim}_2024Q2_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2024Q3/AssetBERT_d{dim}_2024Q3_best_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "group_path": [
+                "data/processed/FirmLabels/SOE/2023Q2.csv",
+                "data/processed/FirmLabels/SOE/2023Q3.csv",
+                "data/processed/FirmLabels/SOE/2023Q4.csv",
+                "data/processed/FirmLabels/SOE/2024Q1.csv",
+                "data/processed/FirmLabels/SOE/2024Q2.csv",
+                "data/processed/FirmLabels/SOE/2024Q3.csv"
+            ],
+            "group_col": "SOE",
+            "group_stock_col": "Stkcd",
+            "grouping": "categorical",
+            "n_bootstrap": 0,
+            "n_permutation": 1000,
+            "ridge_alpha": null,
+            "winsor_pct": null,
+            "cv_alpha_min": null,
+            "alpha_scope": "cell",
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": [
+                "embedding"
+            ],
+            "align_chars": true,
+            "seed": 42
+        },
+        "output_dir": "configs/state_ownership/eval/grouped/{task}/d{dim}",
+        "filename": "AssetBERT_d{dim}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "task": [
+                "RV",
+                "RC"
+            ]
+        }
+    },
+    {
+        "name": "State ownership grouped RV/RC - AssetW2V",
+        "description": "§7.1 Table 2: RV and RC within SOE and non-SOE firms (categorical grouping on SOE), per-cell CV penalty, firms with complete characteristics, finetuned AssetW2V embedding. 7 dims x {RV,RC}.",
+        "template": {
+            "model_type": "AssetW2V",
+            "embedding_path": [
+                "checkpoints/finetune/AssetW2V/d{dim}/2023Q2/AssetW2V_d{dim}_2023Q2_embedding.csv",
+                "checkpoints/finetune/AssetW2V/d{dim}/2023Q3/AssetW2V_d{dim}_2023Q3_embedding.csv",
+                "checkpoints/finetune/AssetW2V/d{dim}/2023Q4/AssetW2V_d{dim}_2023Q4_embedding.csv",
+                "checkpoints/finetune/AssetW2V/d{dim}/2024Q1/AssetW2V_d{dim}_2024Q1_embedding.csv",
+                "checkpoints/finetune/AssetW2V/d{dim}/2024Q2/AssetW2V_d{dim}_2024Q2_embedding.csv",
+                "checkpoints/finetune/AssetW2V/d{dim}/2024Q3/AssetW2V_d{dim}_2024Q3_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "group_path": [
+                "data/processed/FirmLabels/SOE/2023Q2.csv",
+                "data/processed/FirmLabels/SOE/2023Q3.csv",
+                "data/processed/FirmLabels/SOE/2023Q4.csv",
+                "data/processed/FirmLabels/SOE/2024Q1.csv",
+                "data/processed/FirmLabels/SOE/2024Q2.csv",
+                "data/processed/FirmLabels/SOE/2024Q3.csv"
+            ],
+            "group_col": "SOE",
+            "group_stock_col": "Stkcd",
+            "grouping": "categorical",
+            "n_bootstrap": 0,
+            "n_permutation": 1000,
+            "ridge_alpha": null,
+            "winsor_pct": null,
+            "cv_alpha_min": null,
+            "alpha_scope": "cell",
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": [
+                "embedding"
+            ],
+            "align_chars": true,
+            "seed": 42
+        },
+        "output_dir": "configs/state_ownership/eval/grouped/{task}/d{dim}",
+        "filename": "AssetW2V_d{dim}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "task": [
+                "RV",
+                "RC"
+            ]
+        }
+    },
+    {
+        "name": "State ownership grouped RV/RC - AssetRS (4 variants)",
+        "description": "§7.1 Table 2: RV and RC within SOE and non-SOE firms (categorical grouping on SOE), per-cell CV penalty, firms with complete characteristics, finetuned AssetRS embeddings (Binary/Ranks/Level0/LevelMin). 7 dims x {RV,RC}.",
+        "template": {
+            "model_type": "AssetRS_{V}",
+            "embedding_path": [
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2023Q2/AssetRS_{V}_d{dim}_2023Q2_embedding.csv",
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2023Q3/AssetRS_{V}_d{dim}_2023Q3_embedding.csv",
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2023Q4/AssetRS_{V}_d{dim}_2023Q4_embedding.csv",
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2024Q1/AssetRS_{V}_d{dim}_2024Q1_embedding.csv",
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2024Q2/AssetRS_{V}_d{dim}_2024Q2_embedding.csv",
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2024Q3/AssetRS_{V}_d{dim}_2024Q3_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "group_path": [
+                "data/processed/FirmLabels/SOE/2023Q2.csv",
+                "data/processed/FirmLabels/SOE/2023Q3.csv",
+                "data/processed/FirmLabels/SOE/2023Q4.csv",
+                "data/processed/FirmLabels/SOE/2024Q1.csv",
+                "data/processed/FirmLabels/SOE/2024Q2.csv",
+                "data/processed/FirmLabels/SOE/2024Q3.csv"
+            ],
+            "group_col": "SOE",
+            "group_stock_col": "Stkcd",
+            "grouping": "categorical",
+            "n_bootstrap": 0,
+            "n_permutation": 1000,
+            "ridge_alpha": null,
+            "winsor_pct": null,
+            "cv_alpha_min": null,
+            "alpha_scope": "cell",
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": [
+                "embedding"
+            ],
+            "align_chars": true,
+            "seed": 42
+        },
+        "output_dir": "configs/state_ownership/eval/grouped/{task}/d{dim}",
+        "filename": "AssetRS_{V}_d{dim}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "task": [
+                "RV",
+                "RC"
+            ],
+            "V": [
+                "Binary",
+                "Ranks",
+                "Level0",
+                "LevelMin"
+            ]
+        }
+    },
+    {
+        "name": "State ownership grouped RV/RC - characteristics baseline",
+        "description": "§7.1 Table 2: the characteristics (features [\"chars\"]) within SOE and non-SOE firms, same penalty and grouping as the embedding rows. One config per task.",
+        "template": {
+            "model_type": "Chars",
+            "embedding_path": null,
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "group_path": [
+                "data/processed/FirmLabels/SOE/2023Q2.csv",
+                "data/processed/FirmLabels/SOE/2023Q3.csv",
+                "data/processed/FirmLabels/SOE/2023Q4.csv",
+                "data/processed/FirmLabels/SOE/2024Q1.csv",
+                "data/processed/FirmLabels/SOE/2024Q2.csv",
+                "data/processed/FirmLabels/SOE/2024Q3.csv"
+            ],
+            "group_col": "SOE",
+            "group_stock_col": "Stkcd",
+            "grouping": "categorical",
+            "n_bootstrap": 0,
+            "n_permutation": 1000,
+            "ridge_alpha": null,
+            "winsor_pct": null,
+            "cv_alpha_min": null,
+            "alpha_scope": "cell",
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "benchmark_stock_col": "Stkcd",
+            "normalization": "standard",
+            "features": [
+                "chars"
+            ],
+            "align_chars": true,
+            "seed": 42
+        },
+        "output_dir": "configs/state_ownership/eval/grouped/{task}/char",
+        "filename": "char_baseline.json",
+        "variable_params": {
+            "task": [
+                "RV",
+                "RC"
+            ]
+        }
+    },
+    {
+        "name": "State ownership pairwise similarity - AssetBERT",
+        "description": "§7.1 Table 3: pair cosine similarity of the finetuned AssetBERT embedding on same-ownership and same-industry indicators, Fama-MacBeth over the six periods. 7 dims.",
+        "template": {
+            "model_type": "AssetBERT",
+            "embedding_path": [
+                "checkpoints/finetune/AssetBERT/d{dim}/2023Q2/AssetBERT_d{dim}_2023Q2_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2023Q3/AssetBERT_d{dim}_2023Q3_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2023Q4/AssetBERT_d{dim}_2023Q4_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2024Q1/AssetBERT_d{dim}_2024Q1_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2024Q2/AssetBERT_d{dim}_2024Q2_best_embedding.csv",
+                "checkpoints/finetune/AssetBERT/d{dim}/2024Q3/AssetBERT_d{dim}_2024Q3_best_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "label_path": [
+                "data/processed/FirmLabels/SOE/2023Q2.csv",
+                "data/processed/FirmLabels/SOE/2023Q3.csv",
+                "data/processed/FirmLabels/SOE/2023Q4.csv",
+                "data/processed/FirmLabels/SOE/2024Q1.csv",
+                "data/processed/FirmLabels/SOE/2024Q2.csv",
+                "data/processed/FirmLabels/SOE/2024Q3.csv"
+            ],
+            "label_col": "SOE",
+            "match_on": [
+                "SOE",
+                "IndustryCode"
+            ],
+            "interaction": false,
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "benchmark_stock_col": "Stkcd",
+            "seed": 42
+        },
+        "output_dir": "configs/state_ownership/eval/pairwise/d{dim}",
+        "filename": "AssetBERT_d{dim}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ]
+        }
+    },
+    {
+        "name": "State ownership pairwise similarity - AssetW2V",
+        "description": "§7.1 Table 3: pair cosine similarity of the finetuned AssetW2V embedding on same-ownership and same-industry indicators, Fama-MacBeth over the six periods. 7 dims.",
+        "template": {
+            "model_type": "AssetW2V",
+            "embedding_path": [
+                "checkpoints/finetune/AssetW2V/d{dim}/2023Q2/AssetW2V_d{dim}_2023Q2_embedding.csv",
+                "checkpoints/finetune/AssetW2V/d{dim}/2023Q3/AssetW2V_d{dim}_2023Q3_embedding.csv",
+                "checkpoints/finetune/AssetW2V/d{dim}/2023Q4/AssetW2V_d{dim}_2023Q4_embedding.csv",
+                "checkpoints/finetune/AssetW2V/d{dim}/2024Q1/AssetW2V_d{dim}_2024Q1_embedding.csv",
+                "checkpoints/finetune/AssetW2V/d{dim}/2024Q2/AssetW2V_d{dim}_2024Q2_embedding.csv",
+                "checkpoints/finetune/AssetW2V/d{dim}/2024Q3/AssetW2V_d{dim}_2024Q3_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "label_path": [
+                "data/processed/FirmLabels/SOE/2023Q2.csv",
+                "data/processed/FirmLabels/SOE/2023Q3.csv",
+                "data/processed/FirmLabels/SOE/2023Q4.csv",
+                "data/processed/FirmLabels/SOE/2024Q1.csv",
+                "data/processed/FirmLabels/SOE/2024Q2.csv",
+                "data/processed/FirmLabels/SOE/2024Q3.csv"
+            ],
+            "label_col": "SOE",
+            "match_on": [
+                "SOE",
+                "IndustryCode"
+            ],
+            "interaction": false,
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "benchmark_stock_col": "Stkcd",
+            "seed": 42
+        },
+        "output_dir": "configs/state_ownership/eval/pairwise/d{dim}",
+        "filename": "AssetW2V_d{dim}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ]
+        }
+    },
+    {
+        "name": "State ownership pairwise similarity - AssetRS (4 variants)",
+        "description": "§7.1 Table 3: pair cosine similarity of the finetuned AssetRS embeddings (Binary/Ranks/Level0/LevelMin) on same-ownership and same-industry indicators, Fama-MacBeth over the six periods. 7 dims.",
+        "template": {
+            "model_type": "AssetRS_{V}",
+            "embedding_path": [
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2023Q2/AssetRS_{V}_d{dim}_2023Q2_embedding.csv",
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2023Q3/AssetRS_{V}_d{dim}_2023Q3_embedding.csv",
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2023Q4/AssetRS_{V}_d{dim}_2023Q4_embedding.csv",
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2024Q1/AssetRS_{V}_d{dim}_2024Q1_embedding.csv",
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2024Q2/AssetRS_{V}_d{dim}_2024Q2_embedding.csv",
+                "checkpoints/finetune/AssetRS/RS_{V}/d{dim}/2024Q3/AssetRS_{V}_d{dim}_2024Q3_embedding.csv"
+            ],
+            "benchmark_path": [
+                "data/processed/Benchmark/2023Q2.csv",
+                "data/processed/Benchmark/2023Q3.csv",
+                "data/processed/Benchmark/2023Q4.csv",
+                "data/processed/Benchmark/2024Q1.csv",
+                "data/processed/Benchmark/2024Q2.csv",
+                "data/processed/Benchmark/2024Q3.csv"
+            ],
+            "label_path": [
+                "data/processed/FirmLabels/SOE/2023Q2.csv",
+                "data/processed/FirmLabels/SOE/2023Q3.csv",
+                "data/processed/FirmLabels/SOE/2023Q4.csv",
+                "data/processed/FirmLabels/SOE/2024Q1.csv",
+                "data/processed/FirmLabels/SOE/2024Q2.csv",
+                "data/processed/FirmLabels/SOE/2024Q3.csv"
+            ],
+            "label_col": "SOE",
+            "match_on": [
+                "SOE",
+                "IndustryCode"
+            ],
+            "interaction": false,
+            "embedding_token_col": "Token",
+            "embedding_value_pattern": "Embed_*",
+            "periods": [
+                "2023Q2",
+                "2023Q3",
+                "2023Q4",
+                "2024Q1",
+                "2024Q2",
+                "2024Q3"
+            ],
+            "benchmark_stock_col": "Stkcd",
+            "seed": 42
+        },
+        "output_dir": "configs/state_ownership/eval/pairwise/d{dim}",
+        "filename": "AssetRS_{V}_d{dim}.json",
+        "variable_params": {
+            "dim": [
+                4,
+                8,
+                10,
+                16,
+                32,
+                64,
+                128
+            ],
+            "V": [
+                "Binary",
+                "Ranks",
+                "Level0",
+                "LevelMin"
+            ]
+        }
+    }
+]

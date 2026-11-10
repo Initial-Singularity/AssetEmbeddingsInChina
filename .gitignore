@@ -1,5 +1,7 @@
 data/
 !asset_embeddings/scripts/data/
+!asset_embeddings/evaluators/data/
+!tests/evaluators/data/
 !examples/data/
 paper/
 record/
@@ -12,6 +14,11 @@ __pycache__/
 *.model
 *.log
 *.csv
+!tests/smoke/fixtures/*.csv
+!tests/regression/fixtures/*.csv
+!tests/fixtures/text_embedding/csmar/*.csv
+!tests/fixtures/data_loading/*.csv
+!tests/fixtures/data_loading/portfolios/*.csv
 !examples/data/*.csv
 *.ipynb
 !examples/*.ipynb
@@ -39,6 +46,19 @@ scripts/run/test/
 _dev/
 _writing/
 .smoke_tmp/
+.regression_tmp/
 /site/
 CLAUDE.md
+
+# agent-private analysis scripts and their tests (see the records-system doc for the official read path)
+scripts/analysis/
+tests/analysis/
 .claude/
+
+# records migrations: kept locally, not part of the release
+scripts/ops/migrate_records_v5.py
+tests/records/test_migrate_v5.py
+scripts/ops/migrate_char_mode.py
+
+# superseded template versions: a local archive, not part of the repository
+templates/archived/

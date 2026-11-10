@@ -1,17 +1,10 @@
-"""Centralized random-seeding helpers — the single source of seeding policy.
+"""Seeding helpers: the one place that decides which random generators a run seeds, and when.
 
-Three deliberately distinct scopes:
-
-* :func:`seed_basic` — python ``random`` + ``numpy`` (+ optional ``torch``/cuDNN).
-  Used by non-HuggingFace code paths: the data distributor and the
-  Word2Vec trainer.
-* :func:`seed_hf_global` — the HuggingFace/``transformers`` deterministic block,
-  run **before** the ``Accelerator`` is constructed.
-* :func:`seed_accelerate` — ``accelerate`` per-device seeding, run **after** the
-  ``Accelerator`` is constructed (``device_specific`` needs the process index).
-
-``transformers``/``accelerate`` are imported lazily inside the functions so that
-importing this module stays cheap on CPU-only / no-HF environments (see C-H1).
+`seed_basic` covers Python `random` and NumPy (plus torch and cuDNN on request) for the paths without
+HuggingFace: the data distributor, the RV/RC evaluators and the Word2Vec trainer. `seed_hf_global` is the
+transformers deterministic block that runs before the `Accelerator` is built, and `seed_accelerate` the
+per-device accelerate seeding that runs after it. transformers and accelerate are imported inside the
+functions so that importing this module stays cheap on CPU-only installs without them.
 """
 
 import os
@@ -46,13 +39,16 @@ def seed_hf_global(seed: int) -> None:
 
     Seeds ``transformers`` (which covers python/numpy/torch), pins the hash and
     cuBLAS workspace, and forces cuDNN determinism. Call this *before*
-    constructing the ``Accelerator``; pair with :func:`seed_accelerate` after.
+    constructing the ``Accelerator``; pair with `seed_accelerate` after.
     """
     import transformers
 
     transformers.trainer_utils.set_seed(seed, deterministic=True)
-    os.environ["PYTHONHASHSEED"] = str(seed)  # 禁止hash随机化
-    os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"  # 禁止cublas工作空间随机化
+    # The running interpreter fixed its hash seed at start-up; this reaches the child processes spawned
+    # later (DataLoader workers).
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    # CUDA needs a fixed cuBLAS workspace for deterministic results; torch's deterministic mode checks it.
+    os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 

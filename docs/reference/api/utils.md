@@ -24,6 +24,25 @@ The single source of seeding policy.
         - MinMaxTracker
         - EarlyStopTracker
 
-## Error handling
+## Resources
 
-::: asset_embeddings.utils.log_utils.log_exceptions_inclass
+Every `Run` owns one probe; the trainers ask it for a line only when the VRAM high-water mark moved.
+
+::: asset_embeddings.utils.memory_utils
+    options:
+      show_root_heading: false
+      show_root_toc_entry: false
+      members:
+        - ResourceProbe
+
+## Logging
+
+See [Logging system](../../explanation/logging-system.md).
+
+::: asset_embeddings.logger.configure_logging
+
+::: asset_embeddings.logger.failure_report
+
+::: asset_embeddings.logger.job_log_paths
+
+::: asset_embeddings.logger.error_dir

@@ -18,8 +18,7 @@
             "portfolio_key": "Portfolio",
             "workers": 1,
             "save_folder": "checkpoints/pt_strategy_ablation/sliding_window/N40/pretrained/AssetW2V/d{dim}/{quarter}",
-            "save_name": "AssetW2V_sw40_d{dim}_{quarter}",
-            "save_format": ".model"
+            "save_name": "AssetW2V_sw40_d{dim}_{quarter}"
         },
         "output_dir": "configs/pt_strategy_ablation/sliding_window/N40/pretrained/AssetW2V/d{dim}",
         "filename": "AssetW2V_sw40_d{dim}_{quarter}.json",
@@ -582,8 +581,8 @@
                 "hidden_size": "{dim}",
                 "num_hidden_layers": 4,
                 "num_attention_heads": 2,
-                "intermediate_size": "{intermediate_size}",
-                "max_position_embeddings": "{max_position_embeddings}",
+                "intermediate_size": 512,
+                "max_position_embeddings": 256,
                 "type_vocab_size": 1,
                 "freeze_embedding": false,
                 "freeze_encoder": false
@@ -602,11 +601,10 @@
                 "proportion1_key": "Proportion1",
                 "proportion2_key": "Proportion2",
                 "include_proportion": false,
-                "max_length": "{max_position_embeddings}",
+                "max_length": 256,
                 "num_repeats": 1,
                 "mask_prob": 0.15,
-                "mask_indices": null,
-                "cache_size": 400
+                "mask_indices": null
             },
             "dataloader": {
                 "batch_size": 128,
@@ -617,11 +615,11 @@
                 "drop_last": false
             },
             "optimizer": {
-                "optimizer_type": "PagedAdam8bit",
+                "optimizer_type": "AdamW",
                 "optimizer_kwargs": null,
                 "learning_rate": 0.001,
                 "lr_scheduler_type": "cosine",
-                "lr_scheduler_warmup_steps": 0,
+                "lr_scheduler_warmup_steps": 500,
                 "lr_scheduler_train_steps": null,
                 "lr_scheduler_num_cycles": 0.5,
                 "lr_scheduler_power": 0
@@ -639,22 +637,28 @@
                 "allow_tf32": true
             },
             "train": {
-                "max_epoches": 30,
-                "validation_split": null,
+                "max_epochs": 40,
+                "validation_split": 0.1,
                 "split_method": "random",
-                "best_metric": "train_loss",
-                "clip_grad_norm": null,
+                "best_metric": "val_loss",
+                "clip_grad_norm": 1.0,
                 "clip_grad_value": null,
-                "detect_anomaly": true,
-                "check_per_step": 200,
-                "report_per_epoch": 1,
+                "detect_anomaly": false,
+                "log_every_steps": 200,
+                "report_every_epochs": 1,
                 "calculate_contextualized_embeddings": false,
-                "save_per_epoch": 1,
+                "save_every_epochs": 1,
                 "save_folder": "checkpoints/pt_strategy_ablation/sliding_window/N40/pretrained/AssetBERT/d{dim}/{quarter}",
                 "save_name": "AssetBERT_sw40_d{dim}_{quarter}_pretrained",
                 "save_format": ".safetensors",
                 "seed": 42,
-                "keep_best_only": true
+                "keep_best_only": true,
+                "early_stop_enabled": true,
+                "early_stop_patience": 5,
+                "early_stop_min_delta": 0.001,
+                "early_stop_mode": "min",
+                "early_stop_relative": true,
+                "early_stop_metric": "val_loss"
             }
         },
         "output_dir": "configs/pt_strategy_ablation/sliding_window/N40/pretrained/AssetBERT/d{dim}",
@@ -668,14 +672,6 @@
                 32,
                 64,
                 128
-            ],
-            "intermediate_size": [
-                512,
-                1024
-            ],
-            "max_position_embeddings": [
-                64,
-                256
             ],
             "quarter": [
                 "2023Q2",
@@ -942,39 +938,25 @@
         },
         "variable_bindings": [
             {
-                "dim": 4,
-                "intermediate_size": 512,
-                "max_position_embeddings": 64
+                "dim": 4
             },
             {
-                "dim": 8,
-                "intermediate_size": 512,
-                "max_position_embeddings": 64
+                "dim": 8
             },
             {
-                "dim": 10,
-                "intermediate_size": 512,
-                "max_position_embeddings": 64
+                "dim": 10
             },
             {
-                "dim": 16,
-                "intermediate_size": 512,
-                "max_position_embeddings": 64
+                "dim": 16
             },
             {
-                "dim": 32,
-                "intermediate_size": 512,
-                "max_position_embeddings": 64
+                "dim": 32
             },
             {
-                "dim": 64,
-                "intermediate_size": 1024,
-                "max_position_embeddings": 256
+                "dim": 64
             },
             {
-                "dim": 128,
-                "intermediate_size": 1024,
-                "max_position_embeddings": 256
+                "dim": 128
             },
             {
                 "quarter": "2023Q2",
@@ -1261,8 +1243,8 @@
                 "hidden_size": "{dim}",
                 "num_hidden_layers": 4,
                 "num_attention_heads": 2,
-                "intermediate_size": "{intermediate_size}",
-                "max_position_embeddings": "{max_position_embeddings}",
+                "intermediate_size": 512,
+                "max_position_embeddings": 256,
                 "type_vocab_size": 1,
                 "freeze_embedding": false,
                 "freeze_encoder": false
@@ -1281,11 +1263,10 @@
                 "proportion1_key": "Proportion1",
                 "proportion2_key": "Proportion2",
                 "include_proportion": true,
-                "max_length": "{max_position_embeddings}",
+                "max_length": 256,
                 "num_repeats": 1,
                 "mask_prob": 0.15,
-                "mask_indices": null,
-                "cache_size": 80
+                "mask_indices": null
             },
             "dataloader": {
                 "batch_size": 32,
@@ -1318,17 +1299,17 @@
                 "allow_tf32": true
             },
             "train": {
-                "max_epoches": 30,
+                "max_epochs": 30,
                 "validation_split": null,
                 "split_method": "random",
                 "best_metric": "train_loss",
                 "clip_grad_norm": 1.0,
                 "clip_grad_value": null,
-                "detect_anomaly": true,
-                "check_per_step": 200,
-                "report_per_epoch": 1,
+                "detect_anomaly": false,
+                "log_every_steps": 200,
+                "report_every_epochs": 1,
                 "calculate_contextualized_embeddings": true,
-                "save_per_epoch": 1,
+                "save_every_epochs": 1,
                 "save_folder": "checkpoints/pt_strategy_ablation/sliding_window/N40/finetune/AssetBERT/d{dim}/{quarter}",
                 "save_name": "AssetBERT_sw40_d{dim}_{quarter}",
                 "save_format": ".safetensors",
@@ -1348,14 +1329,6 @@
                 64,
                 128
             ],
-            "intermediate_size": [
-                512,
-                1024
-            ],
-            "max_position_embeddings": [
-                64,
-                256
-            ],
             "quarter": [
                 "2023Q2",
                 "2023Q3",
@@ -1365,42 +1338,6 @@
                 "2024Q3"
             ]
         },
-        "variable_bindings": [
-            {
-                "dim": 4,
-                "intermediate_size": 512,
-                "max_position_embeddings": 64
-            },
-            {
-                "dim": 8,
-                "intermediate_size": 512,
-                "max_position_embeddings": 64
-            },
-            {
-                "dim": 10,
-                "intermediate_size": 512,
-                "max_position_embeddings": 64
-            },
-            {
-                "dim": 16,
-                "intermediate_size": 512,
-                "max_position_embeddings": 64
-            },
-            {
-                "dim": 32,
-                "intermediate_size": 512,
-                "max_position_embeddings": 64
-            },
-            {
-                "dim": 64,
-                "intermediate_size": 1024,
-                "max_position_embeddings": 256
-            },
-            {
-                "dim": 128,
-                "intermediate_size": 1024,
-                "max_position_embeddings": 256
-            }
-        ]
+        "variable_bindings": null
     }
 ]
