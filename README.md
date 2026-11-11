@@ -1,10 +1,11 @@
 # AssetEmbeddingsInChina
 
 > Learning asset embeddings from partial institutional holdings in China's A-share market.
-> Companion code for the working paper "Do Asset Embeddings Need Complete Holdings? Lessons from China" (2026).
+> Companion code for the working paper "Do Asset Embeddings Need Complete Holdings? Lessons from China" (2026), [available on SSRN](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7690818).
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](pyproject.toml)
+[![SSRN](https://img.shields.io/badge/SSRN-7690818-1f4e79.svg)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7690818)
 [![Data DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20640781.svg)](https://doi.org/10.5281/zenodo.20640781)
 
 ## The setting
@@ -70,7 +71,8 @@ These are the *learned representations*, not CSMAR source data — download them
   title  = {Do Asset Embeddings Need Complete Holdings? Lessons from China},
   author = {Cheng, Zitong and Huang, Dashan and Liu, Xiaobin and Zeng, Tao},
   year   = {2026},
-  note   = {Working paper},
+  note   = {Working paper, available at SSRN},
+  url    = {https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7690818},
 }
 
 @dataset{cheng2026asset_data,
