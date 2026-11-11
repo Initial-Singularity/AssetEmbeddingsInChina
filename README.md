@@ -1,7 +1,7 @@
 # AssetEmbeddingsInChina
 
 > Learning asset embeddings from partial institutional holdings in China's A-share market.
-> Companion code for the working paper "Do Asset Embeddings Need Complete Holdings? Lessons from China" (2026), [available on SSRN](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7690818).
+> Companion code for the working paper ["Do Asset Embeddings Need Complete Holdings? Lessons from China"](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7690818) (2026).
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](pyproject.toml)
@@ -57,7 +57,7 @@ The notebook runs the full chain of Word2Vec, BERT pretraining, BERT finetuning 
 ## Data availability
 
 The trained embeddings are archived on Zenodo under CC-BY-4.0:
-**[10.5281/zenodo.20640781](https://doi.org/10.5281/zenodo.20640781)** (concept DOI — always resolves to the latest version).
+**[10.5281/zenodo.20640781](https://doi.org/10.5281/zenodo.20640781)**.
 
 - `asset_embeddings.tar.gz` — AssetBERT / AssetW2V / AssetRS per-stock embeddings at dimensions 4–128 for 2023Q2–2024Q3.
 - `text_embeddings.tar.gz` — full-dimensional masters for the nine text embedders plus `regenerate.py`, which rebuilds any `language × transform × dimension × quarter` variant.

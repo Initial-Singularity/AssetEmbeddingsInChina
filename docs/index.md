@@ -1,7 +1,7 @@
 # AssetEmbeddingsInChina
 
 > NLP-based asset embeddings for the Chinese A-share market.
-> Companion code for the working paper **"Do Asset Embeddings Need Complete Holdings? Lessons from China"** (2026), [available on SSRN](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7690818).
+> Companion code for the working paper [**"Do Asset Embeddings Need Complete Holdings? Lessons from China"**](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7690818) (2026).
 
 Following [Gabaix et al. (2025)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4507511), we treat each investor's portfolio as a *sentence* and each stock as a *token*: rank order carries economic meaning (the largest position is the primary exposure), just as word order carries meaning in language. This lets us learn asset representations with NLP techniques for asset pricing and investor modeling.
 

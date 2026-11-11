@@ -1,7 +1,7 @@
 # AssetEmbeddingsInChina
 
 > 面向中国 A 股市场的、基于 NLP 的资产嵌入（asset embeddings）。
-> 配套工作论文 **"Do Asset Embeddings Need Complete Holdings? Lessons from China"**（2026）的代码，论文见 [SSRN](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7690818)。
+> 配套工作论文 [**"Do Asset Embeddings Need Complete Holdings? Lessons from China"**](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7690818)（2026）的代码。
 
 沿用 [Gabaix et al. (2025)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4507511) 的思路，我们把每个投资者的投资组合视为一个*句子*，把每只股票视为一个*词元（token）*：持仓的排序携带经济含义（最大的仓位即首要敞口），正如语言中词序携带语义一样。由此即可用 NLP 技术学习资产表示，用于资产定价与投资者建模。
 
